@@ -27,6 +27,7 @@ public class ClientController {
 
     @PreAuthorize("hasAuthority('client:create')")
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create Client")
     public ClientResponse createClient(
             @Valid @RequestBody CreateClientRequest request) {
@@ -36,6 +37,7 @@ public class ClientController {
 
     @PreAuthorize("hasAuthority('client:read')")
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get All Clients")
     public Page<ClientResponse> getAllClients(Pageable pageable) {
 
@@ -44,7 +46,8 @@ public class ClientController {
 
     @PreAuthorize("hasAuthority('client:read')")
     @GetMapping("/{clientId}")
-    @Operation(summary = "Get Client By ID")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Get Client By Id")
     public ClientResponse getClientById(
             @PathVariable String clientId) {
 
@@ -53,6 +56,7 @@ public class ClientController {
 
     @PreAuthorize("hasAuthority('client:read')")
     @GetMapping("/search")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Search Clients")
     public Page<ClientResponse> searchClients(
             @RequestParam String keyword,
@@ -63,6 +67,7 @@ public class ClientController {
 
     @PreAuthorize("hasAuthority('client:read')")
     @GetMapping("/status")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Filter Clients By Status")
     public Page<ClientResponse> filterClientsByStatus(
             @RequestParam UserStatus status,
@@ -73,6 +78,7 @@ public class ClientController {
 
     @PreAuthorize("hasAuthority('client:update')")
     @PutMapping("/{clientId}")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Update Client")
     public ClientResponse updateClient(
             @PathVariable String clientId,

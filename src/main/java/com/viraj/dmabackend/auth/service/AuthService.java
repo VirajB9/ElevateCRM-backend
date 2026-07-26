@@ -11,6 +11,7 @@ import com.viraj.dmabackend.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.viraj.dmabackend.exception.*;
 
 @Service
 @RequiredArgsConstructor
@@ -29,16 +30,16 @@ public class AuthService {
         User user = userRepository
                 .findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password"));
+                        new UnauthorizedException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new UnauthorizedException("Invalid email or password");
         }
 
         Role role = roleRepository
                 .findById(user.getRoleId())
                 .orElseThrow(() ->
-                        new RuntimeException("Role not found"));
+                        new ResourceNotFoundException("Role not found"));
 
         UserResponse userResponse = UserResponse.builder()
                 .id(user.getId())

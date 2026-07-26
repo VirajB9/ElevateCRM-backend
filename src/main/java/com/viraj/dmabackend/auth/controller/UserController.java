@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:create')")
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create User")
     public CreateUserResponse createUser(
             @Valid @RequestBody CreateUserRequest request) {
@@ -33,6 +35,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:read')")
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get All Users")
     public Page<UserResponse> getAllUsers(
             Pageable pageable) {
@@ -42,6 +45,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:read')")
     @GetMapping("/{userId}")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get User By Id")
     public UserResponse getUserById(
             @PathVariable String userId) {
@@ -51,6 +55,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:update')")
     @PutMapping("/{userId}")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Update User")
     public UserResponse updateUser(
             @PathVariable String userId,
@@ -61,6 +66,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:update')")
     @PatchMapping("/{userId}/status")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Update User Status")
     public UserResponse updateUserStatus(
             @PathVariable String userId,
@@ -71,6 +77,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:delete')")
     @DeleteMapping("/{userId}")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Soft Delete User")
     public UserResponse softDeleteUser(
             @PathVariable String userId) {
@@ -80,6 +87,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:read')")
     @GetMapping("/search")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Search Users")
     public Page<UserResponse> searchUsers(
             @RequestParam String keyword,
@@ -90,6 +98,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('user:read')")
     @GetMapping("/filter")
+    @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Filter Users By Status")
     public Page<UserResponse> filterUsersByStatus(
             @RequestParam UserStatus status,

@@ -4,6 +4,7 @@ import com.viraj.dmabackend.auth.dto.AuthenticationResponse;
 import com.viraj.dmabackend.auth.dto.LoginRequest;
 import com.viraj.dmabackend.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthenticationResponse login(
-            @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 

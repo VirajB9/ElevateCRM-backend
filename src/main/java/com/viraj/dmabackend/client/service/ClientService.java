@@ -142,7 +142,6 @@ public class ClientService {
         if (gstNumber != null
                 && !gstNumber.isBlank()
                 && clientRepository.existsByGstNumberAndIdNot(gstNumber, clientId)) {
-
             throw new DuplicateClientGstException(gstNumber);
         }
     }
