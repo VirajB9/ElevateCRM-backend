@@ -91,7 +91,8 @@ public class ProjectController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Update Project")
     public ProjectResponse updateProject(
-            @PathVariable String projectId, @Valid @RequestBody UpdateProjectRequest request) {
+            @PathVariable String projectId,
+            @Valid @RequestBody UpdateProjectRequest request) {
 
         return projectService.updateProject(projectId, request);
     }

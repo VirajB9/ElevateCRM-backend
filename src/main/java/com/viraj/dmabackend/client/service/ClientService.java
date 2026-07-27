@@ -10,6 +10,7 @@ import com.viraj.dmabackend.client.exception.DuplicateClientEmailException;
 import com.viraj.dmabackend.client.exception.DuplicateClientGstException;
 import com.viraj.dmabackend.client.exception.DuplicateClientPhoneException;
 import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.lead.entity.Lead;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,6 +38,32 @@ public class ClientService {
         return mapClient(savedClient);
     }
 
+    public Client createClientFromLead(Lead lead) {
+
+        validateDuplicateEmail(lead.getEmail());
+
+        validateDuplicatePhone(lead.getPhoneNumber());
+
+        Client client = Client.builder()
+                .companyName(lead.getCompanyName())
+                .contactPerson(lead.getFirstName() + " " + lead.getLastName())
+                .email(lead.getEmail())
+                .phoneNumber(lead.getPhoneNumber())
+                .website(lead.getWebsite())
+                .industry(lead.getIndustry())
+                .notes(lead.getNotes())
+                .build();
+
+        return clientRepository.save(client);
+    }
+
+    public ClientResponse getClientById(String clientId) {
+
+        Client client = findClientById(clientId);
+
+        return mapClient(client);
+    }
+
     public Page<ClientResponse> getAllClients(Pageable pageable) {
 
         Page<Client> clients = clientRepository.findByStatusNot(UserStatus.DELETED, pageable);
@@ -49,13 +76,6 @@ public class ClientService {
         Page<Client> clients = clientRepository.findByCompanyNameContainingIgnoreCaseAndStatusNot(keyword, UserStatus.DELETED, pageable);
 
         return mapToClientResponsePage(clients);
-    }
-
-    public ClientResponse getClientById(String clientId) {
-
-        Client client = findClientById(clientId);
-
-        return mapClient(client);
     }
 
     public Page<ClientResponse> filterClientsByStatus(UserStatus status, Pageable pageable) {
@@ -96,9 +116,18 @@ public class ClientService {
     }
 
 
-    /**
-     * Helper Methods
-     */
+    //Helper Methods
+    private Client findClientById(String clientId) {
+
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientNotFoundException(clientId));
+
+        if (client.getStatus() == UserStatus.DELETED) {
+            throw new ClientNotFoundException(clientId);
+        }
+        return client;
+    }
+
     private void validateDuplicateEmail(String email) {
 
         if (clientRepository.existsByEmail(email)) {
@@ -146,17 +175,6 @@ public class ClientService {
         }
     }
 
-    private Client findClientById(String clientId) {
-
-        Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new ClientNotFoundException(clientId));
-
-        if (client.getStatus() == UserStatus.DELETED) {
-            throw new ClientNotFoundException(clientId);
-        }
-        return client;
-    }
-
     private Client buildClient(CreateClientRequest request) {
 
         return Client.builder()
@@ -174,6 +192,23 @@ public class ClientService {
                 .postalCode(request.getPostalCode())
                 .notes(request.getNotes())
                 .build();
+    }
+
+    private void updateClientFields(Client client, UpdateClientRequest request) {
+
+        client.setCompanyName(request.getCompanyName());
+        client.setContactPerson(request.getContactPerson());
+        client.setEmail(request.getEmail());
+        client.setPhoneNumber(request.getPhoneNumber());
+        client.setWebsite(request.getWebsite());
+        client.setIndustry(request.getIndustry());
+        client.setGstNumber(request.getGstNumber());
+        client.setAddress(request.getAddress());
+        client.setCity(request.getCity());
+        client.setState(request.getState());
+        client.setCountry(request.getCountry());
+        client.setPostalCode(request.getPostalCode());
+        client.setNotes(request.getNotes());
     }
 
     private ClientResponse mapClient(Client client) {
@@ -202,22 +237,5 @@ public class ClientService {
     private Page<ClientResponse> mapToClientResponsePage(Page<Client> clients) {
 
         return clients.map(this::mapClient);
-    }
-
-    private void updateClientFields(Client client, UpdateClientRequest request) {
-
-        client.setCompanyName(request.getCompanyName());
-        client.setContactPerson(request.getContactPerson());
-        client.setEmail(request.getEmail());
-        client.setPhoneNumber(request.getPhoneNumber());
-        client.setWebsite(request.getWebsite());
-        client.setIndustry(request.getIndustry());
-        client.setGstNumber(request.getGstNumber());
-        client.setAddress(request.getAddress());
-        client.setCity(request.getCity());
-        client.setState(request.getState());
-        client.setCountry(request.getCountry());
-        client.setPostalCode(request.getPostalCode());
-        client.setNotes(request.getNotes());
     }
 }

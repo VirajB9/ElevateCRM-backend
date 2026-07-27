@@ -52,6 +52,21 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    public Page<ProjectResponse> getProjectsByStatus(ProjectStatus status, Pageable pageable) {
+        return projectRepository.findByStatus(status, pageable)
+                .map(this::mapToProjectResponse);
+    }
+
+    @Override
+    public Page<ProjectResponse> getProjectsByClient(String clientId, Pageable pageable) {
+
+        validateClientExists(clientId);
+        return projectRepository.findByClientId(clientId, pageable)
+                .map(this::mapToProjectResponse);
+
+    }
+
+    @Override
     public Page<ProjectResponse> getAllProjects(Pageable pageable) {
 
         return projectRepository.findAll(pageable)
@@ -66,21 +81,6 @@ public class ProjectServiceImpl implements ProjectService {
                         keyword,
                         pageable)
                 .map(this::mapToProjectResponse);
-    }
-
-    @Override
-    public Page<ProjectResponse> getProjectsByStatus(ProjectStatus status, Pageable pageable) {
-        return projectRepository.findByStatus(status, pageable)
-                .map(this::mapToProjectResponse);
-    }
-
-    @Override
-    public Page<ProjectResponse> getProjectsByClient(String clientId, Pageable pageable) {
-
-        validateClientExists(clientId);
-        return projectRepository.findByClientId(clientId, pageable)
-                .map(this::mapToProjectResponse);
-
     }
 
     @Override
@@ -108,9 +108,13 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-    /**
-     * Helper Method
-     */
+    //Helper Method
+    private Project findProjectById(String projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() ->
+                        new ProjectNotFoundException(projectId));
+    }
+
     private void validateClientExists(String clientId) {
 
         if (!clientRepository.existsById(clientId)) {
@@ -142,12 +146,6 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
-    private Project findProjectById(String projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() ->
-                        new ProjectNotFoundException(projectId));
-    }
-
     private Project buildProject(CreateProjectRequest request) {
 
         return Project.builder()
@@ -160,6 +158,18 @@ public class ProjectServiceImpl implements ProjectService {
                 .budget(request.getBudget())
                 .notes(request.getNotes())
                 .build();
+    }
+
+    private void updateProjectFields(Project project, UpdateProjectRequest request) {
+
+        project.setProjectName(request.getProjectName());
+        project.setDescription(request.getDescription());
+        project.setPriority(request.getPriority());
+        project.setStatus(request.getStatus());
+        project.setStartDate(request.getStartDate());
+        project.setEndDate(request.getEndDate());
+        project.setBudget(request.getBudget());
+        project.setNotes(request.getNotes());
     }
 
     private ProjectResponse mapToProjectResponse(Project project) {
@@ -180,17 +190,5 @@ public class ProjectServiceImpl implements ProjectService {
                 .createdBy(project.getCreatedBy())
                 .updatedBy(project.getUpdatedBy())
                 .build();
-    }
-
-    private void updateProjectFields(Project project, UpdateProjectRequest request) {
-
-        project.setProjectName(request.getProjectName());
-        project.setDescription(request.getDescription());
-        project.setPriority(request.getPriority());
-        project.setStatus(request.getStatus());
-        project.setStartDate(request.getStartDate());
-        project.setEndDate(request.getEndDate());
-        project.setBudget(request.getBudget());
-        project.setNotes(request.getNotes());
     }
 }

@@ -53,6 +53,13 @@ public class UserService {
                 .build();
     }
 
+    public UserResponse getUserById(String userId) {
+
+        User user = findUserById(userId);
+
+        return mapUser(user);
+    }
+
     public Page<UserResponse> getAllUsers(Pageable pageable) {
 
         Page<User> users = userRepository.findAll(pageable);
@@ -71,13 +78,6 @@ public class UserService {
                 );
 
         return mapToUserResponsePage(users);
-    }
-
-    public UserResponse getUserById(String userId) {
-
-        User user = findUserById(userId);
-
-        return mapUser(user);
     }
 
     public Page<UserResponse> filterUsersByStatus(UserStatus status, Pageable pageable) {
@@ -131,9 +131,30 @@ public class UserService {
     }
 
 
-    /**
-     * Helper Methods
-     */
+    //Helper Methods
+    private User findUserById(String userId) {
+
+        return userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new UserNotFoundException(userId));
+    }
+
+    private Role findRoleById(String roleId) {
+
+        return roleRepository.findById(roleId)
+                .orElseThrow(() ->
+                        new RoleNotFoundException(roleId));
+    }
+
+    private User findCurrentUser() {
+
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+        return userDetails.getUser();
+    }
+
     private void validateDuplicateEmail(String email) {
 
         if (userRepository.existsByEmail(email)) {
@@ -162,9 +183,7 @@ public class UserService {
         }
     }
 
-    /**
-     * Validates whether the authenticated user is allowed to assign the requested role.
-     */
+    //Validates whether the authenticated user is allowed to assign the requested role.
     private void validateRoleAssignment(User currentUser, Role targetRole) {
 
         Role currentUserRole = findRoleById(currentUser.getRoleId());
@@ -197,29 +216,6 @@ public class UserService {
         }
     }
 
-    private User findUserById(String userId) {
-
-        return userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new UserNotFoundException(userId));
-    }
-
-    private Role findRoleById(String roleId) {
-
-        return roleRepository.findById(roleId)
-                .orElseThrow(() ->
-                        new RoleNotFoundException(roleId));
-    }
-
-    private User findCurrentUser() {
-
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
-        return userDetails.getUser();
-    }
-
     private User buildUser(CreateUserRequest request, Role role, String encodedPassword) {
 
         return User.builder()
@@ -231,6 +227,14 @@ public class UserService {
                 .roleId(role.getId())
                 .status(UserStatus.ACTIVE)
                 .build();
+    }
+
+    private void updateUserFields(User user, UpdateUserRequest request, Role role) {
+
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setRoleId(role.getId());
     }
 
     private UserResponse mapToUserResponse(User user, Role role) {
@@ -256,13 +260,5 @@ public class UserService {
         Role role = findRoleById(user.getRoleId());
 
         return mapToUserResponse(user, role);
-    }
-
-    private void updateUserFields(User user, UpdateUserRequest request, Role role) {
-
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setRoleId(role.getId());
     }
 }
