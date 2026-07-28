@@ -35,5 +35,4 @@ public interface ClientRepository extends MongoRepository<Client, String> {
     Page<Client> findByStatusNot(UserStatus status, Pageable pageable);
 
     Page<Client> findByCompanyNameContainingIgnoreCaseAndStatusNot(String companyName, UserStatus status, Pageable pageable);
-
 }

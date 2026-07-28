@@ -1,49 +1,22 @@
 package com.viraj.dmabackend.auth.service;
 
-import com.viraj.dmabackend.auth.dto.RoleResponse;
-import com.viraj.dmabackend.auth.entity.Role;
-import com.viraj.dmabackend.auth.exception.RoleNotFoundException;
-import com.viraj.dmabackend.auth.repository.RoleRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import com.viraj.dmabackend.auth.dto.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-@Service
-@RequiredArgsConstructor
-public class RoleService {
+public interface RoleService {
 
-    private final RoleRepository roleRepository;
+    List<RoleResponse> getAllRoles();
 
-    public List<RoleResponse> getAllRoles() {
+    RoleResponse getRoleById(String roleId);
 
-        List<Role> roles = roleRepository.findAll();
+    RoleResponse updateRole(String roleId, UpdateRoleRequest request);
 
-        return roles.stream()
-                .map(this::mapRole)
-                .toList();
-    }
+    RoleResponse assignPermissions(String roleId, AssignPermissionsRequest request);
 
-    public RoleResponse getRoleById(String roleId) {
+    RoleResponse removePermissions(String roleId, RemovePermissionsRequest request);
 
-        Role role = findRoleById(roleId);
-
-        return mapRole(role);
-    }
-
-    private Role findRoleById(String roleId) {
-
-        return roleRepository.findById(roleId)
-                .orElseThrow(() ->
-                        new RoleNotFoundException(roleId));
-    }
-
-    private RoleResponse mapRole(Role role) {
-
-        return RoleResponse.builder()
-                .id(role.getId())
-                .name(role.getName())
-                .description(role.getDescription())
-                .build();
-    }
+    Page<UserResponse> getUsersByRole(String roleId, Pageable pageable);
 }

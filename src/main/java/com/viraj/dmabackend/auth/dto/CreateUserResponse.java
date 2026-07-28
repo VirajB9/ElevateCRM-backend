@@ -10,5 +10,4 @@ public class CreateUserResponse {
     private UserResponse user;
 
     private String temporaryPassword;
-
 }

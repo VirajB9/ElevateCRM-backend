@@ -2,7 +2,7 @@ package com.viraj.dmabackend.auth.controller;
 
 import com.viraj.dmabackend.auth.dto.*;
 import com.viraj.dmabackend.auth.enums.UserStatus;
-import com.viraj.dmabackend.auth.service.UserService;
+import com.viraj.dmabackend.auth.service.impl.UserServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "Bearer Authentication")
 public class UserController {
 
-    private final UserService userService;
+    private final UserServiceImpl userService;
 
     @PreAuthorize("hasAuthority('user:create')")
     @PostMapping

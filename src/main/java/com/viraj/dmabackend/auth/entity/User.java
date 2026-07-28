@@ -43,6 +43,5 @@ public class User extends BaseEntity {
 
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
-
 }
 

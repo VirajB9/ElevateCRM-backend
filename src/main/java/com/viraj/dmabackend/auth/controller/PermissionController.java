@@ -1,7 +1,7 @@
 package com.viraj.dmabackend.auth.controller;
 
 import com.viraj.dmabackend.auth.dto.PermissionResponse;
-import com.viraj.dmabackend.auth.service.PermissionService;
+import com.viraj.dmabackend.auth.service.impl.PermissionServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +18,7 @@ import java.util.List;
 @SecurityRequirement(name = "Bearer Authentication")
 public class PermissionController {
 
-    private final PermissionService permissionService;
+    private final PermissionServiceImpl permissionService;
 
     @PreAuthorize("hasAuthority('user:read')")
     @GetMapping

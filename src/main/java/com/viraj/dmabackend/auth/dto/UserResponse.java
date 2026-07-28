@@ -23,5 +23,4 @@ public class UserResponse {
     private String roleName;
 
     private UserStatus status;
-
 }

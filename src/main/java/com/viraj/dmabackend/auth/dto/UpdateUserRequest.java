@@ -19,5 +19,4 @@ public class UpdateUserRequest {
 
     @NotBlank
     private String roleId;
-
 }

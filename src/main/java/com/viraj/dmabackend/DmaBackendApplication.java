@@ -9,5 +9,4 @@ public class DmaBackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(DmaBackendApplication.class, args);
 	}
-
 }

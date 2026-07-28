@@ -27,10 +27,5 @@ public interface LeadRepository extends MongoRepository<Lead, String> {
 
     Page<Lead> findByConvertedClientId(String convertedClientId, Pageable pageable);
 
-    Page<Lead> findByCompanyNameContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-            String companyName,
-            String firstName,
-            String lastName,
-            Pageable pageable
-    );
+    Page<Lead> findByCompanyNameContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String companyName, String firstName, String lastName, Pageable pageable);
 }

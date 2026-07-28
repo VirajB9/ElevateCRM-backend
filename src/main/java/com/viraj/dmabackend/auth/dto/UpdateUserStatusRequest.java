@@ -11,5 +11,4 @@ public class UpdateUserStatusRequest {
 
     @NotNull
     private UserStatus status;
-
 }

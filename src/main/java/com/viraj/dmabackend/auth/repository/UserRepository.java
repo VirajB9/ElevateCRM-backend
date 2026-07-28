@@ -16,18 +16,12 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    Page<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-            String firstName,
-            String lastName,
-            String email,
-            Pageable pageable);
+    Page<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(String firstName, String lastName, String email, Pageable pageable);
 
-    Page<User> findByStatus(
-            UserStatus status,
-            Pageable pageable);
+    Page<User> findByStatus(UserStatus status, Pageable pageable);
 
-    boolean existsByPhoneNumberAndIdNot(
-            String phoneNumber,
-            String id);
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, String id);
+
+    Page<User> findByRoleId(String roleId, Pageable pageable);
 }
 

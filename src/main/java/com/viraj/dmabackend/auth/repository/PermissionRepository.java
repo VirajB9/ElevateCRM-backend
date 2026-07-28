@@ -11,5 +11,4 @@ public interface PermissionRepository extends MongoRepository<Permission, String
     boolean existsByPermissionType(PermissionType permissionType);
 
     Optional<Permission> findByPermissionType(PermissionType permissionType);
-
 }
