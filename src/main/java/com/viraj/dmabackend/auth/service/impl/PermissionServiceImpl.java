@@ -25,8 +25,7 @@ public class PermissionServiceImpl implements PermissionService {
                 .toList();
     }
 
-    private PermissionResponse mapPermission(
-            Permission permission) {
+    private PermissionResponse mapPermission(Permission permission) {
 
         return PermissionResponse.builder()
                 .id(permission.getId())

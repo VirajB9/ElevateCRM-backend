@@ -1,6 +1,8 @@
 package com.viraj.dmabackend.auth.exception;
 
-public class PermissionNotFoundException extends RuntimeException {
+import com.viraj.dmabackend.exception.ResourceNotFoundException;
+
+public class PermissionNotFoundException extends ResourceNotFoundException {
 
     public PermissionNotFoundException(String permissionId) {
         super("Permission not found with id: " + permissionId);

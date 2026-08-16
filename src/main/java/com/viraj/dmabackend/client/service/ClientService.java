@@ -1,6 +1,6 @@
 package com.viraj.dmabackend.client.service;
 
-import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.client.enums.ClientStatus;
 import com.viraj.dmabackend.client.dto.ClientResponse;
 import com.viraj.dmabackend.client.dto.CreateClientRequest;
 import com.viraj.dmabackend.client.dto.UpdateClientRequest;
@@ -66,19 +66,19 @@ public class ClientService {
 
     public Page<ClientResponse> getAllClients(Pageable pageable) {
 
-        Page<Client> clients = clientRepository.findByStatusNot(UserStatus.DELETED, pageable);
+        Page<Client> clients = clientRepository.findByStatusNot(ClientStatus.ARCHIVED, pageable);
 
         return mapToClientResponsePage(clients);
     }
 
     public Page<ClientResponse> searchClients(String keyword, Pageable pageable) {
 
-        Page<Client> clients = clientRepository.findByCompanyNameContainingIgnoreCaseAndStatusNot(keyword, UserStatus.DELETED, pageable);
+        Page<Client> clients = clientRepository.findByCompanyNameContainingIgnoreCaseAndStatusNot(keyword, ClientStatus.ARCHIVED, pageable);
 
         return mapToClientResponsePage(clients);
     }
 
-    public Page<ClientResponse> filterClientsByStatus(UserStatus status, Pageable pageable) {
+    public Page<ClientResponse> filterClientsByStatus(ClientStatus status, Pageable pageable) {
 
         Page<Client> clients = clientRepository.findByStatus(status, pageable);
 
@@ -106,23 +106,25 @@ public class ClientService {
 
         Client client = findClientById(clientId);
 
-        if (client.getStatus() == UserStatus.DELETED) {
+        if (client.getStatus() == ClientStatus.ARCHIVED) {
             throw new ClientNotFoundException(clientId);
         }
 
-        client.setStatus(UserStatus.DELETED);
+        client.setStatus(ClientStatus.ARCHIVED);
 
         clientRepository.save(client);
     }
 
 
-    //Helper Methods
+    // =========================
+    // Helper Methods
+    // =========================
     private Client findClientById(String clientId) {
 
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new ClientNotFoundException(clientId));
 
-        if (client.getStatus() == UserStatus.DELETED) {
+        if (client.getStatus() == ClientStatus.ARCHIVED) {
             throw new ClientNotFoundException(clientId);
         }
         return client;

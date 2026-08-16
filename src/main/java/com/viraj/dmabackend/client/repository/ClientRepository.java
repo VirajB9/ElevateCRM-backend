@@ -1,6 +1,6 @@
 package com.viraj.dmabackend.client.repository;
 
-import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.client.enums.ClientStatus;
 import com.viraj.dmabackend.client.entity.Client;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,21 +10,13 @@ import java.util.Optional;
 
 public interface ClientRepository extends MongoRepository<Client, String> {
 
-    Optional<Client> findByEmail(String email);
-
-    Optional<Client> findByPhoneNumber(String phoneNumber);
-
-    Optional<Client> findByGstNumber(String gstNumber);
-
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
 
     boolean existsByGstNumber(String gstNumber);
 
-    Page<Client> findByStatus(UserStatus status, Pageable pageable);
-
-    Page<Client> findByCompanyNameContainingIgnoreCase(String companyName, Pageable pageable);
+    Page<Client> findByStatus(ClientStatus status, Pageable pageable);
 
     boolean existsByEmailAndIdNot(String email, String clientId);
 
@@ -32,7 +24,7 @@ public interface ClientRepository extends MongoRepository<Client, String> {
 
     boolean existsByGstNumberAndIdNot(String gstNumber, String clientId);
 
-    Page<Client> findByStatusNot(UserStatus status, Pageable pageable);
+    Page<Client> findByStatusNot(ClientStatus status, Pageable pageable);
 
-    Page<Client> findByCompanyNameContainingIgnoreCaseAndStatusNot(String companyName, UserStatus status, Pageable pageable);
+    Page<Client> findByCompanyNameContainingIgnoreCaseAndStatusNot(String companyName, ClientStatus status, Pageable pageable);
 }

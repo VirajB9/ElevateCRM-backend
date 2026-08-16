@@ -140,7 +140,9 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    //Helper Methods
+    // =========================
+    // Helper Methods
+    // =========================
     private User findUserById(String userId) {
 
         return userRepository.findById(userId)

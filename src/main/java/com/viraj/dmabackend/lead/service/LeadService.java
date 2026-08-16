@@ -119,7 +119,9 @@ public class LeadService {
     }
 
 
-    // Helper methods
+    // =========================
+    // Helper Methods
+    // =========================
     private Lead findLeadById(String leadId) {
         return leadRepository.findById(leadId)
                 .orElseThrow(() -> new LeadNotFoundException(leadId));

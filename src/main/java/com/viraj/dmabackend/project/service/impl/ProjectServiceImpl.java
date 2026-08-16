@@ -108,7 +108,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-    //Helper Method
+    // =========================
+    // Helper Methods
+    // =========================
     private Project findProjectById(String projectId) {
         return projectRepository.findById(projectId)
                 .orElseThrow(() ->

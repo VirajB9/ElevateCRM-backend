@@ -1,6 +1,6 @@
 package com.viraj.dmabackend.client.controller;
 
-import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.client.enums.ClientStatus;
 import com.viraj.dmabackend.client.dto.ClientResponse;
 import com.viraj.dmabackend.client.dto.CreateClientRequest;
 import com.viraj.dmabackend.client.dto.UpdateClientRequest;
@@ -16,7 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "5. Client Management")
+@Tag(name = "6. Client Management")
 @RestController
 @RequestMapping("/api/clients")
 @RequiredArgsConstructor
@@ -70,7 +70,7 @@ public class ClientController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Filter Clients By Status")
     public Page<ClientResponse> filterClientsByStatus(
-            @RequestParam UserStatus status,
+            @RequestParam ClientStatus status,
             Pageable pageable) {
 
         return clientService.filterClientsByStatus(status, pageable);

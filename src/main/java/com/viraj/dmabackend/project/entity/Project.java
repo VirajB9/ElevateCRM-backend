@@ -7,6 +7,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Document(collection = "projects")
+@TypeAlias("Project")
 public class Project extends BaseEntity {
 
     @Id

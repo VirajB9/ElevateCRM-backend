@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collation = "leads")
+@Document(collection = "leads")
 @TypeAlias("Lead")
 public class
 Lead extends BaseEntity {

@@ -1,6 +1,6 @@
 package com.viraj.dmabackend.client.entity;
 
-import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.client.enums.ClientStatus;
 import com.viraj.dmabackend.common.entity.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -17,6 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @Builder
 @Document(collection = "clients")
+@TypeAlias("Client")
 public class Client extends BaseEntity {
 
     @Id
@@ -52,5 +54,5 @@ public class Client extends BaseEntity {
     private String notes;
 
     @Builder.Default
-    private UserStatus status = UserStatus.ACTIVE;
+    private ClientStatus status = ClientStatus.ACTIVE;
 }

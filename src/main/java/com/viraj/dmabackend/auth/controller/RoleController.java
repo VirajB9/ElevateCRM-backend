@@ -1,7 +1,7 @@
 package com.viraj.dmabackend.auth.controller;
 
 import com.viraj.dmabackend.auth.dto.*;
-import com.viraj.dmabackend.auth.service.impl.RoleServiceImpl;
+import com.viraj.dmabackend.auth.service.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +22,7 @@ import java.util.List;
 @SecurityRequirement(name = "Bearer Authentication")
 public class RoleController {
 
-    private final RoleServiceImpl roleService;
+    private final RoleService roleService;
 
     @PreAuthorize("hasAuthority('role:read')")
     @GetMapping

@@ -1,6 +1,8 @@
 package com.viraj.dmabackend.project.exception;
 
-public class ProjectNotFoundException extends RuntimeException {
+import com.viraj.dmabackend.exception.ResourceNotFoundException;
+
+public class ProjectNotFoundException extends ResourceNotFoundException {
 
     public ProjectNotFoundException(String projectId) {
         super("Project not found with ID: " + projectId);

@@ -1,6 +1,6 @@
 package com.viraj.dmabackend.client.dto;
 
-import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.client.enums.ClientStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -38,7 +38,7 @@ public class ClientResponse {
 
     private String notes;
 
-    private UserStatus status;
+    private ClientStatus status;
 
     private LocalDateTime createdAt;
 

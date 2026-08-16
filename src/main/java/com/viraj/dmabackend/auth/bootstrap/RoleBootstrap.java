@@ -69,7 +69,13 @@ public class RoleBootstrap implements CommandLineRunner {
                         PermissionType.PROJECT_READ,
                         PermissionType.PROJECT_UPDATE,
 
-                        PermissionType.INVOICE_READ
+                        PermissionType.INVOICE_READ,
+
+                        PermissionType.ROLE_READ,
+
+                        PermissionType.MENU_READ,
+
+                        PermissionType.LEAD_CONVERT
                 ))
                 .systemRole(true)
                 .build();
@@ -91,7 +97,8 @@ public class RoleBootstrap implements CommandLineRunner {
                         PermissionType.LEAD_READ,
                         PermissionType.PROJECT_READ,
                         PermissionType.PROJECT_UPDATE,
-                        PermissionType.INVOICE_READ
+                        PermissionType.INVOICE_READ,
+                        PermissionType.MENU_READ
                 ))
                 .systemRole(true)
                 .build();
@@ -111,7 +118,8 @@ public class RoleBootstrap implements CommandLineRunner {
                 .permissionIds(getPermissionIds(
                         PermissionType.CLIENT_READ,
                         PermissionType.LEAD_READ,
-                        PermissionType.PROJECT_READ
+                        PermissionType.PROJECT_READ,
+                        PermissionType.MENU_READ
                 ))
                 .systemRole(true)
                 .build();

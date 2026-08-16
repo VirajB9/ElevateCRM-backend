@@ -1,8 +1,10 @@
 package com.viraj.dmabackend.auth.exception;
 
-public class UnauthorizedRoleAssignmentException extends RuntimeException{
+import com.viraj.dmabackend.exception.BadRequestException;
 
-    public UnauthorizedRoleAssignmentException(String message){
+public class UnauthorizedRoleAssignmentException extends BadRequestException {
+
+    public UnauthorizedRoleAssignmentException(String message) {
         super(message);
     }
 }

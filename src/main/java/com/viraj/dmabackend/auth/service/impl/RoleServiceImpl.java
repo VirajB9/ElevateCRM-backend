@@ -127,7 +127,9 @@ public class RoleServiceImpl implements RoleService {
     }
 
 
-    //Helper Method
+    // =========================
+    // Helper Methods
+    // =========================
     private Role findRoleById(String roleId) {
 
         return roleRepository.findById(roleId)

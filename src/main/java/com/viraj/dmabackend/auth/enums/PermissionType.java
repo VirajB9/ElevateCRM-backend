@@ -25,6 +25,7 @@ public enum PermissionType {
     LEAD_READ,
     LEAD_UPDATE,
     LEAD_DELETE,
+    LEAD_CONVERT,
 
     // ===========================
     // PROJECT MANAGEMENT
@@ -40,5 +41,21 @@ public enum PermissionType {
     INVOICE_CREATE,
     INVOICE_READ,
     INVOICE_UPDATE,
-    INVOICE_DELETE
+    INVOICE_DELETE,
+
+    // ===========================
+    // ROLE MANAGEMENT
+    // ===========================
+    ROLE_CREATE,
+    ROLE_READ,
+    ROLE_UPDATE,
+    ROLE_DELETE,
+
+    // ===========================
+    // MENU MANAGEMENT
+    // ===========================
+    MENU_CREATE,
+    MENU_READ,
+    MENU_UPDATE,
+    MENU_DELETE
 }

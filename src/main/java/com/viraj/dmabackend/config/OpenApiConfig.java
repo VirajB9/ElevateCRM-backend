@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import io.swagger.v3.oas.models.servers.Server;
+
 import java.util.List;
 
 @Configuration
@@ -45,7 +46,11 @@ public class OpenApiConfig {
                         new Tag().name("2. User Management"),
                         new Tag().name("3. Role Management"),
                         new Tag().name("4. Permission Management"),
-                        new Tag().name("5. Client Management")
+                        new Tag().name("5. Lead Management"),
+                        new Tag().name("6. Client Management"),
+                        new Tag().name("7. Project Management"),
+                        new Tag().name("8. Dynamic Menu Management"),
+                        new Tag().name("9. Invoice Management")
                 ));
     }
 }

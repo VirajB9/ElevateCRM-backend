@@ -16,7 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "7. Lead Management")
+@Tag(name = "5. Lead Management")
 @RestController
 @RequestMapping("/api/leads")
 @RequiredArgsConstructor
@@ -49,8 +49,7 @@ public class LeadController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get all leads")
-    public Page<LeadResponse> getAllLeads(
-            Pageable pageable) {
+    public Page<LeadResponse> getAllLeads(Pageable pageable) {
 
         return leadService.getAllLeads(pageable);
     }

@@ -16,7 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "6. Project Management")
+@Tag(name = "7. Project Management")
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
