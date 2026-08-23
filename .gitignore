@@ -38,4 +38,7 @@ out/
 
 # Gemini
 .gemini/
-GEMINI.md.dual-graph/
+GEMINI.md
+.dual-graph/
+.agent/
+graphify-out/
