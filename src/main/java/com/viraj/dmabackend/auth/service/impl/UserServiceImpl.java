@@ -5,10 +5,12 @@ import com.viraj.dmabackend.auth.enums.UserStatus;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.exception.*;
+import com.viraj.dmabackend.auth.mapper.UserMapper;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.CustomUserDetails;
 import com.viraj.dmabackend.auth.service.UserService;
+import com.viraj.dmabackend.auth.validator.UserValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,30 +29,32 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
 
     private final PasswordEncoder passwordEncoder;
+    
+    private final UserMapper userMapper;
+    
+    private final UserValidator userValidator;
 
     @Override
     public CreateUserResponse createUser(CreateUserRequest request) {
 
-        validateDuplicateEmail(request.getEmail());
-
-        validateDuplicatePhone(request.getPhoneNumber());
+        userValidator.validateDuplicateEmail(request.getEmail());
+        userValidator.validateDuplicatePhone(request.getPhoneNumber());
 
         User currentUser = findCurrentUser();
 
         Role role = findRoleById(request.getRoleId());
+        Role currentUserRole = findRoleById(currentUser.getRoleId());
 
-        validateRoleAssignment(currentUser, role);
+        userValidator.validateRoleAssignment(currentUser, currentUserRole, role);
 
         String generatedPassword = generatePassword();
-
         String encodedPassword = passwordEncoder.encode(generatedPassword);
 
         User user = buildUser(request, role, encodedPassword);
-
         User savedUser = userRepository.save(user);
 
         return CreateUserResponse.builder()
-                .user(mapToUserResponse(savedUser, role))
+                .user(userMapper.toUserResponse(savedUser, role.getName()))
                 .temporaryPassword(generatedPassword)
                 .build();
     }
@@ -59,7 +63,6 @@ public class UserServiceImpl implements UserService {
     public UserResponse getUserById(String userId) {
 
         User user = findUserById(userId);
-
         return mapUser(user);
     }
 
@@ -67,7 +70,6 @@ public class UserServiceImpl implements UserService {
     public Page<UserResponse> getAllUsers(Pageable pageable) {
 
         Page<User> users = userRepository.findAll(pageable);
-
         return mapToUserResponsePage(users);
     }
 
@@ -81,7 +83,6 @@ public class UserServiceImpl implements UserService {
                         keyword,
                         pageable
                 );
-
         return mapToUserResponsePage(users);
     }
 
@@ -89,7 +90,6 @@ public class UserServiceImpl implements UserService {
     public Page<UserResponse> filterUsersByStatus(UserStatus status, Pageable pageable) {
 
         Page<User> users = userRepository.findByStatus(status, pageable);
-
         return mapToUserResponsePage(users);
     }
 
@@ -98,32 +98,29 @@ public class UserServiceImpl implements UserService {
 
         User user = findUserById(userId);
 
-        validatePhoneForUpdate(request.getPhoneNumber(), user.getId());
+        userValidator.validatePhoneForUpdate(request.getPhoneNumber(), user.getId());
 
         Role role = findRoleById(request.getRoleId());
-
         User currentUser = findCurrentUser();
+        Role currentUserRole = findRoleById(currentUser.getRoleId());
 
-        validateRoleAssignment(currentUser, role);
+        userValidator.validateRoleAssignment(currentUser, currentUserRole, role);
 
         updateUserFields(user, request, role);
 
         User updatedUser = userRepository.save(user);
-
         return mapUser(updatedUser);
     }
 
     @Override
     public UserResponse updateUserStatus(String userId, UpdateUserStatusRequest request) {
 
-        validateStatusUpdate(request.getStatus());
+        userValidator.validateStatusUpdate(request.getStatus());
 
         User user = findUserById(userId);
-
         user.setStatus(request.getStatus());
 
         User updatedUser = userRepository.save(user);
-
         return mapUser(updatedUser);
     }
 
@@ -131,14 +128,11 @@ public class UserServiceImpl implements UserService {
     public UserResponse softDeleteUser(String userId) {
 
         User user = findUserById(userId);
-
         user.setStatus(UserStatus.DELETED);
 
         User deletedUser = userRepository.save(user);
-
         return mapUser(deletedUser);
     }
-
 
     // =========================
     // Helper Methods
@@ -166,63 +160,6 @@ public class UserServiceImpl implements UserService {
         return userDetails.getUser();
     }
 
-    private void validateDuplicateEmail(String email) {
-
-        if (userRepository.existsByEmail(email)) {
-            throw new DuplicateEmailException(email);
-        }
-    }
-
-    private void validateDuplicatePhone(String phoneNumber) {
-
-        if (userRepository.existsByPhoneNumber(phoneNumber)) {
-            throw new DuplicatePhoneException(phoneNumber);
-        }
-    }
-
-    private void validatePhoneForUpdate(String phoneNumber, String userId) {
-
-        if (userRepository.existsByPhoneNumberAndIdNot(phoneNumber, userId)) {
-            throw new DuplicatePhoneException(phoneNumber);
-        }
-    }
-
-    private void validateStatusUpdate(UserStatus status) {
-
-        if (status == UserStatus.DELETED) {
-            throw new InvalidUserStatusException(status);
-        }
-    }
-
-    //Validates whether the authenticated user is allowed to assign the requested role.
-    private void validateRoleAssignment(User currentUser, Role targetRole) {
-
-        Role currentUserRole = findRoleById(currentUser.getRoleId());
-
-        String currentRole = currentUserRole.getName();
-
-        String targetRoleName = targetRole.getName();
-
-        switch (currentRole) {
-            case "OWNER":
-                return;
-
-            case "MANAGER":
-                if (!targetRoleName.equals("EMPLOYEE")
-                        && !targetRoleName.equals("INTERN")) {
-                    throw new UnauthorizedRoleAssignmentException("Managers can only create Employees or Interns");
-                }
-                return;
-
-            case "EMPLOYEE":
-            case "INTERN":
-                throw new UnauthorizedRoleAssignmentException("You are not allowed to create users");
-
-            default:
-                throw new UnauthorizedRoleAssignmentException("Invalid role assignment");
-        }
-    }
-
     private User buildUser(CreateUserRequest request, Role role, String encodedPassword) {
 
         return User.builder()
@@ -244,19 +181,6 @@ public class UserServiceImpl implements UserService {
         user.setRoleId(role.getId());
     }
 
-    private UserResponse mapToUserResponse(User user, Role role) {
-
-        return UserResponse.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .phoneNumber(user.getPhoneNumber())
-                .roleName(role.getName())
-                .status(user.getStatus())
-                .build();
-    }
-
     private Page<UserResponse> mapToUserResponsePage(Page<User> users) {
 
         return users.map(this::mapUser);
@@ -265,7 +189,6 @@ public class UserServiceImpl implements UserService {
     private UserResponse mapUser(User user) {
 
         Role role = findRoleById(user.getRoleId());
-
-        return mapToUserResponse(user, role);
+        return userMapper.toUserResponse(user, role.getName());
     }
 }

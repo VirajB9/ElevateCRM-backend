@@ -26,7 +26,7 @@ public class InvoiceController {
 
     private final InvoiceService invoiceService;
 
-    @PreAuthorize("hasAnyAuthority('invoice:create')")
+    @PreAuthorize("hasAuthority('invoice:create')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create Invoice")
@@ -36,7 +36,7 @@ public class InvoiceController {
         return invoiceService.createInvoice(request);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:read')")
+    @PreAuthorize("hasAuthority('invoice:read')")
     @GetMapping("/{invoiceId}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get Invoice By ID")
@@ -46,7 +46,7 @@ public class InvoiceController {
         return invoiceService.getInvoiceById(invoiceId);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:read')")
+    @PreAuthorize("hasAuthority('invoice:read')")
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get All Invoices")
@@ -56,7 +56,7 @@ public class InvoiceController {
         return invoiceService.getAllInvoices(pageable);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:read')")
+    @PreAuthorize("hasAuthority('invoice:read')")
     @GetMapping("/status/{status}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get Invoices By Status")
@@ -66,7 +66,7 @@ public class InvoiceController {
         return invoiceService.getInvoicesByStatus(status, pageable);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:read')")
+    @PreAuthorize("hasAuthority('invoice:read')")
     @GetMapping("/client/{clientId}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get Invoices By Client")
@@ -76,7 +76,7 @@ public class InvoiceController {
         return invoiceService.getInvoicesByClientId(clientId, pageable);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:read')")
+    @PreAuthorize("hasAuthority('invoice:read')")
     @GetMapping("/project/{projectId}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get Invoices By Project")
@@ -86,7 +86,7 @@ public class InvoiceController {
         return invoiceService.getInvoicesByProjectId(projectId, pageable);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:update')")
+    @PreAuthorize("hasAuthority('invoice:update')")
     @PutMapping("/{invoiceId}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Update Invoice")
@@ -108,7 +108,7 @@ public class InvoiceController {
         return invoiceService.updateInvoiceStatus(invoiceId, request);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:delete')")
+    @PreAuthorize("hasAuthority('invoice:delete')")
     @DeleteMapping("/{invoiceId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete Invoice")

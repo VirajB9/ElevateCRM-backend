@@ -23,4 +23,8 @@ public class UserResponse {
     private String roleName;
 
     private UserStatus status;
+
+    private java.time.LocalDateTime createdAt;
+
+    private java.time.LocalDateTime updatedAt;
 }

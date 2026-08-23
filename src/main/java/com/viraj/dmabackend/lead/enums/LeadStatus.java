@@ -8,5 +8,6 @@ public enum LeadStatus {
     PROPOSAL_SENT,
     NEGOTIATION,
     WON,
-    LOST
+    LOST,
+    DELETED
 }

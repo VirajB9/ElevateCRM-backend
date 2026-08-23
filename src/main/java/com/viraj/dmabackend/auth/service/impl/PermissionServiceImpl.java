@@ -2,6 +2,7 @@ package com.viraj.dmabackend.auth.service.impl;
 
 import com.viraj.dmabackend.auth.dto.PermissionResponse;
 import com.viraj.dmabackend.auth.entity.Permission;
+import com.viraj.dmabackend.auth.mapper.PermissionMapper;
 import com.viraj.dmabackend.auth.repository.PermissionRepository;
 import com.viraj.dmabackend.auth.service.PermissionService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.List;
 public class PermissionServiceImpl implements PermissionService {
 
     private final PermissionRepository permissionRepository;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public List<PermissionResponse> getAllPermissions() {
@@ -21,16 +23,7 @@ public class PermissionServiceImpl implements PermissionService {
         List<Permission> permissions = permissionRepository.findAll();
 
         return permissions.stream()
-                .map(this::mapPermission)
+                .map(permissionMapper::toPermissionResponse)
                 .toList();
-    }
-
-    private PermissionResponse mapPermission(Permission permission) {
-
-        return PermissionResponse.builder()
-                .id(permission.getId())
-                .name(permission.getPermissionType().name())
-                .description(permission.getDescription())
-                .build();
     }
 }

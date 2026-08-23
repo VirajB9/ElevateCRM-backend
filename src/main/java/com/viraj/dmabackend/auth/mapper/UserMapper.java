@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserMapper {
 
-    public UserResponse toUserResponse(User user) {
+    public UserResponse toUserResponse(User user, String roleName) {
 
         return UserResponse.builder()
                 .id(user.getId())
@@ -15,7 +15,10 @@ public class UserMapper {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
+                .roleName(roleName)
                 .status(user.getStatus())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
     }
 }

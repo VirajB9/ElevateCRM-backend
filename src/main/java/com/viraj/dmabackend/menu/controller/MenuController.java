@@ -25,7 +25,7 @@ public class MenuController {
 
     private final MenuService menuService;
 
-    @PreAuthorize("hasAnyAuthority('menu:create')")
+    @PreAuthorize("hasAuthority('menu:create')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create Menu")
@@ -45,7 +45,7 @@ public class MenuController {
         return menuService.getMenuById(menuId);
     }
 
-    @PreAuthorize("hasAnyAuthority('menu:read')")
+    @PreAuthorize("hasAuthority('menu:read')")
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get All Menus")

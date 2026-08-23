@@ -8,4 +8,8 @@ public class InvalidInvoiceStatusException extends BadRequestException {
     public InvalidInvoiceStatusException(String message) {
         super(message);
     }
+
+    public InvalidInvoiceStatusException(InvoiceStatus currentStatus, InvoiceStatus newStatus) {
+        super(String.format("Cannot transition invoice status from %s to %s", currentStatus, newStatus));
+    }
 }

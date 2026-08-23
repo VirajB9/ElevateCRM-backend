@@ -5,11 +5,12 @@ import com.viraj.dmabackend.auth.dto.LoginRequest;
 import com.viraj.dmabackend.auth.dto.UserResponse;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
+import com.viraj.dmabackend.auth.exception.RoleNotFoundException;
+import com.viraj.dmabackend.auth.mapper.UserMapper;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.JwtUtil;
 import com.viraj.dmabackend.auth.service.AuthService;
-import com.viraj.dmabackend.exception.ResourceNotFoundException;
 import com.viraj.dmabackend.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,12 +21,10 @@ import org.springframework.stereotype.Service;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final RoleRepository roleRepository;
-
     private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
 
     @Override
     public AuthenticationResponse login(LoginRequest request) {
@@ -42,17 +41,9 @@ public class AuthServiceImpl implements AuthService {
         Role role = roleRepository
                 .findById(user.getRoleId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Role not found"));
+                        new RoleNotFoundException(user.getRoleId()));
 
-        UserResponse userResponse = UserResponse.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .phoneNumber(user.getPhoneNumber())
-                .roleName(role.getName())
-                .status(user.getStatus())
-                .build();
+        UserResponse userResponse = userMapper.toUserResponse(user, role.getName());
 
         String token = jwtUtil.generateToken(user.getEmail());
 

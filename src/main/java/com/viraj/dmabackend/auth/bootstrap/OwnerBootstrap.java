@@ -39,7 +39,7 @@ public class OwnerBootstrap implements CommandLineRunner {
                 .password(passwordEncoder.encode("Owner@123"))
                 .roleId(ownerRole.getId())
                 .status(UserStatus.ACTIVE)
-                .build();
+                .build();   
 
         userRepository.save(owner);
     }

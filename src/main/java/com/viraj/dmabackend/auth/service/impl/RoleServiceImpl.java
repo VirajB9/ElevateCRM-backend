@@ -120,10 +120,10 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public Page<UserResponse> getUsersByRole(String roleId, Pageable pageable) {
 
-        findRoleById(roleId);
+        Role role = findRoleById(roleId);
 
         return userRepository.findByRoleId(roleId, pageable)
-                .map(userMapper::toUserResponse);
+                .map(user -> userMapper.toUserResponse(user, role.getName()));
     }
 
 
