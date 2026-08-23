@@ -144,7 +144,7 @@ com.viraj.dmabackend
 ```yaml
 app:
   jwt:
-    secret: mysecretkeymysecretkeymysecretkey123456
+    secret: <YOUR_JWT_SECRET_HERE>
     expiration: 86400000  # 24 hours
 ```
 `JwtUtil` reads these via `@Value("${app.jwt.secret}")` and `@Value("${app.jwt.expiration}")`.
@@ -495,14 +495,14 @@ server:
   port: 8080
 app:
   jwt:
-    secret: mysecretkeymysecretkeymysecretkey123456
+    secret: <YOUR_JWT_SECRET_HERE>
     expiration: 86400000
 ```
 
 ### Default Login
 ```
 Email:    owner@agency.com
-Password: Owner@123
+Password: <YOUR_SECURE_PASSWORD>
 ```
 
 ---
