@@ -379,40 +379,40 @@ module/
 ## 10. Module-by-Module Fix Checklist
 
 ### Auth Module
-- [ ] `AuthController` → inject `AuthService` interface, not `AuthServiceImpl`
-- [ ] `UserController` → inject `UserService` interface, not `UserServiceImpl`
-- [ ] `UserServiceImpl` → inject and use `UserMapper` instead of inline mapping
-- [ ] `AuthServiceImpl` → use `UserMapper` and `RoleNotFoundException` instead of generic exceptions
-- [ ] Create `PermissionMapper` @Component
-- [ ] Create `UserValidator` @Component (extract validation from UserServiceImpl)
-- [ ] `UnauthorizedRoleAssignmentException` → extend `UnauthorizedException` instead of `BadRequestException`
-- [ ] `UserResponse` → add `createdAt`, `updatedAt` fields
-- [ ] `UserMapper.toUserResponse()` → include `roleName` field
+- [x] `AuthController` → inject `AuthService` interface, not `AuthServiceImpl`
+- [x] `UserController` → inject `UserService` interface, not `UserServiceImpl`
+- [x] `UserServiceImpl` → inject and use `UserMapper` instead of inline mapping
+- [x] `AuthServiceImpl` → use `UserMapper` and `RoleNotFoundException` instead of generic exceptions
+- [x] Create `PermissionMapper` @Component
+- [x] Create `UserValidator` @Component (extract validation from UserServiceImpl)
+- [x] `UnauthorizedRoleAssignmentException` → extend `UnauthorizedException` instead of `BadRequestException`
+- [x] `UserResponse` → add `createdAt`, `updatedAt` fields
+- [x] `UserMapper.toUserResponse()` → include `roleName` field
 
 ### Lead Module
-- [ ] **FIX BUG**: `@Document(collation = "leads")` → `@Document(collection = "leads")`
-- [ ] Extract `LeadService` interface, rename current class to `LeadServiceImpl`
-- [ ] Create `LeadMapper` @Component
-- [ ] Create `LeadValidator` @Component
-- [ ] `LeadNotFoundException` → lowercase "id" in message
-- [ ] Consider soft delete instead of hard delete
+- [x] **FIX BUG**: `@Document(collation = "leads")` → `@Document(collection = "leads")`
+- [x] Extract `LeadService` interface, rename current class to `LeadServiceImpl`
+- [x] Create `LeadMapper` @Component
+- [x] Create `LeadValidator` @Component
+- [x] `LeadNotFoundException` → lowercase "id" in message
+- [x] Consider soft delete instead of hard delete
 
 ### Client Module
-- [ ] Extract `ClientService` interface, rename current class to `ClientServiceImpl`
-- [ ] Create `ClientMapper` @Component
-- [ ] Create `ClientValidator` @Component
-- [ ] `ClientResponse` → add `createdBy`, `updatedBy` fields
+- [x] Extract `ClientService` interface, rename current class to `ClientServiceImpl`
+- [x] Create `ClientMapper` @Component
+- [x] Create `ClientValidator` @Component
+- [x] `ClientResponse` → add `createdBy`, `updatedBy` fields
 
 ### Project Module
-- [ ] Create `ProjectMapper` @Component
-- [ ] Create `ProjectValidator` @Component
-- [ ] Remove `@NotBlank` and `@DecimalMin` from `Project.java` entity
-- [ ] `ProjectNotFoundException` → lowercase "id" in message
-- [ ] Consider soft delete instead of hard delete
+- [x] Create `ProjectMapper` @Component
+- [x] Create `ProjectValidator` @Component
+- [x] Remove `@NotBlank` and `@DecimalMin` from `Project.java` entity
+- [x] `ProjectNotFoundException` → lowercase "id" in message
+- [x] Consider soft delete instead of hard delete
 
 ### Menu Module ✅ (Gold Standard — minor fixes only)
-- [ ] `MenuController` → fix `hasAnyAuthority` to `hasAuthority` for single permissions
+- [x] `MenuController` → fix `hasAnyAuthority` to `hasAuthority` for single permissions
 
 ### Invoice Module ✅ (Gold Standard — minor fixes only)
-- [ ] `InvoiceController` → fix `hasAnyAuthority` to `hasAuthority` for single permissions
-- [ ] `InvalidInvoiceStatusException` → consider typed constructor like `InvalidLeadStatusException`
+- [x] `InvoiceController` → fix `hasAnyAuthority` to `hasAuthority` for single permissions
+- [x] `InvalidInvoiceStatusException` → consider typed constructor like `InvalidLeadStatusException`
