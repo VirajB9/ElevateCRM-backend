@@ -10,8 +10,8 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-
 
 @Getter
 @Setter
@@ -25,11 +25,14 @@ public class User extends BaseEntity {
     @Id
     private String id;
 
+    @TextIndexed
     private String firstName;
 
+    @TextIndexed
     private String lastName;
 
     @Indexed(unique = true)
+    @TextIndexed
     private String email;
 
     @Indexed(unique = true)
@@ -41,9 +44,10 @@ public class User extends BaseEntity {
      */
     private String password;
 
+    @Indexed
     private String roleId;
 
     @Builder.Default
+    @Indexed
     private UserStatus status = UserStatus.ACTIVE;
 }
-

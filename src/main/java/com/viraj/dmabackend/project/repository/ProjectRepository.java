@@ -6,13 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface ProjectRepository extends MongoRepository<Project, String> {
+public interface ProjectRepository extends MongoRepository<Project, String>, ProjectRepositoryCustom {
 
     Page<Project> findByClientId(String clientId, Pageable pageable);
 
     Page<Project> findByStatus(ProjectStatus status, Pageable pageable);
-
-    Page<Project> findByProjectNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String projectName, String description, Pageable pageable);
 
     boolean existsByProjectNameAndClientId(String projectName, String clientId);
 

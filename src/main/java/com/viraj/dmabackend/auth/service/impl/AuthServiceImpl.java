@@ -3,10 +3,12 @@ package com.viraj.dmabackend.auth.service.impl;
 import com.viraj.dmabackend.auth.dto.AuthenticationResponse;
 import com.viraj.dmabackend.auth.dto.LoginRequest;
 import com.viraj.dmabackend.auth.dto.UserResponse;
+import com.viraj.dmabackend.auth.entity.Permission;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.exception.RoleNotFoundException;
 import com.viraj.dmabackend.auth.mapper.UserMapper;
+import com.viraj.dmabackend.auth.repository.PermissionRepository;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.JwtUtil;
@@ -15,6 +17,8 @@ import com.viraj.dmabackend.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final RoleRepository roleRepository;
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
+    private final PermissionRepository permissionRepository;
 
     @Override
     public AuthenticationResponse login(LoginRequest request) {
@@ -43,9 +48,29 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() ->
                         new RoleNotFoundException(user.getRoleId()));
 
-        UserResponse userResponse = userMapper.toUserResponse(user, role.getName());
+        List<Permission> permissions =
+                permissionRepository.findAllById(
+                        role.getPermissionIds());
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        List<String> permissionNames =
+                permissions.stream()
+                        .map(permission ->
+                                permission.getPermissionType()
+                                        .name()
+                                        .toLowerCase()
+                                        .replace("_", ":")
+                        )
+                        .toList();
+
+        UserResponse userResponse =
+                userMapper.toUserResponse(
+                        user,
+                        role.getName());
+
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                role.getName(),
+                permissionNames);
 
         return AuthenticationResponse.builder()
                 .token(token)

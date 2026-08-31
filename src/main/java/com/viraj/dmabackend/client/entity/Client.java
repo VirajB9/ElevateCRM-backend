@@ -10,6 +10,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
@@ -24,10 +25,13 @@ public class Client extends BaseEntity {
     @Id
     private String id;
 
+    @TextIndexed
     private String companyName;
 
+    @TextIndexed
     private String contactPerson;
 
+    @TextIndexed
     @Indexed(unique = true)
     private String email;
 

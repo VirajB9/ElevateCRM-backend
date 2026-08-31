@@ -40,7 +40,14 @@ out/
 
 # Gemini
 .gemini/
-GEMINI.md
+docs/GEMINI.md
 .dual-graph/
 .agent/
 graphify-out/
+
+### Environment ###
+.env
+
+### Logs ###
+logs/
+*.log

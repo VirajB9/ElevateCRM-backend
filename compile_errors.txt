@@ -1,0 +1,1018 @@
+> Task :clean
+
+> Task :compileJava FAILED
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/controller/HealthController.java:20: error: reference to ApiResponse is ambiguous
+    public ApiResponse<String> health() {
+           ^
+  both class com.viraj.dmabackend.common.response.ApiResponse in com.viraj.dmabackend.common.response and class io.swagger.v3.oas.annotations.responses.ApiResponse in io.swagger.v3.oas.annotations.responses match
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/controller/HealthController.java:5: error: a type with the same simple name is already defined by the single-type-import of ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+^
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/controller/HealthController.java:18: error: reference to ApiResponse is ambiguous
+            @ApiResponse(responseCode = "200", description = "Backend is up and running")
+             ^
+  both class com.viraj.dmabackend.common.response.ApiResponse in com.viraj.dmabackend.common.response and class io.swagger.v3.oas.annotations.responses.ApiResponse in io.swagger.v3.oas.annotations.responses match
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:80: error: cannot find symbol
+        menu.setActive(false);
+            ^
+  symbol:   method setActive(boolean)
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:108: error: cannot find symbol
+        validateCommonMenuFields(request.getPath(), request.getParentId());
+                                        ^
+  symbol:   method getPath()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:108: error: cannot find symbol
+        validateCommonMenuFields(request.getPath(), request.getParentId());
+                                                           ^
+  symbol:   method getParentId()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:110: error: cannot find symbol
+        menuValidator.validateDuplicateTitle(request.getTitle());
+                                                    ^
+  symbol:   method getTitle()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:112: error: cannot find symbol
+        menuValidator.validateDuplicatePath(request.getPath());
+                                                   ^
+  symbol:   method getPath()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:118: error: cannot find symbol
+        validateCommonMenuFields(request.getPath(), request.getParentId());
+                                        ^
+  symbol:   method getPath()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:118: error: cannot find symbol
+        validateCommonMenuFields(request.getPath(), request.getParentId());
+                                                           ^
+  symbol:   method getParentId()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:120: error: cannot find symbol
+        menuValidator.validateDuplicateTitleForUpdate(request.getTitle(), menuId);
+                                                             ^
+  symbol:   method getTitle()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:122: error: cannot find symbol
+        menuValidator.validateDuplicatePathForUpdate(request.getPath(), menuId);
+                                                            ^
+  symbol:   method getPath()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:124: error: cannot find symbol
+        menuValidator.validateParentRelationship(menuId, request.getParentId());
+                                                                ^
+  symbol:   method getParentId()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:145: error: cannot find symbol
+                        menu.getRequiredPermission() == null
+                            ^
+  symbol:   method getRequiredPermission()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:146: error: cannot find symbol
+                                || menu.getRequiredPermission().isBlank()
+                                       ^
+  symbol:   method getRequiredPermission()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:147: error: cannot find symbol
+                                || authorities.contains(menu.getRequiredPermission()))
+                                                            ^
+  symbol:   method getRequiredPermission()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:153: error: cannot find symbol
+        return Menu.builder()
+                   ^
+  symbol:   method builder()
+  location: class Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:154: error: cannot find symbol
+                .title(request.getTitle().trim())
+                              ^
+  symbol:   method getTitle()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:155: error: cannot find symbol
+                .path(request.getPath().trim())
+                             ^
+  symbol:   method getPath()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:156: error: cannot find symbol
+                .icon(request.getIcon() != null ? request.getIcon().trim() : null)
+                             ^
+  symbol:   method getIcon()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:156: error: cannot find symbol
+                .icon(request.getIcon() != null ? request.getIcon().trim() : null)
+                                                         ^
+  symbol:   method getIcon()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:157: error: cannot find symbol
+                .parentId(request.getParentId())
+                                 ^
+  symbol:   method getParentId()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:158: error: cannot find symbol
+                .orderIndex(request.getOrderIndex())
+                                   ^
+  symbol:   method getOrderIndex()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:159: error: cannot find symbol
+                .requiredPermission(request.getRequiredPermission() != null
+                                           ^
+  symbol:   method getRequiredPermission()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:160: error: cannot find symbol
+                        ? request.getRequiredPermission().trim()
+                                 ^
+  symbol:   method getRequiredPermission()
+  location: variable request of type CreateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:168: error: cannot find symbol
+        menu.setTitle(request.getTitle().trim());
+                             ^
+  symbol:   method getTitle()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:169: error: cannot find symbol
+        menu.setPath(request.getPath().trim());
+                            ^
+  symbol:   method getPath()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:170: error: cannot find symbol
+        menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
+            ^
+  symbol:   method setIcon(request.ge[...] null)
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:170: error: cannot find symbol
+        menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
+                            ^
+  symbol:   method getIcon()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:170: error: cannot find symbol
+        menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
+                                                        ^
+  symbol:   method getIcon()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:171: error: cannot find symbol
+        menu.setParentId(request.getParentId());
+                                ^
+  symbol:   method getParentId()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:172: error: cannot find symbol
+        menu.setOrderIndex(request.getOrderIndex());
+                                  ^
+  symbol:   method getOrderIndex()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:173: error: cannot find symbol
+        menu.setRequiredPermission(request.getRequiredPermission() != null
+            ^
+  symbol:   method setRequiredPermission(request.ge[...] null)
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:173: error: cannot find symbol
+        menu.setRequiredPermission(request.getRequiredPermission() != null
+                                          ^
+  symbol:   method getRequiredPermission()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:174: error: cannot find symbol
+                ? request.getRequiredPermission().trim()
+                         ^
+  symbol:   method getRequiredPermission()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:176: error: cannot find symbol
+        menu.setActive(request.getActive());
+                              ^
+  symbol:   method getActive()
+  location: variable request of type UpdateMenuRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:189: error: cannot find symbol
+                    menu.getId(),
+                        ^
+  symbol:   method getId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:196: error: cannot find symbol
+            MenuTreeResponse currentMenu = menuMap.get(menu.getId());
+                                                           ^
+  symbol:   method getId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:198: error: cannot find symbol
+            if (menu.getParentId() == null || menu.getParentId().isBlank()) {
+                    ^
+  symbol:   method getParentId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:198: error: cannot find symbol
+            if (menu.getParentId() == null || menu.getParentId().isBlank()) {
+                                                  ^
+  symbol:   method getParentId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:202: error: cannot find symbol
+                MenuTreeResponse parentMenu = menuMap.get(menu.getParentId());
+                                                              ^
+  symbol:   method getParentId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:205: error: cannot find symbol
+                    parentMenu.getChildren().add(currentMenu);
+                              ^
+  symbol:   method getChildren()
+  location: variable parentMenu of type MenuTreeResponse
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:13: error: cannot find symbol
+        return MenuResponse.builder()
+                           ^
+  symbol:   method builder()
+  location: class MenuResponse
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:14: error: cannot find symbol
+                .id(menu.getId())
+                        ^
+  symbol:   method getId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:15: error: cannot find symbol
+                .title(menu.getTitle())
+                           ^
+  symbol:   method getTitle()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:16: error: cannot find symbol
+                .path(menu.getPath())
+                          ^
+  symbol:   method getPath()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:17: error: cannot find symbol
+                .icon(menu.getIcon())
+                          ^
+  symbol:   method getIcon()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:18: error: cannot find symbol
+                .parentId(menu.getParentId())
+                              ^
+  symbol:   method getParentId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:19: error: cannot find symbol
+                .orderIndex(menu.getOrderIndex())
+                                ^
+  symbol:   method getOrderIndex()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:20: error: cannot find symbol
+                .requiredPermission(menu.getRequiredPermission())
+                                        ^
+  symbol:   method getRequiredPermission()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:21: error: cannot find symbol
+                .active(menu.getActive())
+                            ^
+  symbol:   method getActive()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:27: error: cannot find symbol
+        return MenuTreeResponse.builder()
+                               ^
+  symbol:   method builder()
+  location: class MenuTreeResponse
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:28: error: cannot find symbol
+                .id(menu.getId())
+                        ^
+  symbol:   method getId()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:29: error: cannot find symbol
+                .title(menu.getTitle())
+                           ^
+  symbol:   method getTitle()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:30: error: cannot find symbol
+                .path(menu.getPath())
+                          ^
+  symbol:   method getPath()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:31: error: cannot find symbol
+                .icon(menu.getIcon())
+                          ^
+  symbol:   method getIcon()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:32: error: cannot find symbol
+                .orderIndex(menu.getOrderIndex())
+                                ^
+  symbol:   method getOrderIndex()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:33: error: cannot find symbol
+                .requiredPermission(menu.getRequiredPermission())
+                                        ^
+  symbol:   method getRequiredPermission()
+  location: variable menu of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:50: error: cannot find symbol
+                leadsRoot.getId(),
+                         ^
+  symbol:   method getId()
+  location: variable leadsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:57: error: cannot find symbol
+                leadsRoot.getId(),
+                         ^
+  symbol:   method getId()
+  location: variable leadsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:76: error: cannot find symbol
+                clientsRoot.getId(),
+                           ^
+  symbol:   method getId()
+  location: variable clientsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:83: error: cannot find symbol
+                clientsRoot.getId(),
+                           ^
+  symbol:   method getId()
+  location: variable clientsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:102: error: cannot find symbol
+                projectsRoot.getId(),
+                            ^
+  symbol:   method getId()
+  location: variable projectsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:109: error: cannot find symbol
+                projectsRoot.getId(),
+                            ^
+  symbol:   method getId()
+  location: variable projectsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:128: error: cannot find symbol
+                invoicesRoot.getId(),
+                            ^
+  symbol:   method getId()
+  location: variable invoicesRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:135: error: cannot find symbol
+                invoicesRoot.getId(),
+                            ^
+  symbol:   method getId()
+  location: variable invoicesRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:154: error: cannot find symbol
+                settingsRoot.getId(),
+                            ^
+  symbol:   method getId()
+  location: variable settingsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:161: error: cannot find symbol
+                settingsRoot.getId(),
+                            ^
+  symbol:   method getId()
+  location: variable settingsRoot of type Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:167: error: cannot find symbol
+        Menu menu = Menu.builder()
+                        ^
+  symbol:   method builder()
+  location: class Menu
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:30: error: cannot find symbol
+        clientValidator.validateDuplicateEmail(request.getEmail());
+                                                      ^
+  symbol:   method getEmail()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:31: error: cannot find symbol
+        clientValidator.validateDuplicatePhone(request.getPhoneNumber());
+                                                      ^
+  symbol:   method getPhoneNumber()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:32: error: cannot find symbol
+        clientValidator.validateDuplicateGst(request.getGstNumber());
+                                                    ^
+  symbol:   method getGstNumber()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:43: error: cannot find symbol
+        clientValidator.validateDuplicateEmail(lead.getEmail());
+                                                   ^
+  symbol:   method getEmail()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:44: error: cannot find symbol
+        clientValidator.validateDuplicatePhone(lead.getPhoneNumber());
+                                                   ^
+  symbol:   method getPhoneNumber()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:48: error: cannot find symbol
+                .contactPerson(lead.getFirstName() + " " + lead.getLastName())
+                                   ^
+  symbol:   method getFirstName()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:48: error: cannot find symbol
+                .contactPerson(lead.getFirstName() + " " + lead.getLastName())
+                                                               ^
+  symbol:   method getLastName()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:46: error: cannot find symbol
+        Client client = Client.builder()
+                              ^
+  symbol:   method builder()
+  location: class Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:47: error: cannot find symbol
+                .companyName(lead.getCompanyName())
+                                 ^
+  symbol:   method getCompanyName()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:49: error: cannot find symbol
+                .email(lead.getEmail())
+                           ^
+  symbol:   method getEmail()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:50: error: cannot find symbol
+                .phoneNumber(lead.getPhoneNumber())
+                                 ^
+  symbol:   method getPhoneNumber()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:51: error: cannot find symbol
+                .website(lead.getWebsite())
+                             ^
+  symbol:   method getWebsite()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:52: error: cannot find symbol
+                .industry(lead.getIndustry())
+                              ^
+  symbol:   method getIndustry()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:53: error: cannot find symbol
+                .notes(lead.getNotes())
+                           ^
+  symbol:   method getNotes()
+  location: variable lead of type Lead
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:92: error: cannot find symbol
+        clientValidator.validateEmailForUpdate(request.getEmail(), client.getId());
+                                                      ^
+  symbol:   method getEmail()
+  location: variable request of type UpdateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:92: error: cannot find symbol
+        clientValidator.validateEmailForUpdate(request.getEmail(), client.getId());
+                                                                         ^
+  symbol:   method getId()
+  location: variable client of type Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:93: error: cannot find symbol
+        clientValidator.validatePhoneForUpdate(request.getPhoneNumber(), client.getId());
+                                                      ^
+  symbol:   method getPhoneNumber()
+  location: variable request of type UpdateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:93: error: cannot find symbol
+        clientValidator.validatePhoneForUpdate(request.getPhoneNumber(), client.getId());
+                                                                               ^
+  symbol:   method getId()
+  location: variable client of type Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:94: error: cannot find symbol
+        clientValidator.validateGstForUpdate(request.getGstNumber(), client.getId());
+                                                    ^
+  symbol:   method getGstNumber()
+  location: variable request of type UpdateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:94: error: cannot find symbol
+        clientValidator.validateGstForUpdate(request.getGstNumber(), client.getId());
+                                                                           ^
+  symbol:   method getId()
+  location: variable client of type Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:107: error: cannot find symbol
+        if (client.getStatus() == ClientStatus.ARCHIVED) {
+                  ^
+  symbol:   method getStatus()
+  location: variable client of type Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:111: error: cannot find symbol
+        client.setStatus(ClientStatus.ARCHIVED);
+              ^
+  symbol:   method setStatus(ClientStatus)
+  location: variable client of type Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:124: error: cannot find symbol
+        if (client.getStatus() == ClientStatus.ARCHIVED) {
+                  ^
+  symbol:   method getStatus()
+  location: variable client of type Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:132: error: cannot find symbol
+        return Client.builder()
+                     ^
+  symbol:   method builder()
+  location: class Client
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:133: error: cannot find symbol
+                .companyName(request.getCompanyName())
+                                    ^
+  symbol:   method getCompanyName()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:134: error: cannot find symbol
+                .contactPerson(request.getContactPerson())
+                                      ^
+  symbol:   method getContactPerson()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:135: error: cannot find symbol
+                .email(request.getEmail())
+                              ^
+  symbol:   method getEmail()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:136: error: cannot find symbol
+                .phoneNumber(request.getPhoneNumber())
+                                    ^
+  symbol:   method getPhoneNumber()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:137: error: cannot find symbol
+                .website(request.getWebsite())
+                                ^
+  symbol:   method getWebsite()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:138: error: cannot find symbol
+                .industry(request.getIndustry())
+                                 ^
+  symbol:   method getIndustry()
+  location: variable request of type CreateClientRequest
+/home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:139: error: cannot find symbol
+                .gstNumber(request.getGstNumber())
+                                  ^
+  symbol:   method getGstNumber()
+  location: variable request of type CreateClientRequest
+Note: /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/config/RateLimitFilter.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+100 errors
+
+[Incubating] Problems report is available at: file:///home/sayless/DMA/DMA-backend/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler output below.
+  Note: /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/config/RateLimitFilter.java uses or overrides a deprecated API.
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/controller/HealthController.java:5: error: a type with the same simple name is already defined by the single-type-import of ApiResponse
+  import io.swagger.v3.oas.annotations.responses.ApiResponse;
+  ^
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/controller/HealthController.java:20: error: reference to ApiResponse is ambiguous
+      public ApiResponse<String> health() {
+             ^
+    both class com.viraj.dmabackend.common.response.ApiResponse in com.viraj.dmabackend.common.response and class io.swagger.v3.oas.annotations.responses.ApiResponse in io.swagger.v3.oas.annotations.responses match
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/controller/HealthController.java:18: error: reference to ApiResponse is ambiguous
+              @ApiResponse(responseCode = "200", description = "Backend is up and running")
+               ^
+    both class com.viraj.dmabackend.common.response.ApiResponse in com.viraj.dmabackend.common.response and class io.swagger.v3.oas.annotations.responses.ApiResponse in io.swagger.v3.oas.annotations.responses match
+  Note: Recompile with -Xlint:deprecation for details.
+  Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:80: error: cannot find symbol
+          menu.setActive(false);
+              ^
+    symbol:   method setActive(boolean)
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:108: error: cannot find symbol
+          validateCommonMenuFields(request.getPath(), request.getParentId());
+                                          ^
+    symbol:   method getPath()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:108: error: cannot find symbol
+          validateCommonMenuFields(request.getPath(), request.getParentId());
+                                                             ^
+    symbol:   method getParentId()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:110: error: cannot find symbol
+          menuValidator.validateDuplicateTitle(request.getTitle());
+                                                      ^
+    symbol:   method getTitle()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:112: error: cannot find symbol
+          menuValidator.validateDuplicatePath(request.getPath());
+                                                     ^
+    symbol:   method getPath()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:118: error: cannot find symbol
+          validateCommonMenuFields(request.getPath(), request.getParentId());
+                                          ^
+    symbol:   method getPath()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:118: error: cannot find symbol
+          validateCommonMenuFields(request.getPath(), request.getParentId());
+                                                             ^
+    symbol:   method getParentId()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:120: error: cannot find symbol
+          menuValidator.validateDuplicateTitleForUpdate(request.getTitle(), menuId);
+                                                               ^
+    symbol:   method getTitle()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:122: error: cannot find symbol
+          menuValidator.validateDuplicatePathForUpdate(request.getPath(), menuId);
+                                                              ^
+    symbol:   method getPath()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:124: error: cannot find symbol
+          menuValidator.validateParentRelationship(menuId, request.getParentId());
+                                                                  ^
+    symbol:   method getParentId()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:145: error: cannot find symbol
+                          menu.getRequiredPermission() == null
+                              ^
+    symbol:   method getRequiredPermission()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:146: error: cannot find symbol
+                                  || menu.getRequiredPermission().isBlank()
+                                         ^
+    symbol:   method getRequiredPermission()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:147: error: cannot find symbol
+                                  || authorities.contains(menu.getRequiredPermission()))
+                                                              ^
+    symbol:   method getRequiredPermission()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:153: error: cannot find symbol
+          return Menu.builder()
+                     ^
+    symbol:   method builder()
+    location: class Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:154: error: cannot find symbol
+                  .title(request.getTitle().trim())
+                                ^
+    symbol:   method getTitle()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:155: error: cannot find symbol
+                  .path(request.getPath().trim())
+                               ^
+    symbol:   method getPath()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:156: error: cannot find symbol
+                  .icon(request.getIcon() != null ? request.getIcon().trim() : null)
+                               ^
+    symbol:   method getIcon()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:156: error: cannot find symbol
+                  .icon(request.getIcon() != null ? request.getIcon().trim() : null)
+                                                           ^
+    symbol:   method getIcon()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:157: error: cannot find symbol
+                  .parentId(request.getParentId())
+                                   ^
+    symbol:   method getParentId()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:158: error: cannot find symbol
+                  .orderIndex(request.getOrderIndex())
+                                     ^
+    symbol:   method getOrderIndex()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:159: error: cannot find symbol
+                  .requiredPermission(request.getRequiredPermission() != null
+                                             ^
+    symbol:   method getRequiredPermission()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:160: error: cannot find symbol
+                          ? request.getRequiredPermission().trim()
+                                   ^
+    symbol:   method getRequiredPermission()
+    location: variable request of type CreateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:168: error: cannot find symbol
+          menu.setTitle(request.getTitle().trim());
+                               ^
+    symbol:   method getTitle()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:169: error: cannot find symbol
+          menu.setPath(request.getPath().trim());
+                              ^
+    symbol:   method getPath()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:170: error: cannot find symbol
+          menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
+              ^
+    symbol:   method setIcon(request.ge[...] null)
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:170: error: cannot find symbol
+          menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
+                              ^
+    symbol:   method getIcon()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:170: error: cannot find symbol
+          menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
+                                                          ^
+    symbol:   method getIcon()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:171: error: cannot find symbol
+          menu.setParentId(request.getParentId());
+                                  ^
+    symbol:   method getParentId()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:172: error: cannot find symbol
+          menu.setOrderIndex(request.getOrderIndex());
+                                    ^
+    symbol:   method getOrderIndex()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:173: error: cannot find symbol
+          menu.setRequiredPermission(request.getRequiredPermission() != null
+              ^
+    symbol:   method setRequiredPermission(request.ge[...] null)
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:173: error: cannot find symbol
+          menu.setRequiredPermission(request.getRequiredPermission() != null
+                                            ^
+    symbol:   method getRequiredPermission()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:174: error: cannot find symbol
+                  ? request.getRequiredPermission().trim()
+                           ^
+    symbol:   method getRequiredPermission()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:176: error: cannot find symbol
+          menu.setActive(request.getActive());
+                                ^
+    symbol:   method getActive()
+    location: variable request of type UpdateMenuRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:189: error: cannot find symbol
+                      menu.getId(),
+                          ^
+    symbol:   method getId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:196: error: cannot find symbol
+              MenuTreeResponse currentMenu = menuMap.get(menu.getId());
+                                                             ^
+    symbol:   method getId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:198: error: cannot find symbol
+              if (menu.getParentId() == null || menu.getParentId().isBlank()) {
+                      ^
+    symbol:   method getParentId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:198: error: cannot find symbol
+              if (menu.getParentId() == null || menu.getParentId().isBlank()) {
+                                                    ^
+    symbol:   method getParentId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:202: error: cannot find symbol
+                  MenuTreeResponse parentMenu = menuMap.get(menu.getParentId());
+                                                                ^
+    symbol:   method getParentId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java:205: error: cannot find symbol
+                      parentMenu.getChildren().add(currentMenu);
+                                ^
+    symbol:   method getChildren()
+    location: variable parentMenu of type MenuTreeResponse
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:13: error: cannot find symbol
+          return MenuResponse.builder()
+                             ^
+    symbol:   method builder()
+    location: class MenuResponse
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:14: error: cannot find symbol
+                  .id(menu.getId())
+                          ^
+    symbol:   method getId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:15: error: cannot find symbol
+                  .title(menu.getTitle())
+                             ^
+    symbol:   method getTitle()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:16: error: cannot find symbol
+                  .path(menu.getPath())
+                            ^
+    symbol:   method getPath()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:17: error: cannot find symbol
+                  .icon(menu.getIcon())
+                            ^
+    symbol:   method getIcon()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:18: error: cannot find symbol
+                  .parentId(menu.getParentId())
+                                ^
+    symbol:   method getParentId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:19: error: cannot find symbol
+                  .orderIndex(menu.getOrderIndex())
+                                  ^
+    symbol:   method getOrderIndex()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:20: error: cannot find symbol
+                  .requiredPermission(menu.getRequiredPermission())
+                                          ^
+    symbol:   method getRequiredPermission()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:21: error: cannot find symbol
+                  .active(menu.getActive())
+                              ^
+    symbol:   method getActive()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:27: error: cannot find symbol
+          return MenuTreeResponse.builder()
+                                 ^
+    symbol:   method builder()
+    location: class MenuTreeResponse
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:28: error: cannot find symbol
+                  .id(menu.getId())
+                          ^
+    symbol:   method getId()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:29: error: cannot find symbol
+                  .title(menu.getTitle())
+                             ^
+    symbol:   method getTitle()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:30: error: cannot find symbol
+                  .path(menu.getPath())
+                            ^
+    symbol:   method getPath()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:31: error: cannot find symbol
+                  .icon(menu.getIcon())
+                            ^
+    symbol:   method getIcon()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:32: error: cannot find symbol
+                  .orderIndex(menu.getOrderIndex())
+                                  ^
+    symbol:   method getOrderIndex()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/mapper/MenuMapper.java:33: error: cannot find symbol
+                  .requiredPermission(menu.getRequiredPermission())
+                                          ^
+    symbol:   method getRequiredPermission()
+    location: variable menu of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:50: error: cannot find symbol
+                  leadsRoot.getId(),
+                           ^
+    symbol:   method getId()
+    location: variable leadsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:57: error: cannot find symbol
+                  leadsRoot.getId(),
+                           ^
+    symbol:   method getId()
+    location: variable leadsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:76: error: cannot find symbol
+                  clientsRoot.getId(),
+                             ^
+    symbol:   method getId()
+    location: variable clientsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:83: error: cannot find symbol
+                  clientsRoot.getId(),
+                             ^
+    symbol:   method getId()
+    location: variable clientsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:102: error: cannot find symbol
+                  projectsRoot.getId(),
+                              ^
+    symbol:   method getId()
+    location: variable projectsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:109: error: cannot find symbol
+                  projectsRoot.getId(),
+                              ^
+    symbol:   method getId()
+    location: variable projectsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:128: error: cannot find symbol
+                  invoicesRoot.getId(),
+                              ^
+    symbol:   method getId()
+    location: variable invoicesRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:135: error: cannot find symbol
+                  invoicesRoot.getId(),
+                              ^
+    symbol:   method getId()
+    location: variable invoicesRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:154: error: cannot find symbol
+                  settingsRoot.getId(),
+                              ^
+    symbol:   method getId()
+    location: variable settingsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:161: error: cannot find symbol
+                  settingsRoot.getId(),
+                              ^
+    symbol:   method getId()
+    location: variable settingsRoot of type Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/menu/bootstrap/MenuBootstrap.java:167: error: cannot find symbol
+          Menu menu = Menu.builder()
+                          ^
+    symbol:   method builder()
+    location: class Menu
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:30: error: cannot find symbol
+          clientValidator.validateDuplicateEmail(request.getEmail());
+                                                        ^
+    symbol:   method getEmail()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:31: error: cannot find symbol
+          clientValidator.validateDuplicatePhone(request.getPhoneNumber());
+                                                        ^
+    symbol:   method getPhoneNumber()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:32: error: cannot find symbol
+          clientValidator.validateDuplicateGst(request.getGstNumber());
+                                                      ^
+    symbol:   method getGstNumber()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:43: error: cannot find symbol
+          clientValidator.validateDuplicateEmail(lead.getEmail());
+                                                     ^
+    symbol:   method getEmail()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:44: error: cannot find symbol
+          clientValidator.validateDuplicatePhone(lead.getPhoneNumber());
+                                                     ^
+    symbol:   method getPhoneNumber()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:48: error: cannot find symbol
+                  .contactPerson(lead.getFirstName() + " " + lead.getLastName())
+                                     ^
+    symbol:   method getFirstName()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:48: error: cannot find symbol
+                  .contactPerson(lead.getFirstName() + " " + lead.getLastName())
+                                                                 ^
+    symbol:   method getLastName()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:46: error: cannot find symbol
+          Client client = Client.builder()
+                                ^
+    symbol:   method builder()
+    location: class Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:47: error: cannot find symbol
+                  .companyName(lead.getCompanyName())
+                                   ^
+    symbol:   method getCompanyName()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:49: error: cannot find symbol
+                  .email(lead.getEmail())
+                             ^
+    symbol:   method getEmail()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:50: error: cannot find symbol
+                  .phoneNumber(lead.getPhoneNumber())
+                                   ^
+    symbol:   method getPhoneNumber()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:51: error: cannot find symbol
+                  .website(lead.getWebsite())
+                               ^
+    symbol:   method getWebsite()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:52: error: cannot find symbol
+                  .industry(lead.getIndustry())
+                                ^
+    symbol:   method getIndustry()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:53: error: cannot find symbol
+                  .notes(lead.getNotes())
+                             ^
+    symbol:   method getNotes()
+    location: variable lead of type Lead
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:92: error: cannot find symbol
+          clientValidator.validateEmailForUpdate(request.getEmail(), client.getId());
+                                                        ^
+    symbol:   method getEmail()
+    location: variable request of type UpdateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:92: error: cannot find symbol
+          clientValidator.validateEmailForUpdate(request.getEmail(), client.getId());
+                                                                           ^
+    symbol:   method getId()
+    location: variable client of type Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:93: error: cannot find symbol
+          clientValidator.validatePhoneForUpdate(request.getPhoneNumber(), client.getId());
+                                                        ^
+    symbol:   method getPhoneNumber()
+    location: variable request of type UpdateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:93: error: cannot find symbol
+          clientValidator.validatePhoneForUpdate(request.getPhoneNumber(), client.getId());
+                                                                                 ^
+    symbol:   method getId()
+    location: variable client of type Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:94: error: cannot find symbol
+          clientValidator.validateGstForUpdate(request.getGstNumber(), client.getId());
+                                                      ^
+    symbol:   method getGstNumber()
+    location: variable request of type UpdateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:94: error: cannot find symbol
+          clientValidator.validateGstForUpdate(request.getGstNumber(), client.getId());
+                                                                             ^
+    symbol:   method getId()
+    location: variable client of type Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:107: error: cannot find symbol
+          if (client.getStatus() == ClientStatus.ARCHIVED) {
+                    ^
+    symbol:   method getStatus()
+    location: variable client of type Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:111: error: cannot find symbol
+          client.setStatus(ClientStatus.ARCHIVED);
+                ^
+    symbol:   method setStatus(ClientStatus)
+    location: variable client of type Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:124: error: cannot find symbol
+          if (client.getStatus() == ClientStatus.ARCHIVED) {
+                    ^
+    symbol:   method getStatus()
+    location: variable client of type Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:132: error: cannot find symbol
+          return Client.builder()
+                       ^
+    symbol:   method builder()
+    location: class Client
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:133: error: cannot find symbol
+                  .companyName(request.getCompanyName())
+                                      ^
+    symbol:   method getCompanyName()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:134: error: cannot find symbol
+                  .contactPerson(request.getContactPerson())
+                                        ^
+    symbol:   method getContactPerson()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:135: error: cannot find symbol
+                  .email(request.getEmail())
+                                ^
+    symbol:   method getEmail()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:136: error: cannot find symbol
+                  .phoneNumber(request.getPhoneNumber())
+                                      ^
+    symbol:   method getPhoneNumber()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:137: error: cannot find symbol
+                  .website(request.getWebsite())
+                                  ^
+    symbol:   method getWebsite()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:138: error: cannot find symbol
+                  .industry(request.getIndustry())
+                                   ^
+    symbol:   method getIndustry()
+    location: variable request of type CreateClientRequest
+  /home/sayless/DMA/DMA-backend/src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java:139: error: cannot find symbol
+                  .gstNumber(request.getGstNumber())
+                                    ^
+    symbol:   method getGstNumber()
+    location: variable request of type CreateClientRequest
+  100 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+BUILD FAILED in 2s
+2 actionable tasks: 2 executed

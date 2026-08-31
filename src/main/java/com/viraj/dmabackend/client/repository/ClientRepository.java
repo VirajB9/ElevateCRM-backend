@@ -8,13 +8,19 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface ClientRepository extends MongoRepository<Client, String> {
+public interface ClientRepository extends MongoRepository<Client, String>, ClientRepositoryCustom {
 
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
 
     boolean existsByGstNumber(String gstNumber);
+
+    Optional<Client> findByEmail(String email);
+
+    Optional<Client> findByPhoneNumber(String phoneNumber);
+
+    Optional<Client> findByGstNumber(String gstNumber);
 
     Page<Client> findByStatus(ClientStatus status, Pageable pageable);
 
@@ -25,6 +31,4 @@ public interface ClientRepository extends MongoRepository<Client, String> {
     boolean existsByGstNumberAndIdNot(String gstNumber, String clientId);
 
     Page<Client> findByStatusNot(ClientStatus status, Pageable pageable);
-
-    Page<Client> findByCompanyNameContainingIgnoreCaseAndStatusNot(String companyName, ClientStatus status, Pageable pageable);
 }

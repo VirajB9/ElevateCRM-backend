@@ -6,6 +6,8 @@ import com.viraj.dmabackend.project.enums.ProjectStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -23,13 +25,16 @@ public class Project extends BaseEntity {
     @Id
     private String id;
 
+    @Indexed
     private String clientId;
 
+    @TextIndexed
     private String projectName;
 
+    @TextIndexed
     private String description;
 
-    @Builder.Default
+    @Builder.Default @Indexed
     private ProjectStatus status = ProjectStatus.PLANNING;
 
     @Builder.Default

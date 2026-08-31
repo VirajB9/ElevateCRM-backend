@@ -14,3 +14,7 @@ app:
   jwt:
     secret: mysecretkeymysecretkeymysecretkey123456
     expiration: 86400000
+
+cors:
+  allowed-origins:
+    - http://localhost:5173

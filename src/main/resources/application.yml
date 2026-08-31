@@ -1,3 +1,8 @@
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: alpha

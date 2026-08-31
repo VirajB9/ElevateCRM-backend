@@ -39,18 +39,6 @@ public class OpenApiConfig {
                                                 .scheme("bearer")
                                                 .bearerFormat("JWT")
                                 )
-                )
-
-                .tags(List.of(
-                        new Tag().name("1. Authentication"),
-                        new Tag().name("2. User Management"),
-                        new Tag().name("3. Role Management"),
-                        new Tag().name("4. Permission Management"),
-                        new Tag().name("5. Lead Management"),
-                        new Tag().name("6. Client Management"),
-                        new Tag().name("7. Project Management"),
-                        new Tag().name("8. Dynamic Menu Management"),
-                        new Tag().name("9. Invoice Management")
-                ));
+                );
     }
 }

@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -40,6 +41,7 @@ public class LeadServiceImpl implements LeadService {
         return leadMapper.toLeadResponse(savedLead);
     }
 
+    @Transactional
     @Override
     public LeadResponse convertLeadToClient(String leadId) {
 
@@ -74,12 +76,7 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public Page<LeadResponse> searchLeads(String keyword, Pageable pageable) {
 
-        return leadRepository.findByCompanyNameContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-                        keyword,
-                        keyword,
-                        keyword,
-                        pageable)
-                .map(leadMapper::toLeadResponse);
+        return leadRepository.searchLeads(keyword, pageable).map(leadMapper::toLeadResponse);
     }
 
     @Override

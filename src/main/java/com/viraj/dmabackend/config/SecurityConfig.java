@@ -25,6 +25,8 @@ public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
 
+    private final CorsProperties corsProperties;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -64,12 +66,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",
-                "http://localhost:5174",
-                "http://localhost:3000",
-                "https://*.up.railway.app"
-        ));
+        configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
         configuration.setAllowedMethods(Arrays.asList(
                 "GET",
                 "POST",

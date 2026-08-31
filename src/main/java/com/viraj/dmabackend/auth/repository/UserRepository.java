@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 
-public interface UserRepository extends MongoRepository<User, String> {
+public interface UserRepository extends MongoRepository<User, String>, UserRepositoryCustom {
 
     Optional<User> findByEmail(String email);
 
@@ -16,12 +16,9 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    Page<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(String firstName, String lastName, String email, Pageable pageable);
-
     Page<User> findByStatus(UserStatus status, Pageable pageable);
 
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, String id);
 
     Page<User> findByRoleId(String roleId, Pageable pageable);
 }
-

@@ -72,8 +72,8 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public Page<ClientResponse> searchClients(String keyword, Pageable pageable) {
-
-        Page<Client> clients = clientRepository.findByCompanyNameContainingIgnoreCaseAndStatusNot(keyword, ClientStatus.ARCHIVED, pageable);
+        
+        Page<Client> clients = clientRepository.searchClients(keyword, pageable);
         return clients.map(clientMapper::toClientResponse);
     }
 

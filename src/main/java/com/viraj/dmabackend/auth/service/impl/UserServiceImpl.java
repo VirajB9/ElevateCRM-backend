@@ -18,6 +18,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import static com.viraj.dmabackend.common.util.PasswordGenerator.generatePassword;
 
 @Service
@@ -29,9 +34,9 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
 
     private final PasswordEncoder passwordEncoder;
-    
+
     private final UserMapper userMapper;
-    
+
     private final UserValidator userValidator;
 
     @Override
@@ -76,13 +81,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<UserResponse> searchUsers(String keyword, Pageable pageable) {
 
-        Page<User> users = userRepository
-                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
-                        keyword,
-                        keyword,
-                        keyword,
-                        pageable
-                );
+        Page<User> users = userRepository.searchUsers(keyword, pageable);
         return mapToUserResponsePage(users);
     }
 
@@ -153,11 +152,13 @@ public class UserServiceImpl implements UserService {
 
     private User findCurrentUser() {
 
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
+        String email = (String) SecurityContextHolder
                 .getContext()
                 .getAuthentication()
                 .getPrincipal();
-        return userDetails.getUser();
+                
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new com.viraj.dmabackend.exception.UnauthorizedException("User not found"));
     }
 
     private User buildUser(CreateUserRequest request, Role role, String encodedPassword) {
@@ -181,9 +182,34 @@ public class UserServiceImpl implements UserService {
         user.setRoleId(role.getId());
     }
 
-    private Page<UserResponse> mapToUserResponsePage(Page<User> users) {
+    private Page<UserResponse> mapToUserResponsePage(
+            Page<User> users) {
 
-        return users.map(this::mapUser);
+        List<String> roleIds = users.getContent()
+                .stream()
+                .map(User::getRoleId)
+                .distinct()
+                .toList();
+
+        Map<String, Role> rolesById = roleRepository
+                .findAllById(roleIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        Role::getId,
+                        Function.identity()));
+
+        return users.map(user -> {
+
+            Role role = rolesById.get(user.getRoleId());
+
+            if (role == null) {
+                throw new RoleNotFoundException(user.getRoleId());
+            }
+
+            return userMapper.toUserResponse(
+                    user,
+                    role.getName());
+        });
     }
 
     private UserResponse mapUser(User user) {

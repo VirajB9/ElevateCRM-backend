@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -18,6 +19,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @Document(collection = "menus")
 @TypeAlias("Menu")
+@CompoundIndex(
+        name = "idx_active_order_index",
+        def = "{'active': 1, 'orderIndex': 1}")
 public class Menu extends BaseEntity {
 
     @Id

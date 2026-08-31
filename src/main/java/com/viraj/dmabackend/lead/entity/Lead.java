@@ -7,6 +7,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -25,13 +26,16 @@ Lead extends BaseEntity {
     @Id
     private String id;
 
+    @TextIndexed
     private String firstName;
 
+    @TextIndexed
     private String lastName;
 
     private String companyName;
 
     @Indexed(unique = true)
+    @TextIndexed
     private String email;
 
     @Indexed(unique = true)
@@ -68,4 +72,3 @@ Lead extends BaseEntity {
      */
     private LocalDateTime convertedAt;
 }
-

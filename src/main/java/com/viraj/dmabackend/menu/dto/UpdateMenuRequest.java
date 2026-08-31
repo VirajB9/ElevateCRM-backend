@@ -35,4 +35,3 @@ public class UpdateMenuRequest {
     @NotNull(message = "Active status is required")
     private Boolean active;
 }
-

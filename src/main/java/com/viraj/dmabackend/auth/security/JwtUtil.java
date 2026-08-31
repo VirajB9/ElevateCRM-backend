@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -29,9 +30,15 @@ public class JwtUtil {
                 secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email) {
+    public String generateToken(
+            String email,
+            String role,
+            List<String> permissions) {
+
         return Jwts.builder()
                 .setSubject(email)
+                .claim("role", role)
+                .claim("permissions", permissions)
                 .setIssuedAt(new Date())
                 .setExpiration(
                         new Date(System.currentTimeMillis() + expiration)
@@ -41,8 +48,16 @@ public class JwtUtil {
     }
 
     public String extractEmail(String token) {
-        return extractClaims(token)
-                .getSubject();
+        return extractClaims(token).getSubject();
+    }
+
+    public String extractRole(String token) {
+        return extractClaims(token).get("role", String.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractPermissions(String token) {
+        return extractClaims(token).get("permissions", List.class);
     }
 
     public boolean validateToken(String token) {

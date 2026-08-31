@@ -68,12 +68,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public Page<ProjectResponse> searchProjects(String keyword, Pageable pageable) {
 
-        return projectRepository
-                .findByProjectNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                        keyword,
-                        keyword,
-                        pageable)
-                .map(projectMapper::toProjectResponse);
+        Page<Project> projects = projectRepository.searchProjects(keyword, pageable);
+        return projects.map(projectMapper::toProjectResponse);
     }
 
     @Override

@@ -139,13 +139,13 @@ public class RoleServiceImpl implements RoleService {
 
     private User findCurrentUser() {
 
-        CustomUserDetails userDetails =
-                (CustomUserDetails) SecurityContextHolder
+        String email = (String) SecurityContextHolder
                         .getContext()
                         .getAuthentication()
                         .getPrincipal();
 
-        return userDetails.getUser();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new com.viraj.dmabackend.exception.UnauthorizedException("User not found"));
     }
 
     private void ensureOwner(User currentUser) {

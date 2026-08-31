@@ -27,8 +27,10 @@ public class Invoice extends BaseEntity {
     @Indexed(unique = true)
     private String invoiceNumber;
 
+    @Indexed
     private String clientId;
 
+    @Indexed
     private String projectId;
 
     private LocalDate issueDate;
@@ -47,11 +49,13 @@ public class Invoice extends BaseEntity {
 
     private BigDecimal totalAmount;
 
+    @Indexed
     private InvoiceStatus status;
 
     private String notes;
 
     private LocalDate paidDate;
 
+    @Indexed
     private Boolean active;
 }

@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface LeadRepository extends MongoRepository<Lead, String> {
+public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepositoryCustom {
 
     boolean existsByEmail(String email);
 
@@ -24,6 +24,4 @@ public interface LeadRepository extends MongoRepository<Lead, String> {
     Page<Lead> findByAssignedUserId(String assignedUserId, Pageable pageable);
 
     Page<Lead> findBySource(LeadSource source, Pageable pageable);
-
-    Page<Lead> findByCompanyNameContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String companyName, String firstName, String lastName, Pageable pageable);
 }
