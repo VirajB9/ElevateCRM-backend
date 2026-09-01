@@ -2,9 +2,7 @@ package com.viraj.dmabackend.common.entity;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.annotation.Version;
+import org.springframework.data.annotation.*;
 
 import java.time.LocalDateTime;
 
@@ -22,12 +20,14 @@ public abstract class BaseEntity {
      * ID of the user who created this record.
      * Will be populated automatically later using Spring Security auditing.
      */
+    @CreatedBy
     private String createdBy;
 
     /**
      * ID of the user who last updated this record.
      * Will be populated automatically later using Spring Security auditing.
      */
+    @LastModifiedBy
     private String updatedBy;
 
     @Version

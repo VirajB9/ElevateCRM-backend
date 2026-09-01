@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "5. Lead Management", description = "Endpoints for managing sales leads")
 @RestController
-@RequestMapping("/api/leads")
+@RequestMapping("/api/v1/leads")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 public class LeadController {

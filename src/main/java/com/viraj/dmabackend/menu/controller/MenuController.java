@@ -21,7 +21,7 @@ import java.util.List;
 
 @Tag(name = "8. Dynamic Menu Management", description = "Endpoints for managing dynamic sidebar menus")
 @RestController
-@RequestMapping("/api/menus")
+@RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 public class MenuController {

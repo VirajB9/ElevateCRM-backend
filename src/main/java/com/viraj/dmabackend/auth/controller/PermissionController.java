@@ -15,7 +15,7 @@ import java.util.List;
 
 @Tag(name = "4. Permission Management", description = "Endpoints for retrieving system permissions")
 @RestController
-@RequestMapping("/api/permissions")
+@RequestMapping("/api/v1/permissions")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 public class PermissionController {

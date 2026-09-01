@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -162,8 +163,14 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         for (InvoiceItem item : invoice.getItems()) {
 
-            BigDecimal lineTotal = item.getQuantity()
-                    .multiply(item.getUnitPrice())
+            BigDecimal quantity = Optional.ofNullable(item.getQuantity())
+                    .orElse(BigDecimal.ZERO);
+
+            BigDecimal unitPrice = Optional.ofNullable(item.getUnitPrice())
+                    .orElse(BigDecimal.ZERO);
+
+            BigDecimal lineTotal = quantity
+                    .multiply(unitPrice)
                     .setScale(2, RoundingMode.HALF_UP);
 
             item.setLineTotal(lineTotal);
@@ -173,11 +180,15 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
 
+        BigDecimal taxPercentage = Optional.ofNullable(invoice.getTaxPercentage())
+                .orElse(BigDecimal.ZERO);
+
         BigDecimal taxAmount = subtotal
-                .multiply(invoice.getTaxPercentage())
+                .multiply(taxPercentage)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
-        BigDecimal discount = invoice.getDiscount()
+        BigDecimal discount = Optional.ofNullable(invoice.getDiscount())
+                .orElse(BigDecimal.ZERO)
                 .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal totalAmount = subtotal

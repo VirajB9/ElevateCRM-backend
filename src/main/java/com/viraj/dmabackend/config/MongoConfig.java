@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 
 @Configuration
-@EnableMongoAuditing
+@EnableMongoAuditing(auditorAwareRef = "auditorAware")
 public class MongoConfig {
 
     @Bean

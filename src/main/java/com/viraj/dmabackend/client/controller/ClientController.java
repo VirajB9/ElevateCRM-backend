@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "6. Client Management", description = "Endpoints for managing agency clients")
 @RestController
-@RequestMapping("/api/clients")
+@RequestMapping("/api/v1/clients")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 public class ClientController {

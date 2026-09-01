@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "9. Invoice Management", description = "Endpoints for managing client invoices and billing")
 @RestController
-@RequestMapping("/api/invoices")
+@RequestMapping("/api/v1/invoices")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 public class InvoiceController {

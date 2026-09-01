@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "7. Project Management", description = "Endpoints for managing client projects")
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 public class ProjectController {

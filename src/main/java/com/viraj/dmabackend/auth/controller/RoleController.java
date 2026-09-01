@@ -20,7 +20,7 @@ import java.util.List;
 
 @Tag(name = "3. Role Management", description = "Endpoints for managing roles and their associated permissions")
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/api/v1/roles")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 public class RoleController {

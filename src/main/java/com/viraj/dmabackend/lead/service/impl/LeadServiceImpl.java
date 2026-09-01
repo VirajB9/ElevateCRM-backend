@@ -1,19 +1,19 @@
 package com.viraj.dmabackend.lead.service.impl;
 
-import com.viraj.dmabackend.client.entity.Client;
-import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.LeadResponse;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
 import com.viraj.dmabackend.lead.entity.Lead;
 import com.viraj.dmabackend.lead.enums.LeadSource;
 import com.viraj.dmabackend.lead.enums.LeadStatus;
+import com.viraj.dmabackend.lead.event.LeadConvertedEvent;
 import com.viraj.dmabackend.lead.exception.LeadNotFoundException;
 import com.viraj.dmabackend.lead.mapper.LeadMapper;
 import com.viraj.dmabackend.lead.repository.LeadRepository;
 import com.viraj.dmabackend.lead.service.LeadService;
 import com.viraj.dmabackend.lead.validator.LeadValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 public class LeadServiceImpl implements LeadService {
 
     private final LeadRepository leadRepository;
-    private final ClientService clientService;
+    private final ApplicationEventPublisher eventPublisher;
     private final LeadMapper leadMapper;
     private final LeadValidator leadValidator;
 
@@ -49,12 +49,11 @@ public class LeadServiceImpl implements LeadService {
 
         leadValidator.validateLeadConversion(lead);
 
-        Client client = clientService.createClientFromLead(lead);
-
-        lead.setConvertedClientId(client.getId());
         lead.setConvertedAt(LocalDateTime.now());
 
         Lead savedLead = leadRepository.save(lead);
+
+        eventPublisher.publishEvent(new LeadConvertedEvent(savedLead));
 
         return leadMapper.toLeadResponse(savedLead);
     }
