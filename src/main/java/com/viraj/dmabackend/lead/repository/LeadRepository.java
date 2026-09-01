@@ -24,4 +24,6 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
     Page<Lead> findByAssignedUserId(String assignedUserId, Pageable pageable);
 
     Page<Lead> findBySource(LeadSource source, Pageable pageable);
+
+    Optional<Lead> findByIdAndStatusNot(String id, LeadStatus status);
 }

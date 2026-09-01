@@ -31,4 +31,6 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     boolean existsByGstNumberAndIdNot(String gstNumber, String clientId);
 
     Page<Client> findByStatusNot(ClientStatus status, Pageable pageable);
+
+    Optional<Client> findByIdAndStatusNot(String id, ClientStatus status);
 }

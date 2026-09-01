@@ -128,7 +128,7 @@ public class LeadServiceImpl implements LeadService {
     // Helper Methods
     // =========================
     private Lead findLeadById(String leadId) {
-        return leadRepository.findById(leadId)
+        return leadRepository.findByIdAndStatusNot(leadId, LeadStatus.DELETED)
                 .orElseThrow(() -> new LeadNotFoundException(leadId));
     }
 

@@ -14,6 +14,7 @@ app:
   jwt:
     secret: mysecretkeymysecretkeymysecretkey123456
     expiration: 86400000
+    refresh-expiration: 604800000
 
 cors:
   allowed-origins:

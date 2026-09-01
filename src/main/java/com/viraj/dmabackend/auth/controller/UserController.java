@@ -92,7 +92,8 @@ public class UserController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User status updated successfully"),
             @ApiResponse(responseCode = "404", description = "User not found"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")})
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
     public UserResponse updateUserStatus(
             @Parameter(description = "Unique identifier of the user", required = true)
             @PathVariable String userId,

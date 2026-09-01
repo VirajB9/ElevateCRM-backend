@@ -138,7 +138,7 @@ public class UserServiceImpl implements UserService {
     // =========================
     private User findUserById(String userId) {
 
-        return userRepository.findById(userId)
+        return userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
                 .orElseThrow(() ->
                         new UserNotFoundException(userId));
     }

@@ -34,7 +34,8 @@ public class Project extends BaseEntity {
     @TextIndexed
     private String description;
 
-    @Builder.Default @Indexed
+    @Builder.Default
+    @Indexed
     private ProjectStatus status = ProjectStatus.PLANNING;
 
     @Builder.Default

@@ -18,5 +18,7 @@ public class AuthenticationResponse {
     @Builder.Default
     private String type="Bearer";
 
+    private String refreshToken;
+
     private UserResponse user;
 }

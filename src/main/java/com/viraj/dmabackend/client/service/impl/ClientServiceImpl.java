@@ -104,10 +104,6 @@ public class ClientServiceImpl implements ClientService {
 
         Client client = findClientById(clientId);
 
-        if (client.getStatus() == ClientStatus.ARCHIVED) {
-            throw new ClientNotFoundException(clientId);
-        }
-
         client.setStatus(ClientStatus.ARCHIVED);
         clientRepository.save(client);
     }
@@ -118,13 +114,8 @@ public class ClientServiceImpl implements ClientService {
     // =========================
     private Client findClientById(String clientId) {
 
-        Client client = clientRepository.findById(clientId)
+        return clientRepository.findByIdAndStatusNot(clientId, ClientStatus.ARCHIVED)
                 .orElseThrow(() -> new ClientNotFoundException(clientId));
-
-        if (client.getStatus() == ClientStatus.ARCHIVED) {
-            throw new ClientNotFoundException(clientId);
-        }
-        return client;
     }
 
     private Client buildClient(CreateClientRequest request) {

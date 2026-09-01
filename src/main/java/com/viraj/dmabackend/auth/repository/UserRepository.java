@@ -21,4 +21,6 @@ public interface UserRepository extends MongoRepository<User, String>, UserRepos
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, String id);
 
     Page<User> findByRoleId(String roleId, Pageable pageable);
+
+    Optional<User> findByIdAndStatusNot(String id, UserStatus status);
 }

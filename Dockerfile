@@ -1,19 +1,24 @@
-FROM eclipse-temurin:17-jdk AS builder
+FROM eclipse-temurin:17-jdk AS build
 
 WORKDIR /app
 
-COPY gradlew .
-COPY gradle gradle
 COPY build.gradle settings.gradle ./
+COPY gradle gradle
+COPY gradlew ./
+
+RUN chmod +x gradlew && \
+    ./gradlew dependencies --no-daemon
+
 COPY src src
 
-RUN chmod +x gradlew && ./gradlew clean bootJar -x test
+RUN ./gradlew clean bootJar -x test --no-daemon
+
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/*.jar app.jar
+COPY --from=build /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
 

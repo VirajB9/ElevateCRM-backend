@@ -54,14 +54,15 @@ public class ProjectServiceImpl implements ProjectService {
     public Page<ProjectResponse> getProjectsByClient(String clientId, Pageable pageable) {
 
         projectValidator.validateClientExists(clientId);
-        return projectRepository.findByClientId(clientId, pageable)
+
+        return projectRepository.findByClientIdAndStatusNot(clientId, ProjectStatus.ARCHIVED, pageable)
                 .map(projectMapper::toProjectResponse);
     }
 
     @Override
     public Page<ProjectResponse> getAllProjects(Pageable pageable) {
 
-        return projectRepository.findAll(pageable)
+        return projectRepository.findByStatusNot(ProjectStatus.ARCHIVED, pageable)
                 .map(projectMapper::toProjectResponse);
     }
 
@@ -100,7 +101,7 @@ public class ProjectServiceImpl implements ProjectService {
     // Helper Methods
     // =========================
     private Project findProjectById(String projectId) {
-        return projectRepository.findById(projectId)
+        return projectRepository.findByIdAndStatusNot(projectId, ProjectStatus.ARCHIVED)
                 .orElseThrow(() ->
                         new ProjectNotFoundException(projectId));
     }

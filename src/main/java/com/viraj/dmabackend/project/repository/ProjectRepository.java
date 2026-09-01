@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
+import java.util.Optional;
+
 public interface ProjectRepository extends MongoRepository<Project, String>, ProjectRepositoryCustom {
 
     Page<Project> findByClientId(String clientId, Pageable pageable);
@@ -15,4 +17,10 @@ public interface ProjectRepository extends MongoRepository<Project, String>, Pro
     boolean existsByProjectNameAndClientId(String projectName, String clientId);
 
     boolean existsByProjectNameAndClientIdAndIdNot(String projectName, String clientId, String id);
+
+    Optional<Project> findByIdAndStatusNot(String id, ProjectStatus status);
+
+    Page<Project> findByStatusNot(ProjectStatus status, Pageable pageable);
+
+    Page<Project> findByClientIdAndStatusNot(String clientId, ProjectStatus status, Pageable pageable);
 }

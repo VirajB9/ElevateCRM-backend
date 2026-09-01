@@ -31,9 +31,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (!"/api/auth/login".equals(request.getRequestURI())
+        if (!(("/api/auth/login".equals(request.getRequestURI())
+                || "/api/auth/refresh".equals(request.getRequestURI())))
                 || !"POST".equalsIgnoreCase(request.getMethod())) {
-
             filterChain.doFilter(request, response);
             return;
         }
@@ -42,19 +42,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         Bucket bucket = buckets.computeIfAbsent(
                 clientIp,
-                key -> createBucket()
-        );
+                key -> createBucket());
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        response.setStatus(429);
+        response.setStatus(429); // HTTP 429 Too Many Requests
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
         response.getWriter().write(
-                "{\"message\":\"Too many login attempts. Please try again later.\"}"
-        );
+                """
+                {
+                    "success": false,
+                    "message": "Too many login attempts. Please try again later.",
+                    "data": null
+                }
+                """);
     }
 
     private Bucket createBucket() {
@@ -63,9 +68,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 CAPACITY,
                 Refill.greedy(
                         REFILL_TOKENS,
-                        REFILL_DURATION
-                )
-        );
+                        REFILL_DURATION));
 
         return Bucket.builder()
                 .addLimit(limit)
@@ -79,7 +82,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (forwardedFor != null && !forwardedFor.isBlank()) {
             return forwardedFor.split(",")[0].trim();
         }
-
         return request.getRemoteAddr();
     }
 }

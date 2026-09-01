@@ -45,15 +45,18 @@ Lead extends BaseEntity {
 
     private String industry;
 
+    @Indexed
     private LeadSource source;
 
     @Builder.Default
+    @Indexed
     private LeadStatus status = LeadStatus.NEW;
 
     /**
      * User responsible for handling this lead.
      * Stores User ID only (No DBRef).
      */
+    @Indexed
     private String assignedUserId;
 
     private BigDecimal estimatedBudget;
