@@ -25,6 +25,8 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
         Query query = TextQuery
                 .queryText(TextCriteria.forDefaultLanguage().matching(keyword)).sortByScore();
 
+        query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where("status").ne(com.viraj.dmabackend.auth.enums.UserStatus.DELETED));
+
         long total = mongoTemplate.count(query, User.class);
 
         query.with(pageable);

@@ -2,6 +2,9 @@ spring:
   application:
     name: digital-marketing-agency-backend
   data:
+    web:
+      pageable:
+        max-page-size: 100
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}&maxPoolSize=50&minPoolSize=5&connectTimeoutMS=10000&socketTimeoutMS=10000
 
@@ -12,7 +15,7 @@ server:
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION:86400000}
+    expiration: ${JWT_EXPIRATION:900000}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 cors:

@@ -4,59 +4,72 @@ services:
     image: mongo:8
     container_name: dma-mongodb
     restart: unless-stopped
-
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-
     volumes:
       - mongodb_data:/data/db
-
     ports:
       - "27018:27017"
-
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
+          "mongosh --quiet -u ${MONGO_ROOT_USERNAME} -p ${MONGO_ROOT_PASSWORD} --eval \"db.adminCommand('ping').ok\""
         ]
       interval: 10s
       timeout: 5s
       retries: 5
-
     networks:
       - dma-network
 
+  mongo-setup:
+    image: mongo:8
+    container_name: dma-mongo-setup
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - dma-network
+    command: >
+      mongosh --host mongodb:27017 -u ${MONGO_ROOT_USERNAME} -p ${MONGO_ROOT_PASSWORD} --eval '
+      try {
+        rs.status();
+        print("Replica set already initialized");
+      } catch (e) {
+        rs.initiate({
+          _id: "rs0",
+          members: [
+            { _id: 0, host: "mongodb:27017" }
+          ]
+        });
+        print("Replica set initialized");
+      }'
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-
     container_name: dma-backend
     restart: unless-stopped
-
     depends_on:
       mongodb:
         condition: service_healthy
-
+      mongo-setup:
+        condition: service_completed_successfully
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE}?authSource=admin
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE}?authSource=admin&replicaSet=rs0
       JWT_SECRET: ${JWT_SECRET}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-
     ports:
       - "8080:8080"
-
     networks:
       - dma-network
 
-
 volumes:
   mongodb_data:
-
 
 networks:
   dma-network:

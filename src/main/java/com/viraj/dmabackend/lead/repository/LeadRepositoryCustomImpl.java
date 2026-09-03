@@ -26,6 +26,8 @@ public class LeadRepositoryCustomImpl
         Query query = TextQuery
                 .queryText(TextCriteria.forDefaultLanguage().matching(keyword)).sortByScore();
 
+        query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where("status").ne(com.viraj.dmabackend.lead.enums.LeadStatus.DELETED));
+
         long total = mongoTemplate.count(query, Lead.class);
 
         query.with(pageable);

@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<UserResponse> getAllUsers(Pageable pageable) {
 
-        Page<User> users = userRepository.findAll(pageable);
+        Page<User> users = userRepository.findByStatusNot(UserStatus.DELETED, pageable);
         return mapToUserResponsePage(users);
     }
 
@@ -128,6 +128,13 @@ public class UserServiceImpl implements UserService {
 
         User user = findUserById(userId);
         user.setStatus(UserStatus.DELETED);
+        
+        // Mutate unique fields so they don't block future registrations
+        String suffix = "_DELETED_" + System.currentTimeMillis();
+        user.setEmail(user.getEmail() + suffix);
+        if (user.getPhoneNumber() != null) {
+            user.setPhoneNumber(user.getPhoneNumber() + suffix);
+        }
 
         User deletedUser = userRepository.save(user);
         return mapUser(deletedUser);
