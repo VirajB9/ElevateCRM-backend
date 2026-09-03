@@ -12,8 +12,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -21,8 +22,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int CAPACITY = 5;
     private static final int REFILL_TOKENS = 5;
     private static final Duration REFILL_DURATION = Duration.ofMinutes(1);
+    private static final int MAX_CACHE_SIZE = 10000;
 
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    // AUDIT-005 FIX: Bounded LRU Cache instead of unbounded ConcurrentHashMap to prevent OOM
+    private final Map<String, Bucket> buckets = Collections.synchronizedMap(
+            new LinkedHashMap<String, Bucket>(MAX_CACHE_SIZE, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Bucket> eldest) {
+                    return size() > MAX_CACHE_SIZE;
+                }
+            }
+    );
 
     @Override
     protected void doFilterInternal(
@@ -76,12 +86,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
+        // AUDIT-006 FIX: Trust Spring's ForwardedHeaderFilter rather than naively parsing raw headers to prevent trivial spoofing bypass.
         return request.getRemoteAddr();
     }
 }

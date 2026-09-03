@@ -68,7 +68,7 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public Page<LeadResponse> getAllLeads(Pageable pageable) {
 
-        return leadRepository.findAll(pageable)
+        return leadRepository.findByStatusNot(com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, pageable)
                 .map(leadMapper::toLeadResponse);
     }
 
@@ -119,6 +119,16 @@ public class LeadServiceImpl implements LeadService {
 
         Lead lead = findLeadById(leadId);
         lead.setStatus(LeadStatus.DELETED);
+        
+        // Mutate unique fields so they don't block future registrations
+        String suffix = "_DELETED_" + System.currentTimeMillis();
+        if (lead.getEmail() != null) {
+            lead.setEmail(lead.getEmail() + suffix);
+        }
+        if (lead.getPhoneNumber() != null) {
+            lead.setPhoneNumber(lead.getPhoneNumber() + suffix);
+        }
+
         leadRepository.save(lead);
     }
 

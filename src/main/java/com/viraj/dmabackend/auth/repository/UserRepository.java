@@ -23,4 +23,5 @@ public interface UserRepository extends MongoRepository<User, String>, UserRepos
     Page<User> findByRoleId(String roleId, Pageable pageable);
 
     Optional<User> findByIdAndStatusNot(String id, UserStatus status);
+    Page<User> findByStatusNot(UserStatus status, Pageable pageable);
 }

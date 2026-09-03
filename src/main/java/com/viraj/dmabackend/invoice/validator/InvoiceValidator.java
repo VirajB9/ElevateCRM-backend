@@ -44,7 +44,7 @@ public class InvoiceValidator {
 
     private void validateClientExists(String clientId) {
 
-        if (!clientRepository.existsById(clientId)) {
+        if (!clientRepository.existsByIdAndStatusNot(clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new ResourceNotFoundException("Client not found with id: " + clientId);
         }
     }

@@ -50,6 +50,10 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid email or password");
         }
 
+        if (user.getStatus() != com.viraj.dmabackend.auth.enums.UserStatus.ACTIVE) {
+            throw new UnauthorizedException("User account is not active");
+        }
+
         Role role = roleRepository
                 .findById(user.getRoleId())
                 .orElseThrow(() ->

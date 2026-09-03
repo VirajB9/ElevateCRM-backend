@@ -4,8 +4,8 @@ import com.viraj.dmabackend.client.entity.Client;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.lead.entity.Lead;
 import com.viraj.dmabackend.lead.event.LeadConvertedEvent;
-import com.viraj.dmabackend.lead.repository.LeadRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class ClientLeadEventListener {
 
     private final ClientService clientService;
-    private final LeadRepository leadRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @EventListener
     public void handleLeadConverted(LeadConvertedEvent event) {
@@ -23,8 +23,6 @@ public class ClientLeadEventListener {
 
         Client client = clientService.createClientFromLead(lead);
 
-        lead.setConvertedClientId(client.getId());
-
-        leadRepository.save(lead);
+        eventPublisher.publishEvent(new ClientCreatedFromLeadEvent(lead.getId(), client.getId()));
     }
 }

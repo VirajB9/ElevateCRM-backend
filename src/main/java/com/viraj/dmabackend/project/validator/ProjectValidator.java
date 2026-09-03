@@ -18,7 +18,7 @@ public class ProjectValidator {
     private final ClientRepository clientRepository;
 
     public void validateClientExists(String clientId) {
-        if (!clientRepository.existsById(clientId)) {
+        if (!clientRepository.existsByIdAndStatusNot(clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new ClientNotFoundException(clientId);
         }
     }

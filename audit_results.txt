@@ -1,0 +1,451 @@
+--- Modules ---
+src/main/java/com/viraj/dmabackend/auth
+src/main/java/com/viraj/dmabackend/client
+src/main/java/com/viraj/dmabackend/common
+src/main/java/com/viraj/dmabackend/config
+src/main/java/com/viraj/dmabackend/controller
+src/main/java/com/viraj/dmabackend/DmaBackendApplication.java
+src/main/java/com/viraj/dmabackend/exception
+src/main/java/com/viraj/dmabackend/invoice
+src/main/java/com/viraj/dmabackend/lead
+src/main/java/com/viraj/dmabackend/menu
+src/main/java/com/viraj/dmabackend/project
+--- Controllers ---
+src/main/java/com/viraj/dmabackend/menu/controller/MenuController.java
+src/main/java/com/viraj/dmabackend/client/controller/ClientController.java
+src/main/java/com/viraj/dmabackend/invoice/controller/InvoiceController.java
+src/main/java/com/viraj/dmabackend/controller/HealthController.java
+src/main/java/com/viraj/dmabackend/lead/controller/LeadController.java
+src/main/java/com/viraj/dmabackend/project/controller/ProjectController.java
+src/main/java/com/viraj/dmabackend/auth/controller/RoleController.java
+src/main/java/com/viraj/dmabackend/auth/controller/PermissionController.java
+src/main/java/com/viraj/dmabackend/auth/controller/UserController.java
+src/main/java/com/viraj/dmabackend/auth/controller/AuthController.java
+--- Services ---
+src/main/java/com/viraj/dmabackend/menu/service/MenuService.java
+src/main/java/com/viraj/dmabackend/client/service/ClientService.java
+src/main/java/com/viraj/dmabackend/invoice/service/InvoiceService.java
+src/main/java/com/viraj/dmabackend/lead/service/LeadService.java
+src/main/java/com/viraj/dmabackend/project/service/ProjectService.java
+src/main/java/com/viraj/dmabackend/auth/security/CustomUserDetailsService.java
+src/main/java/com/viraj/dmabackend/auth/service/PermissionService.java
+src/main/java/com/viraj/dmabackend/auth/service/RoleService.java
+src/main/java/com/viraj/dmabackend/auth/service/AuthService.java
+src/main/java/com/viraj/dmabackend/auth/service/UserService.java
+src/main/java/com/viraj/dmabackend/menu/service/impl/MenuServiceImpl.java
+src/main/java/com/viraj/dmabackend/client/service/impl/ClientServiceImpl.java
+src/main/java/com/viraj/dmabackend/invoice/service/impl/InvoiceServiceImpl.java
+src/main/java/com/viraj/dmabackend/lead/service/impl/LeadServiceImpl.java
+src/main/java/com/viraj/dmabackend/project/service/impl/ProjectServiceImpl.java
+src/main/java/com/viraj/dmabackend/auth/service/impl/PermissionServiceImpl.java
+src/main/java/com/viraj/dmabackend/auth/service/impl/UserServiceImpl.java
+src/main/java/com/viraj/dmabackend/auth/service/impl/RoleServiceImpl.java
+src/main/java/com/viraj/dmabackend/auth/service/impl/AuthServiceImpl.java
+--- Repositories ---
+src/main/java/com/viraj/dmabackend/menu/repository/MenuRepository.java
+src/main/java/com/viraj/dmabackend/client/repository/ClientRepository.java
+src/main/java/com/viraj/dmabackend/invoice/repository/InvoiceRepository.java
+src/main/java/com/viraj/dmabackend/invoice/repository/InvoiceHistoryRepository.java
+src/main/java/com/viraj/dmabackend/lead/repository/LeadRepository.java
+src/main/java/com/viraj/dmabackend/common/counter/CounterRepository.java
+src/main/java/com/viraj/dmabackend/project/repository/ProjectRepository.java
+src/main/java/com/viraj/dmabackend/auth/repository/UserRepository.java
+src/main/java/com/viraj/dmabackend/auth/repository/PermissionRepository.java
+src/main/java/com/viraj/dmabackend/auth/repository/RoleRepository.java
+src/main/java/com/viraj/dmabackend/auth/repository/RefreshTokenRepository.java
+--- Entities ---
+src/main/java/com/viraj/dmabackend/menu/entity/Menu.java
+src/main/java/com/viraj/dmabackend/client/entity/Client.java
+src/main/java/com/viraj/dmabackend/invoice/entity/InvoiceHistory.java
+src/main/java/com/viraj/dmabackend/invoice/entity/Invoice.java
+src/main/java/com/viraj/dmabackend/invoice/entity/InvoiceItem.java
+src/main/java/com/viraj/dmabackend/lead/entity/Lead.java
+src/main/java/com/viraj/dmabackend/common/entity/BaseEntity.java
+src/main/java/com/viraj/dmabackend/project/entity/Project.java
+src/main/java/com/viraj/dmabackend/auth/entity/User.java
+src/main/java/com/viraj/dmabackend/auth/entity/RefreshToken.java
+src/main/java/com/viraj/dmabackend/auth/entity/Role.java
+src/main/java/com/viraj/dmabackend/auth/entity/Permission.java
+--- Security Config ---
+package com.viraj.dmabackend.config;
+
+import com.viraj.dmabackend.auth.security.JwtFilter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
+@EnableMethodSecurity
+@Configuration
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtFilter jwtFilter;
+
+    private final CorsProperties corsProperties;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/logout",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/actuator/health"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+
+                .addFilterBefore(
+                        jwtFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
+
+        return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+        ));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "x-auth-token"
+        ));
+        configuration.setExposedHeaders(List.of("x-auth-token"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+}
+--- JWT Filter ---
+package com.viraj.dmabackend.auth.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.List;
+
+@Component
+@RequiredArgsConstructor
+public class JwtFilter extends OncePerRequestFilter {
+
+    private final JwtUtil jwtUtil;
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = authHeader.substring(7);
+
+        if (!jwtUtil.validateToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String email = jwtUtil.extractEmail(token);
+        String role = jwtUtil.extractRole(token);
+        List<String> permissions =
+                jwtUtil.extractPermissions(token);
+
+        if (SecurityContextHolder
+                .getContext()
+                .getAuthentication() == null) {
+
+            List<SimpleGrantedAuthority> authorities =
+                    permissions.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .toList();
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            email,
+                            null,
+                            authorities
+                    );
+
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource()
+                            .buildDetails(request)
+            );
+
+            SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authentication);
+        }
+
+        filterChain.doFilter(request, response);
+    }
+}--- Rate Limit ---
+package com.viraj.dmabackend.config;
+
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.Refill;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Component
+public class RateLimitFilter extends OncePerRequestFilter {
+
+    private static final int CAPACITY = 5;
+    private static final int REFILL_TOKENS = 5;
+    private static final Duration REFILL_DURATION = Duration.ofMinutes(1);
+
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
+            throws ServletException, IOException {
+
+        if (!(("/api/v1/auth/login".equals(request.getRequestURI())
+                || "/api/v1/auth/refresh".equals(request.getRequestURI())))
+                || !"POST".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String clientIp = getClientIp(request);
+
+        Bucket bucket = buckets.computeIfAbsent(
+                clientIp,
+                key -> createBucket());
+
+        if (bucket.tryConsume(1)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        response.setStatus(429); // HTTP 429 Too Many Requests
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        response.getWriter().write(
+                """
+                {
+                    "success": false,
+                    "message": "Too many login attempts. Please try again later.",
+                    "data": null
+                }
+                """);
+    }
+
+    private Bucket createBucket() {
+
+        Bandwidth limit = Bandwidth.classic(
+                CAPACITY,
+                Refill.greedy(
+                        REFILL_TOKENS,
+                        REFILL_DURATION));
+
+        return Bucket.builder()
+                .addLimit(limit)
+                .build();
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+}--- GlobalExceptionHandler ---
+package com.viraj.dmabackend.exception;
+
+import com.viraj.dmabackend.common.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Object>> handleValidationException(
+            MethodArgumentNotValidException ex) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "Validation failed",
+                errors
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResourceNotFound(
+            ResourceNotFoundException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBadRequest(
+            BadRequestException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUnauthorized(
+            UnauthorizedException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Object>> handleOptimisticLockingFailure(org.springframework.dao.OptimisticLockingFailureException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "The record was modified by another user while you were editing it. Please refresh and try again.",
+                null
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.CONFLICT
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Object>> handleException(
+            Exception ex) {
+
+        log.error("Unhandled exception occurred", ex);
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "An unexpected error occurred",
+                null
+        );
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+}
