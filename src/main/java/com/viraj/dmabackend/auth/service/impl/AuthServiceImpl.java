@@ -7,6 +7,7 @@ import com.viraj.dmabackend.auth.entity.Permission;
 import com.viraj.dmabackend.auth.entity.RefreshToken;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
+import com.viraj.dmabackend.auth.enums.UserStatus;
 import com.viraj.dmabackend.auth.exception.RoleNotFoundException;
 import com.viraj.dmabackend.auth.mapper.UserMapper;
 import com.viraj.dmabackend.auth.repository.PermissionRepository;
@@ -35,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final PermissionRepository permissionRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    
     @Value("${app.jwt.refresh-expiration}")
     private long refreshExpiration;
 
@@ -50,40 +52,13 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid email or password");
         }
 
-        if (user.getStatus() != com.viraj.dmabackend.auth.enums.UserStatus.ACTIVE) {
+        if (user.getStatus() != UserStatus.ACTIVE) {
             throw new UnauthorizedException("User account is not active");
         }
 
-        Role role = roleRepository
-                .findById(user.getRoleId())
-                .orElseThrow(() ->
-                        new RoleNotFoundException(user.getRoleId()));
+        refreshTokenRepository.deleteByUserId(user.getId());
 
-        List<Permission> permissions =
-                permissionRepository.findAllById(role.getPermissionIds());
-
-        List<String> permissionNames =
-                permissions.stream()
-                        .map(permission ->
-                                permission.getPermissionType()
-                                        .name()
-                                        .toLowerCase()
-                                        .replace("_", ":")
-                        )
-                        .toList();
-
-        UserResponse userResponse =
-                userMapper.toUserResponse(
-                        user,
-                        role.getName());
-
-        String token = jwtUtil.generateToken(
-                user.getEmail(),
-                role.getName(),
-                permissionNames);
-
-        String refreshTokenValue =
-                jwtUtil.generateRefreshToken();
+        String refreshTokenValue = jwtUtil.generateRefreshToken();
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(refreshTokenValue)
@@ -96,12 +71,7 @@ public class AuthServiceImpl implements AuthService {
 
         refreshTokenRepository.save(refreshToken);
 
-        return AuthenticationResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .refreshToken(refreshTokenValue)
-                .user(userResponse)
-                .build();
+        return buildAuthenticationResponse(user, refreshTokenValue);
     }
 
     @Override
@@ -111,58 +81,24 @@ public class AuthServiceImpl implements AuthService {
                 refreshTokenRepository
                         .findByTokenAndRevokedFalse(refreshTokenValue)
                         .orElseThrow(() ->
-                                new UnauthorizedException(
-                                        "Invalid refresh token"));
+                                new UnauthorizedException("Invalid refresh token"));
 
-        if (refreshToken.getExpiresAt()
-                .isBefore(LocalDateTime.now())) {
-
-            throw new UnauthorizedException(
-                    "Refresh token has expired");
+        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new UnauthorizedException("Refresh token has expired");
         }
 
         User user = userRepository
                 .findById(refreshToken.getUserId())
                 .orElseThrow(() ->
-                        new UnauthorizedException(
-                                "User not found"));
+                        new UnauthorizedException("User not found"));
 
-        Role role = roleRepository
-                .findById(user.getRoleId())
-                .orElseThrow(() ->
-                        new RoleNotFoundException(
-                                user.getRoleId()));
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            refreshToken.setRevoked(true);
+            refreshTokenRepository.save(refreshToken);
+            throw new UnauthorizedException("User account is not active");
+        }
 
-        List<Permission> permissions =
-                permissionRepository.findAllById(
-                        role.getPermissionIds());
-
-        List<String> permissionNames =
-                permissions.stream()
-                        .map(permission ->
-                                permission.getPermissionType()
-                                        .name()
-                                        .toLowerCase()
-                                        .replace("_", ":")
-                        )
-                        .toList();
-
-        String token = jwtUtil.generateToken(
-                user.getEmail(),
-                role.getName(),
-                permissionNames);
-
-        UserResponse userResponse =
-                userMapper.toUserResponse(
-                        user,
-                        role.getName());
-
-        return AuthenticationResponse.builder()
-                .token(token)
-                .type("Bearer")
-                .refreshToken(refreshTokenValue)
-                .user(userResponse)
-                .build();
+        return buildAuthenticationResponse(user, refreshTokenValue);
     }
 
     @Override
@@ -172,11 +108,34 @@ public class AuthServiceImpl implements AuthService {
                 refreshTokenRepository
                         .findByTokenAndRevokedFalse(refreshTokenValue)
                         .orElseThrow(() ->
-                                new UnauthorizedException(
-                                        "Invalid refresh token"));
+                                new UnauthorizedException("Invalid refresh token"));
 
         refreshToken.setRevoked(true);
 
         refreshTokenRepository.save(refreshToken);
+    }
+
+    private AuthenticationResponse buildAuthenticationResponse(User user, String refreshTokenValue) {
+
+        Role role = roleRepository
+                .findById(user.getRoleId())
+                .orElseThrow(() -> new RoleNotFoundException(user.getRoleId()));
+
+        List<Permission> permissions = permissionRepository.findAllById(role.getPermissionIds());
+
+        List<String> permissionNames = permissions.stream()
+                .map(permission -> permission.getPermissionType().name().toLowerCase().replace("_", ":"))
+                .toList();
+
+        String token = jwtUtil.generateToken(user.getEmail(), role.getName(), permissionNames);
+
+        UserResponse userResponse = userMapper.toUserResponse(user, role.getName());
+
+        return AuthenticationResponse.builder()
+                .token(token)
+                .type("Bearer")
+                .refreshToken(refreshTokenValue)
+                .user(userResponse)
+                .build();
     }
 }

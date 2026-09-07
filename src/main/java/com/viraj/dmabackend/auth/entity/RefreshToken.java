@@ -26,6 +26,7 @@ public class RefreshToken {
     @Indexed
     private String userId;
 
+    @Indexed(expireAfter = "0s")
     private LocalDateTime expiresAt;
 
     @Builder.Default

@@ -5,6 +5,7 @@ import com.viraj.dmabackend.invoice.enums.InvoiceStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -19,6 +20,9 @@ import java.util.List;
 @AllArgsConstructor
 @Document(collection = "invoices")
 @TypeAlias("Invoice")
+@CompoundIndex(name = "idx_active_client", def = "{'active': 1, 'clientId': 1}")
+@CompoundIndex(name = "idx_active_status", def = "{'active': 1, 'status': 1}")
+@CompoundIndex(name = "idx_active_project", def = "{'active': 1, 'projectId': 1}")
 public class Invoice extends BaseEntity {
 
     @Id

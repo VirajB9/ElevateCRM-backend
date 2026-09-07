@@ -2,8 +2,11 @@ package com.viraj.dmabackend.exception;
 
 import com.viraj.dmabackend.common.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,20 +29,16 @@ public class GlobalExceptionHandler {
                 .forEach(error ->
                         errors.put(
                                 error.getField(),
-                                error.getDefaultMessage()
-                        )
-                );
+                                error.getDefaultMessage()));
 
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "Validation failed",
-                errors
-        );
+                errors);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.BAD_REQUEST
-        );
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -49,13 +48,11 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null
-        );
+                null);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.NOT_FOUND
-        );
+                HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadRequestException.class)
@@ -65,13 +62,11 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null
-        );
+                null);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.BAD_REQUEST
-        );
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(UnauthorizedException.class)
@@ -81,44 +76,52 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null
-        );
+                null);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.UNAUTHORIZED
-        );
+                HttpStatus.UNAUTHORIZED);
     }
 
-    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    @ExceptionHandler(OptimisticLockingFailureException.class)
     public ResponseEntity<ApiResponse<Object>> handleOptimisticLockingFailure(org.springframework.dao.OptimisticLockingFailureException ex) {
 
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "The record was modified by another user while you were editing it. Please refresh and try again.",
-                null
-        );
+                null);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.CONFLICT
-        );
+                HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(
             org.springframework.security.access.AccessDeniedException ex) {
 
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "Access denied: You do not have permission to perform this action.",
-                null
-        );
+                null);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.FORBIDDEN
-        );
+                HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDuplicateKey(
+            DuplicateKeyException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "A record with this value already exists.",
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
@@ -130,12 +133,10 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "An unexpected error occurred",
-                null
-        );
+                null);
 
         return new ResponseEntity<>(
                 response,
-                HttpStatus.INTERNAL_SERVER_ERROR
-        );
+                HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -6,6 +6,7 @@ import com.viraj.dmabackend.project.enums.ProjectStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,6 +21,9 @@ import java.time.LocalDate;
 @Builder
 @Document(collection = "projects")
 @TypeAlias("Project")
+@CompoundIndex(name = "uk_client_project_name",
+        def = "{'clientId': 1, 'projectName': 1}",
+        unique = true)
 public class Project extends BaseEntity {
 
     @Id

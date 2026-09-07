@@ -55,7 +55,10 @@ public class LeadServiceImpl implements LeadService {
 
         eventPublisher.publishEvent(new LeadConvertedEvent(savedLead));
 
-        return leadMapper.toLeadResponse(savedLead);
+        Lead updatedLead = leadRepository.findById(leadId)
+                .orElseThrow(() -> new LeadNotFoundException(leadId));
+
+        return leadMapper.toLeadResponse(updatedLead);
     }
 
     @Override

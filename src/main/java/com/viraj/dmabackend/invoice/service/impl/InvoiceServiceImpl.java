@@ -184,17 +184,20 @@ public class InvoiceServiceImpl implements InvoiceService {
         BigDecimal taxPercentage = Optional.ofNullable(invoice.getTaxPercentage())
                 .orElse(BigDecimal.ZERO);
 
-        BigDecimal taxAmount = subtotal
-                .multiply(taxPercentage)
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
         BigDecimal discount = Optional.ofNullable(invoice.getDiscount())
                 .orElse(BigDecimal.ZERO)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        BigDecimal totalAmount = subtotal
-                .add(taxAmount)
+        BigDecimal taxableAmount = subtotal
                 .subtract(discount)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal taxAmount = taxableAmount
+                .multiply(taxPercentage)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+        BigDecimal totalAmount = taxableAmount
+                .add(taxAmount)
                 .setScale(2, RoundingMode.HALF_UP);
 
         invoice.setSubtotal(subtotal);

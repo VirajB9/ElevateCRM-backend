@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.auth.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.viraj.dmabackend.auth.enums.UserStatus;
 import com.viraj.dmabackend.common.entity.BaseEntity;
 import lombok.AllArgsConstructor;
@@ -42,6 +43,7 @@ public class User extends BaseEntity {
      * Bcrypt hashed password.
      * Never store plain text password.
      */
+    @JsonIgnore
     private String password;
 
     @Indexed

@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.client.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,13 +9,17 @@ import lombok.Setter;
 @Setter
 public class UpdateClientRequest {
 
+    @NotBlank
     private String companyName;
 
+    @NotBlank
     private String contactPerson;
 
+    @NotBlank
     @Email
     private String email;
 
+    @NotBlank
     private String phoneNumber;
 
     private String website;
