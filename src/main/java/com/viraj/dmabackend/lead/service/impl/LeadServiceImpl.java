@@ -53,7 +53,19 @@ public class LeadServiceImpl implements LeadService {
 
         Lead savedLead = leadRepository.save(lead);
 
-        eventPublisher.publishEvent(new LeadConvertedEvent(savedLead));
+        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
+                .leadId(savedLead.getId())
+                .firstName(savedLead.getFirstName())
+                .lastName(savedLead.getLastName())
+                .companyName(savedLead.getCompanyName())
+                .email(savedLead.getEmail())
+                .phoneNumber(savedLead.getPhoneNumber())
+                .website(savedLead.getWebsite())
+                .industry(savedLead.getIndustry())
+                .notes(savedLead.getNotes())
+                .build();
+
+        eventPublisher.publishEvent(new LeadConvertedEvent(data));
 
         Lead updatedLead = leadRepository.findById(leadId)
                 .orElseThrow(() -> new LeadNotFoundException(leadId));

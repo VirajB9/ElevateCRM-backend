@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.menu.validator;
 
+import com.viraj.dmabackend.menu.entity.Menu;
 import com.viraj.dmabackend.menu.exception.DuplicateMenuPathException;
 import com.viraj.dmabackend.menu.exception.DuplicateMenuTitleException;
 import com.viraj.dmabackend.menu.exception.InvalidMenuPathException;
@@ -8,6 +9,11 @@ import com.viraj.dmabackend.menu.exception.SelfParentMenuException;
 import com.viraj.dmabackend.menu.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import java.util.HashSet;
+import com.viraj.dmabackend.menu.exception.CircularMenuException;
+
+import java.util.Set;
+
 
 @Component
 @RequiredArgsConstructor
@@ -43,8 +49,27 @@ public class MenuValidator {
         if (menuId == null || parentId == null) {
             return;
         }
+
         if (menuId.equals(parentId)) {
             throw new SelfParentMenuException();
+        }
+
+        String currentParent = parentId;
+        Set<String> visited = new HashSet<>();
+
+        while (currentParent != null) {
+
+            if (currentParent.equals(menuId)) {
+                throw new CircularMenuException();
+            }
+
+            if (!visited.add(currentParent)) {
+                break;
+            }
+
+            Menu parent = menuRepository.findById(currentParent).orElse(null);
+
+            currentParent = parent != null ? parent.getParentId() : null;
         }
     }
 

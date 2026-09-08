@@ -10,7 +10,7 @@ import com.viraj.dmabackend.client.mapper.ClientMapper;
 import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.client.validator.ClientValidator;
-import com.viraj.dmabackend.lead.entity.Lead;
+import com.viraj.dmabackend.common.dto.LeadConversionData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -38,19 +38,19 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public Client createClientFromLead(Lead lead) {
+    public Client createClientFromLead(LeadConversionData data) {
 
-        clientValidator.validateDuplicateEmail(lead.getEmail());
-        clientValidator.validateDuplicatePhone(lead.getPhoneNumber());
+        clientValidator.validateDuplicateEmail(data.getEmail());
+        clientValidator.validateDuplicatePhone(data.getPhoneNumber());
 
         Client client = Client.builder()
-                .companyName(lead.getCompanyName())
-                .contactPerson(lead.getFirstName() + " " + lead.getLastName())
-                .email(lead.getEmail())
-                .phoneNumber(lead.getPhoneNumber())
-                .website(lead.getWebsite())
-                .industry(lead.getIndustry())
-                .notes(lead.getNotes())
+                .companyName(data.getCompanyName())
+                .contactPerson(data.getFirstName() + " " + data.getLastName())
+                .email(data.getEmail())
+                .phoneNumber(data.getPhoneNumber())
+                .website(data.getWebsite())
+                .industry(data.getIndustry())
+                .notes(data.getNotes())
                 .build();
 
         return clientRepository.save(client);

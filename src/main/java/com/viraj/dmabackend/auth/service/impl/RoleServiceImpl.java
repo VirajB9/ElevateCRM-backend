@@ -17,6 +17,8 @@ import com.viraj.dmabackend.auth.security.CustomUserDetails;
 import com.viraj.dmabackend.auth.service.RoleService;
 import com.viraj.dmabackend.auth.validator.RoleValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,23 +46,23 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleValidator roleValidator;
 
+    @Cacheable("roles")
     @Override
     public List<RoleResponse> getAllRoles() {
-
         return roleRepository.findAll()
                 .stream()
                 .map(roleMapper::toRoleResponse)
                 .toList();
     }
 
+    @Cacheable(value = "role", key = "#roleId")
     @Override
     public RoleResponse getRoleById(String roleId) {
-
         Role role = findRoleById(roleId);
-
         return roleMapper.toRoleResponse(role);
     }
 
+    @CacheEvict(value = {"roles", "role"}, allEntries = true)
     @Override
     public RoleResponse updateRole(String roleId, UpdateRoleRequest request) {
 
@@ -75,6 +77,7 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.toRoleResponse(updatedRole);
     }
 
+    @CacheEvict(value = {"roles", "role"}, allEntries = true)
     @Override
     public RoleResponse assignPermissions(String roleId, AssignPermissionsRequest request) {
 
@@ -97,6 +100,7 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.toRoleResponse(updatedRole);
     }
 
+    @CacheEvict(value = {"roles", "role"}, allEntries = true)
     @Override
     public RoleResponse removePermissions(String roleId, RemovePermissionsRequest request) {
 

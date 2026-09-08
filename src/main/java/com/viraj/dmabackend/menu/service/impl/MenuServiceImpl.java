@@ -11,6 +11,9 @@ import com.viraj.dmabackend.menu.repository.MenuRepository;
 import com.viraj.dmabackend.menu.service.MenuService;
 import com.viraj.dmabackend.menu.validator.MenuValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MenuServiceImpl implements MenuService {
 
     private final MenuRepository menuRepository;
@@ -30,6 +34,7 @@ public class MenuServiceImpl implements MenuService {
     private final MenuValidator menuValidator;
 
     @Override
+    @CacheEvict(value = "menuTree", allEntries = true)
     public MenuResponse createMenu(CreateMenuRequest request) {
 
         validateCreateMenuRequest(request);
@@ -55,10 +60,15 @@ public class MenuServiceImpl implements MenuService {
         List<Menu> menus = menuRepository.findAll(
                 Sort.by(Sort.Direction.ASC, "orderIndex"));
 
+        if (menus.size() > 500) {
+            log.warn("Menu count exceeds expected threshold: {}", menus.size());
+        }
+
         return mapToMenuResponseList(menus);
     }
 
     @Override
+    @CacheEvict(value = "menuTree", allEntries = true)
     public MenuResponse updateMenu(String menuId, UpdateMenuRequest request) {
 
         Menu menu = findMenuById(menuId);
@@ -82,6 +92,7 @@ public class MenuServiceImpl implements MenuService {
         menuRepository.save(menu);
     }
 
+    @Cacheable("menuTree")
     @Override
     public List<MenuTreeResponse> getMenuTree() {
 

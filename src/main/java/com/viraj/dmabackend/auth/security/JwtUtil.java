@@ -2,14 +2,13 @@ package com.viraj.dmabackend.auth.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Date;
@@ -24,7 +23,7 @@ public class JwtUtil {
     @Value("${app.jwt.expiration}")
     private long expiration;
 
-    private Key key;
+    private SecretKey key;
 
     @PostConstruct
     public void init() {
@@ -38,14 +37,14 @@ public class JwtUtil {
             List<String> permissions) {
 
         return Jwts.builder()
-                .setSubject(email)
+                .subject(email)
                 .claim("role", role)
                 .claim("permissions", permissions)
-                .setIssuedAt(new Date())
-                .setExpiration(
+                .issuedAt(new Date())
+                .expiration(
                         new Date(System.currentTimeMillis() + expiration)
                 )
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key)
                 .compact();
     }
 
@@ -72,11 +71,11 @@ public class JwtUtil {
     }
 
     private Claims extractClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
+        return Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private final SecureRandom secureRandom = new SecureRandom();

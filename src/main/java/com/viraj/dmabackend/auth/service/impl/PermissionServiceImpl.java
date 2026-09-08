@@ -6,6 +6,7 @@ import com.viraj.dmabackend.auth.mapper.PermissionMapper;
 import com.viraj.dmabackend.auth.repository.PermissionRepository;
 import com.viraj.dmabackend.auth.service.PermissionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class PermissionServiceImpl implements PermissionService {
     private final PermissionRepository permissionRepository;
     private final PermissionMapper permissionMapper;
 
+    @Cacheable("permissions")
     @Override
     public List<PermissionResponse> getAllPermissions() {
 

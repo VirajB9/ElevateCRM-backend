@@ -17,12 +17,15 @@ public class InvoiceNumberGenerator {
 
     public String generate() {
 
-        long sequence = counterRepository.getNextSequence(INVOICE_COUNTER);
+        int currentYear = Year.now().getValue();
+        String counterKey = INVOICE_COUNTER + "_" + currentYear;
+
+        long sequence = counterRepository.getNextSequence(counterKey);
 
         return String.format(
                 "%s-%d-%05d",
                 INVOICE_PREFIX,
-                Year.now().getValue(),
+                currentYear,
                 sequence);
     }
 }

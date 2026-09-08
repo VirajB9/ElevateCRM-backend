@@ -1,14 +1,14 @@
 package com.viraj.dmabackend.lead.event;
 
-import com.viraj.dmabackend.lead.entity.Lead;
+import com.viraj.dmabackend.common.dto.LeadConversionData;
 import lombok.Getter;
 
 @Getter
 public class LeadConvertedEvent {
 
-    private final Lead lead;
+    private final LeadConversionData data;
 
-    public LeadConvertedEvent(Lead lead) {
-        this.lead = lead;
+    public LeadConvertedEvent(LeadConversionData data) {
+        this.data = data;
     }
 }

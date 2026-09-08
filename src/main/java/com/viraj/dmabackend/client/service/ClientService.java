@@ -5,13 +5,13 @@ import com.viraj.dmabackend.client.dto.CreateClientRequest;
 import com.viraj.dmabackend.client.dto.UpdateClientRequest;
 import com.viraj.dmabackend.client.entity.Client;
 import com.viraj.dmabackend.client.enums.ClientStatus;
-import com.viraj.dmabackend.lead.entity.Lead;
+import com.viraj.dmabackend.common.dto.LeadConversionData;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface ClientService {
     ClientResponse createClient(CreateClientRequest request);
-    Client createClientFromLead(Lead lead);
+    Client createClientFromLead(LeadConversionData data);
     ClientResponse getClientById(String clientId);
     Page<ClientResponse> getAllClients(Pageable pageable);
     Page<ClientResponse> searchClients(String keyword, Pageable pageable);
