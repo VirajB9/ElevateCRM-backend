@@ -46,6 +46,8 @@ public class User extends BaseEntity {
     @JsonIgnore
     private String password;
 
+    private boolean passwordChangeRequired;
+
     @Indexed
     private String roleId;
 

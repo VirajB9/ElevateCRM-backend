@@ -5,6 +5,7 @@ import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.config.OwnerProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -22,10 +23,22 @@ public class OwnerBootstrap implements CommandLineRunner {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final OwnerProperties ownerProperties;
+
     @Override
     public void run(String... args) throws Exception {
-        if (userRepository.findByEmail("owner@agency.com").isPresent()) {
+
+        String ownerEmail = ownerProperties.getEmail();
+        String initialPassword = ownerProperties.getInitialPassword();
+
+        if (userRepository.findByEmail(ownerEmail).isPresent()) {
             return;
+        }
+
+        if (initialPassword == null || initialPassword.isBlank()) {
+            throw new IllegalStateException(
+                    "OWNER_INITIAL_PASSWORD must be configured"
+            );
         }
 
         Role ownerRole = roleRepository.findByName("OWNER")
@@ -34,12 +47,13 @@ public class OwnerBootstrap implements CommandLineRunner {
         User owner = User.builder()
                 .firstName("Owner")
                 .lastName("Admin")
-                .email("owner@agency.com")
+                .email(ownerEmail)
                 .phoneNumber("9999999999")
-                .password(passwordEncoder.encode("Owner@123"))
+                .password(passwordEncoder.encode(initialPassword))
+                .passwordChangeRequired(true)
                 .roleId(ownerRole.getId())
                 .status(UserStatus.ACTIVE)
-                .build();   
+                .build();
 
         userRepository.save(owner);
     }

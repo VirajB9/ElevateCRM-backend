@@ -19,6 +19,8 @@ import java.math.BigDecimal;
 public class InvoiceItemRequest {
 
     @NotBlank(message = "Item description is required")
+    
+    @jakarta.validation.constraints.Size(max = 500)
     private String description;
 
     @NotNull(message = "Quantity is required")

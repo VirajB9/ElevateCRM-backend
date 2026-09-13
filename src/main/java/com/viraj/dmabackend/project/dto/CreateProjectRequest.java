@@ -1,39 +1,40 @@
 package com.viraj.dmabackend.project.dto;
+
 import com.viraj.dmabackend.project.enums.ProjectPriority;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class CreateProjectRequest {
 
     @NotBlank(message = "Client ID is required")
+    @Size(max = 50)
     private String clientId;
 
     @NotBlank(message = "Project name is required")
+    @Size(max = 150)
     private String projectName;
 
+    @Size(max = 2000)
     private String description;
 
     @NotNull(message = "Priority is required")
     private ProjectPriority priority;
 
-    @FutureOrPresent(message = "Start date cannot be in the past")
+    @NotNull(message = "Start date is required")
     private LocalDate startDate;
 
     private LocalDate endDate;
 
-    @DecimalMin(value = "0.0", inclusive = true, message = "Budget cannot be negative")
     private BigDecimal budget;
 
+    @Size(max = 2000)
     private String notes;
 }

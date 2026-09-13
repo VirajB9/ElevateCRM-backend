@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserValidator userValidator;
 
+    @Transactional
     @Override
     public CreateUserResponse createUser(CreateUserRequest request) {
 
@@ -92,6 +94,7 @@ public class UserServiceImpl implements UserService {
         return mapToUserResponsePage(users);
     }
 
+    @Transactional
     @Override
     public UserResponse updateUser(String userId, UpdateUserRequest request) {
 
@@ -111,6 +114,7 @@ public class UserServiceImpl implements UserService {
         return mapUser(updatedUser);
     }
 
+    @Transactional
     @Override
     public UserResponse updateUserStatus(String userId, UpdateUserStatusRequest request) {
 
@@ -123,6 +127,7 @@ public class UserServiceImpl implements UserService {
         return mapUser(updatedUser);
     }
 
+    @Transactional
     @Override
     public UserResponse softDeleteUser(String userId) {
 

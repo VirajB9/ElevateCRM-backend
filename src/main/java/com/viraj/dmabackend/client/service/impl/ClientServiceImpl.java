@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class ClientServiceImpl implements ClientService {
     private final ClientMapper clientMapper;
     private final ClientValidator clientValidator;
 
+    @Transactional
     @Override
     public ClientResponse createClient(CreateClientRequest request) {
 
@@ -37,6 +39,7 @@ public class ClientServiceImpl implements ClientService {
         return clientMapper.toClientResponse(savedClient);
     }
 
+    @Transactional
     @Override
     public Client createClientFromLead(LeadConversionData data) {
 
@@ -84,6 +87,7 @@ public class ClientServiceImpl implements ClientService {
         return clients.map(clientMapper::toClientResponse);
     }
 
+    @Transactional
     @Override
     public ClientResponse updateClient(String clientId, UpdateClientRequest request) {
 
@@ -99,6 +103,7 @@ public class ClientServiceImpl implements ClientService {
         return clientMapper.toClientResponse(updatedClient);
     }
 
+    @Transactional
     @Override
     public void deleteClient(String clientId) {
 

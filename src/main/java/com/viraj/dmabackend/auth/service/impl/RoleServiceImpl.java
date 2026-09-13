@@ -17,6 +17,7 @@ import com.viraj.dmabackend.auth.security.CustomUserDetails;
 import com.viraj.dmabackend.auth.service.RoleService;
 import com.viraj.dmabackend.auth.validator.RoleValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
@@ -49,8 +51,13 @@ public class RoleServiceImpl implements RoleService {
     @Cacheable("roles")
     @Override
     public List<RoleResponse> getAllRoles() {
-        return roleRepository.findAll()
-                .stream()
+        List<Role> roles = roleRepository.findAll();
+        
+        if (roles.size() > 100) {
+            log.warn("Role count exceeds expected threshold: {}", roles.size());
+        }
+        
+        return roles.stream()
                 .map(roleMapper::toRoleResponse)
                 .toList();
     }

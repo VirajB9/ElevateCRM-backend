@@ -31,7 +31,7 @@ public class CounterRepositoryImpl implements CounterRepository {
                 options,
                 Counter.class);
 
-        assert counter != null;
+        java.util.Objects.requireNonNull(counter, "Counter sequence returned null");
         return counter.getSequence();
     }
 }

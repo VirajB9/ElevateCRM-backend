@@ -22,3 +22,7 @@ app:
 cors:
   allowed-origins:
     - http://localhost:5173
+
+owner:
+  email: ${OWNER_EMAIL:owner@agency.com}
+  initial-password: ${OWNER_INITIAL_PASSWORD}

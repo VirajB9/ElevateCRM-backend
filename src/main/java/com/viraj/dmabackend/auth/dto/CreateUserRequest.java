@@ -21,6 +21,8 @@ public class CreateUserRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
+    
+    @jakarta.validation.constraints.Size(max = 150)
     private String email;
 
     @NotBlank(message = "Phone number is required")
@@ -30,5 +32,7 @@ public class CreateUserRequest {
     private String phoneNumber;
 
     @NotBlank(message = "Role is required")
+    
+    @jakarta.validation.constraints.Size(max = 50)
     private String roleId;
 }

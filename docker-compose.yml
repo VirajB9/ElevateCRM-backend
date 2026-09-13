@@ -53,12 +53,19 @@ services:
       dockerfile: Dockerfile
     container_name: dma-backend
     restart: unless-stopped
+    stop_grace_period: 40s
 
     deploy:
       resources:
         limits:
           memory: 512M
           cpus: "1.0"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
     depends_on:
       mongodb:

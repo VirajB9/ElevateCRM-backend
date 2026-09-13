@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -29,11 +30,14 @@ public class UpdateInvoiceRequest {
 
     @NotNull(message = "Tax percentage is required")
     @DecimalMin(value = "0.00", message = "Tax percentage cannot be negative")
+    @DecimalMax(value = "100.00", message = "Tax percentage cannot exceed 100")
     private BigDecimal taxPercentage;
 
     @NotNull(message = "Discount is required")
     @DecimalMin(value = "0.00", message = "Discount cannot be negative")
     private BigDecimal discount;
 
+    
+    @jakarta.validation.constraints.Size(max = 2000)
     private String notes;
 }

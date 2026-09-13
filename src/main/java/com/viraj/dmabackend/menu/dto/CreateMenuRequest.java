@@ -16,12 +16,15 @@ import lombok.Setter;
 public class CreateMenuRequest {
 
     @NotBlank(message = "Title is required")
+    @jakarta.validation.constraints.Size(max = 100)
     private String title;
 
     @NotBlank(message = "Path is required")
+    @jakarta.validation.constraints.Size(max = 255)
     private String path;
 
     @NotBlank(message = "Icon is required")
+    @jakarta.validation.constraints.Size(max = 100)
     private String icon;
 
     private String parentId;
@@ -30,6 +33,7 @@ public class CreateMenuRequest {
     private Integer orderIndex;
 
     @NotBlank(message = "Required permission is required")
+    @jakarta.validation.constraints.Size(max = 100)
     private String requiredPermission;
 
     @Builder.Default

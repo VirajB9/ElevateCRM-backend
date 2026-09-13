@@ -18,7 +18,11 @@ FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=build /app/build/libs/*.jar app.jar
+RUN addgroup --system spring && adduser --system --ingroup spring spring
+
+COPY --from=build --chown=spring:spring /app/build/libs/*.jar app.jar
+
+USER spring:spring
 
 EXPOSE 8080
 

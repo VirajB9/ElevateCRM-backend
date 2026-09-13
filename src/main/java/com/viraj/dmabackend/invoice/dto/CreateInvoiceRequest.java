@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,9 +24,13 @@ import java.util.List;
 public class CreateInvoiceRequest {
 
     @NotBlank(message = "Client ID is required")
+    
+    @jakarta.validation.constraints.Size(max = 50)
     private String clientId;
 
     @NotBlank(message = "Project ID is required")
+    
+    @jakarta.validation.constraints.Size(max = 50)
     private String projectId;
 
     @NotNull(message = "Issue date is required")
@@ -40,11 +45,14 @@ public class CreateInvoiceRequest {
 
     @NotNull(message = "Tax percentage is required")
     @DecimalMin(value = "0.00", message = "Tax percentage cannot be negative")
+    @DecimalMax(value = "100.00", message = "Tax percentage cannot exceed 100")
     private BigDecimal taxPercentage;
 
     @NotNull(message = "Discount is required")
     @DecimalMin(value = "0.00", message = "Discount cannot be negative")
     private BigDecimal discount;
 
+    
+    @jakarta.validation.constraints.Size(max = 2000)
     private String notes;
 }

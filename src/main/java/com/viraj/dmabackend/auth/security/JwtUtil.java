@@ -34,12 +34,14 @@ public class JwtUtil {
     public String generateToken(
             String email,
             String role,
-            List<String> permissions) {
+            List<String> permissions,
+            boolean passwordChangeRequired) {
 
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
                 .claim("permissions", permissions)
+                .claim("passwordChangeRequired", passwordChangeRequired)
                 .issuedAt(new Date())
                 .expiration(
                         new Date(System.currentTimeMillis() + expiration)
@@ -59,6 +61,11 @@ public class JwtUtil {
     @SuppressWarnings("unchecked")
     public List<String> extractPermissions(String token) {
         return extractClaims(token).get("permissions", List.class);
+    }
+
+    public boolean extractPasswordChangeRequired(String token) {
+        Boolean value = extractClaims(token).get("passwordChangeRequired", Boolean.class);
+        return value != null && value;
     }
 
     public boolean validateToken(String token) {

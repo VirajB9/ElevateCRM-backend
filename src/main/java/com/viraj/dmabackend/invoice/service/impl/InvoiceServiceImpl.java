@@ -190,6 +190,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         BigDecimal taxableAmount = subtotal
                 .subtract(discount)
+                .max(BigDecimal.ZERO)
                 .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal taxAmount = taxableAmount

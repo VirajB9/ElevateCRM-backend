@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.auth.service.impl;
 
 import com.viraj.dmabackend.auth.dto.AuthenticationResponse;
+import com.viraj.dmabackend.auth.dto.ChangePasswordRequest;
 import com.viraj.dmabackend.auth.dto.LoginRequest;
 import com.viraj.dmabackend.auth.dto.UserResponse;
 import com.viraj.dmabackend.auth.entity.Permission;
@@ -16,7 +17,9 @@ import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.JwtUtil;
 import com.viraj.dmabackend.auth.service.AuthService;
+import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.exception.UnauthorizedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -115,6 +118,44 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(refreshToken);
     }
 
+    @Override
+    public AuthenticationResponse changePassword(ChangePasswordRequest request) {
+
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("New password must be different");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordChangeRequired(false);
+        userRepository.save(user);
+
+        refreshTokenRepository.deleteByUserId(user.getId());
+
+        String refreshTokenValue = jwtUtil.generateRefreshToken();
+
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token(refreshTokenValue)
+                .userId(user.getId())
+                .expiresAt(
+                        LocalDateTime.now()
+                                .plus(java.time.Duration.ofMillis(refreshExpiration))
+                )
+                .build();
+
+        refreshTokenRepository.save(refreshToken);
+
+        return buildAuthenticationResponse(user, refreshTokenValue);
+    }
+
     private AuthenticationResponse buildAuthenticationResponse(User user, String refreshTokenValue) {
 
         Role role = roleRepository
@@ -127,7 +168,12 @@ public class AuthServiceImpl implements AuthService {
                 .map(permission -> permission.getPermissionType().name().toLowerCase().replace("_", ":"))
                 .toList();
 
-        String token = jwtUtil.generateToken(user.getEmail(), role.getName(), permissionNames);
+        String token = jwtUtil.generateToken(
+                user.getEmail(), 
+                role.getName(), 
+                permissionNames,
+                user.isPasswordChangeRequired()
+        );
 
         UserResponse userResponse = userMapper.toUserResponse(user, role.getName());
 
@@ -135,6 +181,7 @@ public class AuthServiceImpl implements AuthService {
                 .token(token)
                 .type("Bearer")
                 .refreshToken(refreshTokenValue)
+                .passwordChangeRequired(user.isPasswordChangeRequired())
                 .user(userResponse)
                 .build();
     }

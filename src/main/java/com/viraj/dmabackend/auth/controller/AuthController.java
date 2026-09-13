@@ -70,4 +70,18 @@ public class AuthController {
         authService.logout(
                 request.getRefreshToken());
     }
+
+    @Operation(
+            summary = "Change password",
+            description = "Changes the authenticated user's password and issues new tokens.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request formatting or incorrect current password")
+    })
+    @PatchMapping("/change-password")
+    public AuthenticationResponse changePassword(
+            @Valid @RequestBody com.viraj.dmabackend.auth.dto.ChangePasswordRequest request) {
+
+        return authService.changePassword(request);
+    }
 }

@@ -51,3 +51,6 @@ graphify-out/
 ### Logs ###
 logs/
 *.log
+*.sh
+*.patch
+.env

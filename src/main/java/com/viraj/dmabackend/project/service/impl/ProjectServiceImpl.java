@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMapper projectMapper;
     private final ProjectValidator projectValidator;
 
+    @Transactional
     @Override
     public ProjectResponse createProject(CreateProjectRequest request) {
 
@@ -73,6 +75,7 @@ public class ProjectServiceImpl implements ProjectService {
         return projects.map(projectMapper::toProjectResponse);
     }
 
+    @Transactional
     @Override
     public ProjectResponse updateProject(String projectId, UpdateProjectRequest request) {
 
@@ -88,6 +91,7 @@ public class ProjectServiceImpl implements ProjectService {
         return projectMapper.toProjectResponse(updatedProject);
     }
 
+    @Transactional
     @Override
     public void deleteProject(String projectId) {
 
