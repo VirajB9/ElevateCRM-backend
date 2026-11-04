@@ -86,7 +86,7 @@ public class MenuValidator {
 
     public void validatePath(String path) {
 
-        if(!path.startsWith("/")){
+        if (path == null || !path.trim().startsWith("/")) {
             throw new InvalidMenuPathException(path);
         }
     }

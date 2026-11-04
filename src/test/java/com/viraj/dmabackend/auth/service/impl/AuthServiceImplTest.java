@@ -174,4 +174,50 @@ public class AuthServiceImplTest {
         assertEquals("jwt-token", response.getToken());
         verify(permissionRepository).findAllById(java.util.Collections.emptyList());
     }
+
+    @Test
+    void logout_whenValidActiveToken_revokesAndSaves() {
+        com.viraj.dmabackend.auth.entity.RefreshToken token = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("token-1")
+                .token("active-token")
+                .revoked(false)
+                .build();
+        when(refreshTokenRepository.findByToken("active-token")).thenReturn(Optional.of(token));
+
+        authService.logout("active-token");
+
+        assertTrue(token.isRevoked());
+        verify(refreshTokenRepository).save(token);
+    }
+
+    @Test
+    void logout_whenAlreadyRevokedToken_doesNotReSaveAndCompletesCleanly() {
+        com.viraj.dmabackend.auth.entity.RefreshToken token = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("token-1")
+                .token("revoked-token")
+                .revoked(true)
+                .build();
+        when(refreshTokenRepository.findByToken("revoked-token")).thenReturn(Optional.of(token));
+
+        assertDoesNotThrow(() -> authService.logout("revoked-token"));
+
+        verify(refreshTokenRepository, never()).save(any());
+    }
+
+    @Test
+    void logout_whenTokenNotFound_completesCleanlyWithoutException() {
+        when(refreshTokenRepository.findByToken("non-existent")).thenReturn(Optional.empty());
+
+        assertDoesNotThrow(() -> authService.logout("non-existent"));
+
+        verify(refreshTokenRepository, never()).save(any());
+    }
+
+    @Test
+    void logout_whenNullOrBlank_completesCleanlyWithoutRepoCall() {
+        assertDoesNotThrow(() -> authService.logout(null));
+        assertDoesNotThrow(() -> authService.logout("   "));
+
+        verify(refreshTokenRepository, never()).findByToken(any());
+    }
 }

@@ -32,7 +32,6 @@ public class UpdateMenuRequest {
     @NotNull(message = "Order index is required")
     private Integer orderIndex;
 
-    @NotBlank(message = "Required permission is required")
     @jakarta.validation.constraints.Size(max = 100)
     private String requiredPermission;
 

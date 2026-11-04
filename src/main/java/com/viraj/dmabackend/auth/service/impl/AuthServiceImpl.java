@@ -147,15 +147,18 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String refreshTokenValue) {
 
-        RefreshToken refreshToken =
-                refreshTokenRepository
-                        .findByTokenAndRevokedFalse(refreshTokenValue)
-                        .orElseThrow(() ->
-                                new UnauthorizedException("Invalid refresh token"));
+        if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
+            return;
+        }
 
-        refreshToken.setRevoked(true);
-
-        refreshTokenRepository.save(refreshToken);
+        refreshTokenRepository
+                .findByToken(refreshTokenValue)
+                .ifPresent(token -> {
+                    if (!token.isRevoked()) {
+                        token.setRevoked(true);
+                        refreshTokenRepository.save(token);
+                    }
+                });
     }
 
     @Override

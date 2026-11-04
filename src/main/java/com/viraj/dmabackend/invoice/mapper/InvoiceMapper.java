@@ -56,7 +56,11 @@ public class InvoiceMapper {
     }
 
     private List<InvoiceItem> toEntityItems(List<InvoiceItemRequest> items) {
+        if (items == null) {
+            return java.util.Collections.emptyList();
+        }
         return items.stream()
+                .filter(java.util.Objects::nonNull)
                 .map(this::toEntityItem)
                 .toList();
     }
@@ -70,7 +74,11 @@ public class InvoiceMapper {
     }
 
     private List<InvoiceItemResponse> toResponseItems(List<InvoiceItem> items) {
+        if (items == null) {
+            return java.util.Collections.emptyList();
+        }
         return items.stream()
+                .filter(java.util.Objects::nonNull)
                 .map(this::toResponseItem)
                 .toList();
     }

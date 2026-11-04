@@ -136,37 +136,48 @@ public class ClientServiceImpl implements ClientService {
     private Client buildClient(CreateClientRequest request) {
 
         return Client.builder()
-                .companyName(request.getCompanyName())
-                .contactPerson(request.getContactPerson())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .website(request.getWebsite())
-                .industry(request.getIndustry())
-                .gstNumber(request.getGstNumber())
-                .address(request.getAddress())
-                .city(request.getCity())
-                .state(request.getState())
-                .country(request.getCountry())
-                .postalCode(request.getPostalCode())
+                .companyName(normalizeTrim(request.getCompanyName()))
+                .contactPerson(normalizeTrim(request.getContactPerson()))
+                .email(normalizeTrim(request.getEmail()))
+                .phoneNumber(normalizeTrim(request.getPhoneNumber()))
+                .website(normalizeTrim(request.getWebsite()))
+                .industry(normalizeTrim(request.getIndustry()))
+                .gstNumber(normalizeGstNumber(request.getGstNumber()))
+                .address(normalizeTrim(request.getAddress()))
+                .city(normalizeTrim(request.getCity()))
+                .state(normalizeTrim(request.getState()))
+                .country(normalizeTrim(request.getCountry()))
+                .postalCode(normalizeTrim(request.getPostalCode()))
                 .notes(request.getNotes())
                 .build();
     }
 
     private void updateClientFields(Client client, UpdateClientRequest request) {
 
-        client.setCompanyName(request.getCompanyName());
-        client.setContactPerson(request.getContactPerson());
-        client.setEmail(request.getEmail());
-        client.setPhoneNumber(request.getPhoneNumber());
-        client.setWebsite(request.getWebsite());
-        client.setIndustry(request.getIndustry());
-        client.setGstNumber(request.getGstNumber());
-        client.setAddress(request.getAddress());
-        client.setCity(request.getCity());
-        client.setState(request.getState());
-        client.setCountry(request.getCountry());
-        client.setPostalCode(request.getPostalCode());
+        client.setCompanyName(normalizeTrim(request.getCompanyName()));
+        client.setContactPerson(normalizeTrim(request.getContactPerson()));
+        client.setEmail(normalizeTrim(request.getEmail()));
+        client.setPhoneNumber(normalizeTrim(request.getPhoneNumber()));
+        client.setWebsite(normalizeTrim(request.getWebsite()));
+        client.setIndustry(normalizeTrim(request.getIndustry()));
+        client.setGstNumber(normalizeGstNumber(request.getGstNumber()));
+        client.setAddress(normalizeTrim(request.getAddress()));
+        client.setCity(normalizeTrim(request.getCity()));
+        client.setState(normalizeTrim(request.getState()));
+        client.setCountry(normalizeTrim(request.getCountry()));
+        client.setPostalCode(normalizeTrim(request.getPostalCode()));
         client.setNotes(request.getNotes());
         client.setStatus(request.getStatus());
+    }
+
+    private String normalizeGstNumber(String gstNumber) {
+        if (gstNumber == null || gstNumber.isBlank()) {
+            return null;
+        }
+        return gstNumber.trim();
+    }
+
+    private String normalizeTrim(String value) {
+        return value != null ? value.trim() : null;
     }
 }

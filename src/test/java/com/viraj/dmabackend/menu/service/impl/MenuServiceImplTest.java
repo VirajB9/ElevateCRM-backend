@@ -150,4 +150,76 @@ class MenuServiceImplTest {
         org.mockito.Mockito.verify(menuRepository).save(menu);
         assertThat(menu.getActive()).isFalse();
     }
+
+    @Test
+    void createMenu_withNullOrBlankPermission_normalizesToNull() {
+        com.viraj.dmabackend.menu.dto.CreateMenuRequest request = new com.viraj.dmabackend.menu.dto.CreateMenuRequest();
+        request.setTitle("Dashboard");
+        request.setPath("/dashboard");
+        request.setIcon("dashboard-icon");
+        request.setOrderIndex(1);
+        request.setRequiredPermission("   ");
+
+        org.mockito.ArgumentCaptor<Menu> captor = org.mockito.ArgumentCaptor.forClass(Menu.class);
+        when(menuRepository.save(captor.capture())).thenAnswer(i -> {
+            Menu m = i.getArgument(0);
+            m.setId("dash-1");
+            return m;
+        });
+
+        menuService.createMenu(request);
+
+        Menu saved = captor.getValue();
+        assertThat(saved.getRequiredPermission()).isNull();
+    }
+
+    @Test
+    void updateMenu_withNullOrBlankPermission_normalizesToNull() {
+        Menu existing = Menu.builder()
+                .id("dash-1")
+                .title("Dashboard")
+                .path("/dashboard")
+                .orderIndex(1)
+                .requiredPermission("old:perm")
+                .active(true)
+                .build();
+        when(menuRepository.findById("dash-1")).thenReturn(java.util.Optional.of(existing));
+        when(menuRepository.save(any(Menu.class))).thenAnswer(i -> i.getArgument(0));
+
+        com.viraj.dmabackend.menu.dto.UpdateMenuRequest request = new com.viraj.dmabackend.menu.dto.UpdateMenuRequest();
+        request.setTitle("Dashboard");
+        request.setPath("/dashboard");
+        request.setIcon("dashboard-icon");
+        request.setOrderIndex(1);
+        request.setRequiredPermission(null);
+        request.setActive(true);
+
+        menuService.updateMenu("dash-1", request);
+
+        assertThat(existing.getRequiredPermission()).isNull();
+    }
+
+    @Test
+    void requestValidation_allowsNullRequiredPermission() {
+        jakarta.validation.Validator validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+
+        com.viraj.dmabackend.menu.dto.CreateMenuRequest createReq = com.viraj.dmabackend.menu.dto.CreateMenuRequest.builder()
+                .title("Dashboard")
+                .path("/dashboard")
+                .icon("icon")
+                .orderIndex(1)
+                .requiredPermission(null)
+                .build();
+        assertThat(validator.validate(createReq)).isEmpty();
+
+        com.viraj.dmabackend.menu.dto.UpdateMenuRequest updateReq = com.viraj.dmabackend.menu.dto.UpdateMenuRequest.builder()
+                .title("Dashboard")
+                .path("/dashboard")
+                .icon("icon")
+                .orderIndex(1)
+                .requiredPermission(null)
+                .active(true)
+                .build();
+        assertThat(validator.validate(updateReq)).isEmpty();
+    }
 }

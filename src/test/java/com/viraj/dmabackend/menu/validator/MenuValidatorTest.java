@@ -81,6 +81,18 @@ class MenuValidatorTest {
     }
 
     @Test
+    void validatePath_whenNull_throwsInvalidMenuPathException() {
+        assertThatThrownBy(() -> menuValidator.validatePath(null))
+                .isInstanceOf(InvalidMenuPathException.class);
+    }
+
+    @Test
+    void validatePath_whenValidLeadingSlash_succeeds() {
+        assertThatCode(() -> menuValidator.validatePath("/leads"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void validateParentRelationship_whenSelfParent_throwsException() {
         assertThatThrownBy(() -> menuValidator.validateParentRelationship("id1", "id1"))
                 .isInstanceOf(SelfParentMenuException.class);

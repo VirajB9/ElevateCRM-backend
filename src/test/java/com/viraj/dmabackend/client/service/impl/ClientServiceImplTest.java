@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.client.service.impl;
 
+import com.viraj.dmabackend.client.dto.CreateClientRequest;
 import com.viraj.dmabackend.client.dto.ClientResponse;
 import com.viraj.dmabackend.client.dto.UpdateClientRequest;
 import com.viraj.dmabackend.client.entity.Client;
@@ -9,6 +10,7 @@ import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.client.validator.ClientValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -16,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -33,6 +36,61 @@ public class ClientServiceImplTest {
 
     @InjectMocks
     private ClientServiceImpl clientService;
+
+    @Test
+    void createClient_NormalizesBlankGstNumberToNull() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName(" Acme Corp ");
+        request.setContactPerson(" John Doe ");
+        request.setEmail("john@acme.com");
+        request.setPhoneNumber("1234567890");
+        request.setGstNumber("   ");
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class))).thenReturn(ClientResponse.builder().build());
+
+        clientService.createClient(request);
+
+        ArgumentCaptor<Client> captor = ArgumentCaptor.forClass(Client.class);
+        verify(clientRepository).save(captor.capture());
+        Client saved = captor.getValue();
+        assertEquals("Acme Corp", saved.getCompanyName());
+        assertEquals("John Doe", saved.getContactPerson());
+        assertNull(saved.getGstNumber());
+    }
+
+    @Test
+    void updateClient_NormalizesBlankGstNumberToNull() {
+        Client client = Client.builder()
+                .id("client-1")
+                .companyName("Acme")
+                .contactPerson("John")
+                .email("john@acme.com")
+                .phoneNumber("1234567890")
+                .gstNumber("27ABCDE1234F1Z5")
+                .status(ClientStatus.ACTIVE)
+                .build();
+
+        when(clientRepository.findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED))
+                .thenReturn(Optional.of(client));
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class))).thenReturn(ClientResponse.builder().build());
+
+        UpdateClientRequest request = new UpdateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@acme.com");
+        request.setPhoneNumber("1234567890");
+        request.setGstNumber("");
+        request.setStatus(ClientStatus.ACTIVE);
+
+        clientService.updateClient("client-1", request);
+
+        ArgumentCaptor<Client> captor = ArgumentCaptor.forClass(Client.class);
+        verify(clientRepository).save(captor.capture());
+        Client saved = captor.getValue();
+        assertNull(saved.getGstNumber());
+    }
 
     @Test
     void updateClient_UpdatesStatusField() {
