@@ -122,13 +122,13 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         invoiceValidator.validateUpdateInvoice(invoice, request);
 
-        saveInvoiceHistory(invoice);
-
         invoiceMapper.updateEntity(invoice, request);
 
         calculateInvoiceTotals(invoice);
 
         Invoice updatedInvoice = invoiceRepository.save(invoice);
+
+        saveInvoiceHistory(updatedInvoice);
 
         return invoiceMapper.toResponse(updatedInvoice);
     }
@@ -140,8 +140,6 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         validateStatusTransition(invoice.getStatus(), request.getStatus());
 
-        saveInvoiceHistory(invoice);
-
         invoice.setStatus(request.getStatus());
 
         if (request.getStatus() == InvoiceStatus.PAID) {
@@ -149,6 +147,8 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
 
         Invoice updatedInvoice = invoiceRepository.save(invoice);
+
+        saveInvoiceHistory(updatedInvoice);
 
         return invoiceMapper.toResponse(updatedInvoice);
     }
@@ -162,12 +162,12 @@ public class InvoiceServiceImpl implements InvoiceService {
             throw new InvalidInvoiceStatusException("Paid invoices cannot be deleted.");
         }
 
-        saveInvoiceHistory(invoice);
-
         invoice.setActive(false);
         invoice.setDeleted(true);
 
-        invoiceRepository.save(invoice);
+        Invoice deletedInvoice = invoiceRepository.save(invoice);
+
+        saveInvoiceHistory(deletedInvoice);
     }
 
     // =========================

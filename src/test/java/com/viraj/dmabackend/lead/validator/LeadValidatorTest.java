@@ -1,5 +1,8 @@
 package com.viraj.dmabackend.lead.validator;
 
+import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.auth.exception.UserNotFoundException;
+import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
 import com.viraj.dmabackend.lead.entity.Lead;
@@ -24,6 +27,9 @@ public class LeadValidatorTest {
 
     @Mock
     private LeadRepository leadRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private LeadValidator leadValidator;
@@ -84,5 +90,24 @@ public class LeadValidatorTest {
         lead.setConvertedClientId(null);
 
         assertDoesNotThrow(() -> leadValidator.validateLeadNotConverted(lead));
+    }
+
+    @Test
+    void validateAssignedUser_NullOrBlank_ShouldPass() {
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUser(null));
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUser(""));
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUser("   "));
+    }
+
+    @Test
+    void validateAssignedUser_ExistingActiveUser_ShouldPass() {
+        when(userRepository.existsByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(true);
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUser("user-1"));
+    }
+
+    @Test
+    void validateAssignedUser_NonExistentUser_ShouldThrow() {
+        when(userRepository.existsByIdAndStatusNot("user-missing", UserStatus.DELETED)).thenReturn(false);
+        assertThrows(UserNotFoundException.class, () -> leadValidator.validateAssignedUser("user-missing"));
     }
 }

@@ -38,6 +38,7 @@ public class LeadServiceImpl implements LeadService {
     public LeadResponse createLead(CreateLeadRequest request) {
 
         leadValidator.validateDuplicateLead(request);
+        leadValidator.validateAssignedUser(request.getAssignedUserId());
 
         Lead lead = buildLead(request);
         Lead savedLead = leadRepository.save(lead);
@@ -111,14 +112,14 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public Page<LeadResponse> filterBySource(LeadSource source, Pageable pageable) {
 
-        return leadRepository.findBySource(source, pageable)
+        return leadRepository.findBySourceAndStatusNot(source, LeadStatus.DELETED, pageable)
                 .map(leadMapper::toLeadResponse);
     }
 
     @Override
     public Page<LeadResponse> filterByAssignedUser(String userId, Pageable pageable) {
 
-        return leadRepository.findByAssignedUserId(userId, pageable)
+        return leadRepository.findByAssignedUserIdAndStatusNot(userId, LeadStatus.DELETED, pageable)
                 .map(leadMapper::toLeadResponse);
     }
 
@@ -128,6 +129,7 @@ public class LeadServiceImpl implements LeadService {
         Lead existingLead = findLeadById(leadId);
 
         leadValidator.validateLeadNotConverted(existingLead);
+        leadValidator.validateAssignedUser(request.getAssignedUserId());
         leadValidator.validateDuplicateLeadForUpdate(existingLead, request);
         leadValidator.validateLeadStatus(existingLead.getStatus(), request.getStatus());
 

@@ -66,4 +66,17 @@ public class ProjectValidatorTest {
 
         assertDoesNotThrow(() -> projectValidator.validateProjectDeletable("proj-1"));
     }
+
+    @Test
+    void validateProjectStatusForUpdate_ThrowsWhenArchived() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusForUpdate(ProjectStatus.ARCHIVED));
+    }
+
+    @Test
+    void validateProjectStatusForUpdate_AllowsActiveStatus() {
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusForUpdate(ProjectStatus.ACTIVE));
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusForUpdate(ProjectStatus.COMPLETED));
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusForUpdate(ProjectStatus.ON_HOLD));
+    }
 }

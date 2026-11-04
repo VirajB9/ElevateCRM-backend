@@ -16,7 +16,6 @@ public class ChangePasswordRequest {
     private String currentPassword;
 
     @NotBlank(message = "New password is required")
-    
-    @jakarta.validation.constraints.Size(max = 100)
+    @Size(min = 8, max = 100, message = "New password must be between 8 and 100 characters")
     private String newPassword;
 }

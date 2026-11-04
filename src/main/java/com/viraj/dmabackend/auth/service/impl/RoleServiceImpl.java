@@ -133,7 +133,7 @@ public class RoleServiceImpl implements RoleService {
 
         Role role = findRoleById(roleId);
 
-        return userRepository.findByRoleId(roleId, pageable)
+        return userRepository.findByRoleIdAndStatusNot(roleId, com.viraj.dmabackend.auth.enums.UserStatus.DELETED, pageable)
                 .map(user -> userMapper.toUserResponse(user, role.getName()));
     }
 

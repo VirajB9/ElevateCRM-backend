@@ -5,15 +5,22 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.MediaType;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.http.HttpMethod;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class GlobalExceptionHandlerTest {
 
@@ -61,6 +68,30 @@ public class GlobalExceptionHandlerTest {
         ResponseEntity<ApiResponse<Object>> response = handler.handleHttpRequestMethodNotSupported(ex);
 
         assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+    }
+
+    @Test
+    void handleHttpMediaTypeNotSupported_ReturnsUnsupportedMediaType() {
+        HttpMediaTypeNotSupportedException ex = new HttpMediaTypeNotSupportedException(MediaType.TEXT_PLAIN, List.of(MediaType.APPLICATION_JSON));
+        ResponseEntity<ApiResponse<Object>> response = handler.handleHttpMediaTypeNotSupported(ex);
+
+        assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+    }
+
+    @Test
+    void handleConstraintViolation_ReturnsBadRequest() {
+        ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+        jakarta.validation.Path path = mock(jakarta.validation.Path.class);
+        when(path.toString()).thenReturn("page");
+        when(violation.getPropertyPath()).thenReturn(path);
+        when(violation.getMessage()).thenReturn("must be greater than or equal to 1");
+
+        ConstraintViolationException ex = new ConstraintViolationException(java.util.Set.of(violation));
+        ResponseEntity<ApiResponse<Object>> response = handler.handleConstraintViolation(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
     }
 }

@@ -38,7 +38,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return user.getLockoutUntil() == null || !user.getLockoutUntil().isAfter(java.time.LocalDateTime.now());
     }
 
     @Override
@@ -48,6 +48,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return user.getStatus() == com.viraj.dmabackend.auth.enums.UserStatus.ACTIVE;
     }
 }

@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -198,6 +200,38 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 response,
                 HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHttpMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                String.format("Content type '%s' is not supported", ex.getContentType()),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleConstraintViolation(
+            ConstraintViolationException ex) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+        ex.getConstraintViolations().forEach(violation ->
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage()));
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "Validation failed",
+                errors);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

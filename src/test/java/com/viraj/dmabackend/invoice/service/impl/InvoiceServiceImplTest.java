@@ -124,12 +124,37 @@ public class InvoiceServiceImplTest {
         invoice.setActive(true);
 
         when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         invoiceService.deleteInvoice("inv-123");
 
         assertFalse(invoice.getActive());
         assertTrue(invoice.isDeleted());
         verify(invoiceRepository).save(invoice);
+        verify(invoiceHistoryRepository).save(any());
+    }
+
+    @Test
+    void updateInvoiceStatus_SavesUpdatedStatusInHistory() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.PAID);
+
+        invoiceService.updateInvoiceStatus("inv-123", req);
+
+        org.mockito.ArgumentCaptor<com.viraj.dmabackend.invoice.entity.InvoiceHistory> captor =
+                org.mockito.ArgumentCaptor.forClass(com.viraj.dmabackend.invoice.entity.InvoiceHistory.class);
+        verify(invoiceHistoryRepository).save(captor.capture());
+        assertEquals(InvoiceStatus.PAID, captor.getValue().getStatus());
+        assertNotNull(captor.getValue().getPaidDate());
     }
 
     @Test

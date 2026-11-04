@@ -58,4 +58,16 @@ public class ClientValidatorTest {
 
         assertDoesNotThrow(() -> clientValidator.validateClientDeletable("client-1"));
     }
+
+    @Test
+    void validateClientStatusForUpdate_ThrowsWhenArchived() {
+        assertThrows(BadRequestException.class,
+                () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED));
+    }
+
+    @Test
+    void validateClientStatusForUpdate_AllowsActiveAndInactive() {
+        assertDoesNotThrow(() -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE));
+        assertDoesNotThrow(() -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE));
+    }
 }

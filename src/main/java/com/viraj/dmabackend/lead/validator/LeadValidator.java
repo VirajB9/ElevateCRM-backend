@@ -1,5 +1,8 @@
 package com.viraj.dmabackend.lead.validator;
 
+import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.auth.exception.UserNotFoundException;
+import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
 import com.viraj.dmabackend.lead.entity.Lead;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Component;
 public class LeadValidator {
 
     private final LeadRepository leadRepository;
+    private final UserRepository userRepository;
 
     public void validateDuplicateLead(CreateLeadRequest request) {
         if (leadRepository.existsByEmailAndStatusNot(request.getEmail(), LeadStatus.DELETED)) {
@@ -89,6 +93,14 @@ public class LeadValidator {
         }
         if (lead.getStatus() != LeadStatus.WON) {
             throw new InvalidLeadStatusException(lead.getStatus(), LeadStatus.WON);
+        }
+    }
+
+    public void validateAssignedUser(String assignedUserId) {
+        if (assignedUserId != null && !assignedUserId.isBlank()) {
+            if (!userRepository.existsByIdAndStatusNot(assignedUserId, UserStatus.DELETED)) {
+                throw new UserNotFoundException(assignedUserId);
+            }
         }
     }
 }

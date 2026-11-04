@@ -53,4 +53,10 @@ public class ProjectValidator {
             throw new BadRequestException("Cannot archive project with unpaid or active invoices.");
         }
     }
+
+    public void validateProjectStatusForUpdate(ProjectStatus status) {
+        if (status == ProjectStatus.ARCHIVED) {
+            throw new BadRequestException("Projects cannot be archived via update. Please use the delete project endpoint.");
+        }
+    }
 }

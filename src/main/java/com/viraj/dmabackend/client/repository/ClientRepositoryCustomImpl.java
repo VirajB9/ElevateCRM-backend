@@ -24,9 +24,14 @@ public class ClientRepositoryCustomImpl implements ClientRepositoryCustom {
     @Override
     public Page<Client> searchClients(String keyword, Pageable pageable) {
 
-        Query query = TextQuery
-                .queryText(TextCriteria.forDefaultLanguage().matching(keyword))
-                .sortByScore();
+        Query query;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            query = TextQuery
+                    .queryText(TextCriteria.forDefaultLanguage().matching(keyword.trim()))
+                    .sortByScore();
+        } else {
+            query = new Query();
+        }
                 
         // ensure we don't return ARCHIVED clients
         query.addCriteria(Criteria.where("status").ne(ClientStatus.ARCHIVED));

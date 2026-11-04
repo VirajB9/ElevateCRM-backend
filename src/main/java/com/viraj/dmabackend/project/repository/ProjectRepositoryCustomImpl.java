@@ -24,12 +24,17 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     @Override
     public Page<Project> searchProjects(String keyword, Pageable pageable) {
 
-        Query query = TextQuery
-                .queryText(
-                        TextCriteria
-                                .forDefaultLanguage()
-                                .matching(keyword)
-                ).sortByScore();
+        Query query;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            query = TextQuery
+                    .queryText(
+                            TextCriteria
+                                    .forDefaultLanguage()
+                                    .matching(keyword.trim())
+                    ).sortByScore();
+        } else {
+            query = new Query();
+        }
 
         query.addCriteria(
                 Criteria.where("status")

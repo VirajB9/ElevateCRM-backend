@@ -69,4 +69,10 @@ public class ClientValidator {
             throw new BadRequestException("Cannot archive client with unpaid or active invoices.");
         }
     }
+
+    public void validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus status) {
+        if (status == com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED) {
+            throw new BadRequestException("Clients cannot be archived via update. Please use the delete client endpoint.");
+        }
+    }
 }
