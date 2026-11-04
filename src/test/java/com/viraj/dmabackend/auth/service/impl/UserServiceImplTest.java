@@ -161,6 +161,7 @@ public class UserServiceImplTest {
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
         when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
         when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
         when(userRepository.save(any(User.class))).thenReturn(managerUser);
@@ -181,6 +182,7 @@ public class UserServiceImplTest {
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
         when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
         when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
         when(userRepository.save(any(User.class))).thenReturn(managerUser);

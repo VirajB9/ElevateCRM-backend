@@ -71,4 +71,57 @@ public class RoleServiceImplTest {
         assertEquals(1, response.getTotalElements());
         verify(userRepository).findByRoleIdAndStatusNot(eq("role-1"), eq(UserStatus.DELETED), eq(pageable));
     }
+
+    @Test
+    void assignPermissions_whenRoleHasNullPermissionIds_assignsSuccessfullyWithoutNPE() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-2").name("MANAGER").permissionIds(null).build();
+        com.viraj.dmabackend.auth.entity.Permission permission =
+                com.viraj.dmabackend.auth.entity.Permission.builder().id("p1").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-2")).thenReturn(Optional.of(targetRole));
+        when(permissionRepository.findAllById(List.of("p1"))).thenReturn(List.of(permission));
+        when(roleRepository.save(any(Role.class))).thenReturn(targetRole);
+        when(roleMapper.toRoleResponse(any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.AssignPermissionsRequest request = new com.viraj.dmabackend.auth.dto.AssignPermissionsRequest();
+        request.setPermissionIds(List.of("p1"));
+
+        roleService.assignPermissions("role-2", request);
+
+        verify(roleRepository).save(targetRole);
+        org.assertj.core.api.Assertions.assertThat(targetRole.getPermissionIds()).containsExactly("p1");
+    }
+
+    @Test
+    void removePermissions_whenRoleHasNullPermissionIds_executesSuccessfullyWithoutNPE() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-2").name("MANAGER").permissionIds(null).build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-2")).thenReturn(Optional.of(targetRole));
+        when(roleRepository.save(any(Role.class))).thenReturn(targetRole);
+        when(roleMapper.toRoleResponse(any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.RemovePermissionsRequest request = new com.viraj.dmabackend.auth.dto.RemovePermissionsRequest();
+        request.setPermissionIds(List.of("p1"));
+
+        roleService.removePermissions("role-2", request);
+
+        verify(roleRepository).save(targetRole);
+        org.assertj.core.api.Assertions.assertThat(targetRole.getPermissionIds()).isEmpty();
+    }
 }

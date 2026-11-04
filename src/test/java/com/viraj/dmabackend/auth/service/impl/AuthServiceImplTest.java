@@ -147,4 +147,31 @@ public class AuthServiceImplTest {
         assertNull(user.getLockoutUntil());
         verify(userRepository).save(user);
     }
+
+    @Test
+    void login_whenRolePermissionIdsIsNull_generatesAuthenticationResponseSuccessfully() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@agency.com");
+        request.setPassword("correct_password");
+
+        Role role = new Role();
+        role.setId("role-1");
+        role.setName("EMPLOYEE");
+        role.setPermissionIds(null);
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("correct_password", "hashedpassword")).thenReturn(true);
+        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
+        when(permissionRepository.findAllById(java.util.Collections.emptyList())).thenReturn(java.util.Collections.emptyList());
+        when(jwtUtil.generateRefreshToken()).thenReturn("new-refresh-token");
+        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean())).thenReturn("jwt-token");
+        when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.AuthenticationResponse response = authService.login(request);
+
+        assertNotNull(response);
+        assertEquals("jwt-token", response.getToken());
+        verify(permissionRepository).findAllById(java.util.Collections.emptyList());
+    }
 }

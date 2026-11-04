@@ -202,9 +202,14 @@ public class AuthServiceImpl implements AuthService {
                 .findById(user.getRoleId())
                 .orElseThrow(() -> new RoleNotFoundException(user.getRoleId()));
 
-        List<Permission> permissions = permissionRepository.findAllById(role.getPermissionIds());
+        List<String> permissionIds = role.getPermissionIds() != null
+                ? role.getPermissionIds()
+                : java.util.Collections.emptyList();
+
+        List<Permission> permissions = permissionRepository.findAllById(permissionIds);
 
         List<String> permissionNames = permissions.stream()
+                .filter(permission -> permission != null && permission.getPermissionType() != null)
                 .map(permission -> permission.getPermissionType().name().toLowerCase().replace("_", ":"))
                 .toList();
 

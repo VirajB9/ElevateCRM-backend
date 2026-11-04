@@ -63,4 +63,26 @@ public class UserValidator {
                 throw new UnauthorizedRoleAssignmentException("Invalid role assignment");
         }
     }
+
+    public void validateUserManagement(User currentUser, Role currentUserRole, User targetUser, Role targetUserRole) {
+        if ("OWNER".equals(currentUserRole.getName())) {
+            return;
+        }
+
+        if ("OWNER".equals(targetUserRole.getName())) {
+            throw new UnauthorizedRoleAssignmentException("Non-owner users cannot manage the Owner account");
+        }
+
+        if ("MANAGER".equals(currentUserRole.getName())) {
+            if ("MANAGER".equals(targetUserRole.getName())) {
+                throw new UnauthorizedRoleAssignmentException("Managers cannot modify or delete other Managers");
+            }
+            if (!"EMPLOYEE".equals(targetUserRole.getName()) && !"INTERN".equals(targetUserRole.getName())) {
+                throw new UnauthorizedRoleAssignmentException("Managers can only manage Employees or Interns");
+            }
+            return;
+        }
+
+        throw new UnauthorizedRoleAssignmentException("You are not authorized to manage users");
+    }
 }

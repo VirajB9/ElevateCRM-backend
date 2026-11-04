@@ -94,4 +94,15 @@ public class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
     }
+
+    @Test
+    void handleAuthenticationException_ReturnsUnauthorized() {
+        org.springframework.security.authentication.BadCredentialsException ex =
+                new org.springframework.security.authentication.BadCredentialsException("Bad credentials");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleAuthenticationException(ex);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Bad credentials", response.getBody().getMessage());
+    }
 }

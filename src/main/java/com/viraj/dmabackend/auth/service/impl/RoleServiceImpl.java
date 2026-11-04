@@ -193,8 +193,9 @@ public class RoleServiceImpl implements RoleService {
 
     private void assignPermissionsToRole(Role role, List<String> permissionIds) {
 
-        Set<String> updatedPermissions =
-                new HashSet<>(role.getPermissionIds());
+        Set<String> updatedPermissions = role.getPermissionIds() != null
+                ? new HashSet<>(role.getPermissionIds())
+                : new HashSet<>();
 
         updatedPermissions.addAll(permissionIds);
 
@@ -205,8 +206,9 @@ public class RoleServiceImpl implements RoleService {
 
     private void removePermissionsFromRole(Role role, List<String> permissionIds) {
 
-        Set<String> updatedPermissions =
-                new HashSet<>(role.getPermissionIds());
+        Set<String> updatedPermissions = role.getPermissionIds() != null
+                ? new HashSet<>(role.getPermissionIds())
+                : new HashSet<>();
 
         permissionIds.forEach(updatedPermissions::remove);
 

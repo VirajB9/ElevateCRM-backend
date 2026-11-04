@@ -123,6 +123,7 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("The Owner account cannot be demoted");
         }
 
+        userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
         userValidator.validateRoleAssignment(currentUser, currentUserRole, newRole);
 
         updateUserFields(user, request, newRole);
@@ -148,6 +149,9 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Users cannot deactivate their own account");
         }
 
+        Role currentUserRole = findRoleById(currentUser.getRoleId());
+        userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
+
         user.setStatus(request.getStatus());
 
         if (request.getStatus() != UserStatus.ACTIVE) {
@@ -172,6 +176,9 @@ public class UserServiceImpl implements UserService {
         if (currentUser.getId().equals(user.getId())) {
             throw new BadRequestException("Users cannot delete their own account");
         }
+
+        Role currentUserRole = findRoleById(currentUser.getRoleId());
+        userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
 
         user.setStatus(UserStatus.DELETED);
         user.setDeleted(true);

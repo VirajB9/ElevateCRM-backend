@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.project.dto;
 
 import com.viraj.dmabackend.project.enums.ProjectPriority;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -33,6 +34,7 @@ public class CreateProjectRequest {
 
     private LocalDate endDate;
 
+    @DecimalMin(value = "0.0", inclusive = true, message = "Budget cannot be negative")
     private BigDecimal budget;
 
     @Size(max = 2000)

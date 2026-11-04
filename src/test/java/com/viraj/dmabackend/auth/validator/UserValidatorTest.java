@@ -65,4 +65,39 @@ public class UserValidatorTest {
         assertThrows(UnauthorizedRoleAssignmentException.class, 
             () -> userValidator.validateRoleAssignment(employeeUser, employeeRole, targetRole));
     }
+
+    @Test
+    void validateUserManagement_OwnerCanManageAnyone() {
+        Role ownerRole = Role.builder().name("OWNER").build();
+        Role managerRole = Role.builder().name("MANAGER").build();
+
+        assertDoesNotThrow(() -> userValidator.validateUserManagement(
+                new User(), ownerRole, new User(), managerRole));
+    }
+
+    @Test
+    void validateUserManagement_ManagerCannotManageOtherManagers() {
+        Role managerRole = Role.builder().name("MANAGER").build();
+
+        assertThrows(UnauthorizedRoleAssignmentException.class, () ->
+                userValidator.validateUserManagement(new User(), managerRole, new User(), managerRole));
+    }
+
+    @Test
+    void validateUserManagement_ManagerCannotManageOwner() {
+        Role managerRole = Role.builder().name("MANAGER").build();
+        Role ownerRole = Role.builder().name("OWNER").build();
+
+        assertThrows(UnauthorizedRoleAssignmentException.class, () ->
+                userValidator.validateUserManagement(new User(), managerRole, new User(), ownerRole));
+    }
+
+    @Test
+    void validateUserManagement_ManagerCanManageEmployee() {
+        Role managerRole = Role.builder().name("MANAGER").build();
+        Role employeeRole = Role.builder().name("EMPLOYEE").build();
+
+        assertDoesNotThrow(() ->
+                userValidator.validateUserManagement(new User(), managerRole, new User(), employeeRole));
+    }
 }
