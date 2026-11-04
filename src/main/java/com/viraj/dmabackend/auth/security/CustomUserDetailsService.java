@@ -37,13 +37,18 @@ public class CustomUserDetailsService implements UserDetailsService {
         Role role = roleRepository
                 .findById(user.getRoleId())
                 .orElseThrow(() ->
-                        new RuntimeException("Role not found"));
+                        new UsernameNotFoundException("Role not found for user: " + email));
+
+        List<String> permissionIds = role.getPermissionIds() != null
+                ? role.getPermissionIds()
+                : java.util.Collections.emptyList();
 
         List<Permission> permissions =
-                permissionRepository.findAllById(role.getPermissionIds());
+                permissionRepository.findAllById(permissionIds);
 
         List<SimpleGrantedAuthority> authorities =
                 permissions.stream()
+                        .filter(permission -> permission != null && permission.getPermissionType() != null)
                         .map(permission ->
                                 new SimpleGrantedAuthority(
                                         permission.getPermissionType()

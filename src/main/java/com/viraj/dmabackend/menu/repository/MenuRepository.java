@@ -17,4 +17,6 @@ public interface MenuRepository extends MongoRepository<Menu, String> {
     boolean existsByTitleAndIdNot(String title, String id);
 
     boolean existsByPathAndIdNot(String path, String id);
+
+    boolean existsByParentIdAndActiveTrue(String parentId);
 }

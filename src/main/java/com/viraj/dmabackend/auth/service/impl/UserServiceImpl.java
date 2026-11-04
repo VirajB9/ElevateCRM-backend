@@ -6,6 +6,7 @@ import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.exception.*;
 import com.viraj.dmabackend.auth.mapper.UserMapper;
+import com.viraj.dmabackend.auth.repository.RefreshTokenRepository;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.CustomUserDetails;
@@ -40,6 +41,8 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     private final UserValidator userValidator;
+
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
     @Override
@@ -147,6 +150,10 @@ public class UserServiceImpl implements UserService {
 
         user.setStatus(request.getStatus());
 
+        if (request.getStatus() != UserStatus.ACTIVE) {
+            refreshTokenRepository.deleteByUserId(user.getId());
+        }
+
         User updatedUser = userRepository.save(user);
         return mapUser(updatedUser);
     }
@@ -168,6 +175,8 @@ public class UserServiceImpl implements UserService {
 
         user.setStatus(UserStatus.DELETED);
         user.setDeleted(true);
+
+        refreshTokenRepository.deleteByUserId(user.getId());
 
         User deletedUser = userRepository.save(user);
         return mapUser(deletedUser);

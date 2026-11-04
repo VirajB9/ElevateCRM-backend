@@ -75,6 +75,10 @@ public class MenuServiceImpl implements MenuService {
 
         validateUpdateMenuRequest(menuId, request);
 
+        if (Boolean.FALSE.equals(request.getActive())) {
+            menuValidator.validateMenuDeactivation(menuId);
+        }
+
         updateMenuFields(menu, request);
 
         Menu updatedMenu = menuRepository.save(menu);
@@ -87,6 +91,8 @@ public class MenuServiceImpl implements MenuService {
     public void deactivateMenu(String menuId) {
 
         Menu menu = findMenuById(menuId);
+
+        menuValidator.validateMenuDeactivation(menuId);
 
         menu.setActive(false);
 
@@ -145,12 +151,15 @@ public class MenuServiceImpl implements MenuService {
 
     private List<Menu> filterMenusByPermission(List<Menu> menus) {
 
-        Set<String> authorities = SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
+        org.springframework.security.core.Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        Set<String> authorities = (authentication != null && authentication.getAuthorities() != null)
+                ? authentication.getAuthorities()
+                        .stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toSet())
+                : Collections.emptySet();
 
         return menus.stream()
                 .filter(menu ->

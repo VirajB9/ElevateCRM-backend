@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.menu.validator;
 
+import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.menu.entity.Menu;
 import com.viraj.dmabackend.menu.exception.DuplicateMenuPathException;
 import com.viraj.dmabackend.menu.exception.DuplicateMenuTitleException;
@@ -40,8 +41,18 @@ public class MenuValidator {
         if (parentId == null || parentId.isBlank()) {
             return;
         }
-        menuRepository.findById(parentId)
+        Menu parent = menuRepository.findById(parentId)
                 .orElseThrow(() -> new ParentMenuNotFoundException(parentId));
+        if (Boolean.FALSE.equals(parent.getActive())) {
+            throw new BadRequestException("Cannot assign inactive menu as parent");
+        }
+    }
+
+    public void validateMenuDeactivation(String menuId) {
+
+        if (menuId != null && menuRepository.existsByParentIdAndActiveTrue(menuId)) {
+            throw new BadRequestException("Cannot deactivate menu with active submenus. Deactivate child menus first.");
+        }
     }
 
     public void validateParentRelationship(String menuId, String parentId) {

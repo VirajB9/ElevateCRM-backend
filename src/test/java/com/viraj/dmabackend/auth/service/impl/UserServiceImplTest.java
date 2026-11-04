@@ -7,6 +7,7 @@ import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.enums.UserStatus;
 import com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException;
 import com.viraj.dmabackend.auth.mapper.UserMapper;
+import com.viraj.dmabackend.auth.repository.RefreshTokenRepository;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.validator.UserValidator;
@@ -43,6 +44,9 @@ public class UserServiceImplTest {
 
     @Mock
     private UserValidator userValidator;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -149,5 +153,42 @@ public class UserServiceImplTest {
     void filterUsersByStatus_ThrowsWhenStatusIsDeleted() {
         assertThrows(BadRequestException.class,
                 () -> userService.filterUsersByStatus(UserStatus.DELETED, org.springframework.data.domain.Pageable.unpaged()));
+    }
+
+    @Test
+    void updateUserStatus_deactivatesUserAndDeletesRefreshTokens() {
+        authenticateAs(ownerUser);
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(ownerUser));
+        when(userRepository.save(any(User.class))).thenReturn(managerUser);
+        when(userMapper.toUserResponse(any(User.class), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        UpdateUserStatusRequest request = new UpdateUserStatusRequest();
+        request.setStatus(UserStatus.SUSPENDED);
+
+        userService.updateUserStatus("user-manager", request);
+
+        verify(refreshTokenRepository).deleteByUserId("user-manager");
+        verify(userRepository).save(managerUser);
+    }
+
+    @Test
+    void softDeleteUser_deletesRefreshTokens() {
+        authenticateAs(ownerUser);
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(ownerUser));
+        when(userRepository.save(any(User.class))).thenReturn(managerUser);
+        when(userMapper.toUserResponse(any(User.class), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        userService.softDeleteUser("user-manager");
+
+        verify(refreshTokenRepository).deleteByUserId("user-manager");
+        verify(userRepository).save(managerUser);
     }
 }

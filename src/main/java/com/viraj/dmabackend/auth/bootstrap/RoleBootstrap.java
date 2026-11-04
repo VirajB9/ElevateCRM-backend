@@ -30,13 +30,22 @@ public class RoleBootstrap implements CommandLineRunner {
     }
 
     private void createOwnerRole() {
-        if (roleRepository.findByName("OWNER").isPresent()) {
+        List<String> allPermissionIds = getAllPermissionIds();
+        Role existingOwner = roleRepository.findByName("OWNER").orElse(null);
+
+        if (existingOwner != null) {
+            if (existingOwner.getPermissionIds() == null
+                    || !new java.util.HashSet<>(existingOwner.getPermissionIds()).containsAll(allPermissionIds)) {
+                existingOwner.setPermissionIds(allPermissionIds);
+                roleRepository.save(existingOwner);
+            }
             return;
         }
+
         Role role = Role.builder()
                 .name("OWNER")
                 .description("SYSTEM OWNER")
-                .permissionIds(getAllPermissionIds())
+                .permissionIds(allPermissionIds)
                 .systemRole(true)
                 .build();
 
