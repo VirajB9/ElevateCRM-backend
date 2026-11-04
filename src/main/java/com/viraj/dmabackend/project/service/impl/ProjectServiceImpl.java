@@ -29,7 +29,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponse createProject(CreateProjectRequest request) {
 
-        projectValidator.validateClientExists(request.getClientId());
+        projectValidator.validateClientActiveForProject(request.getClientId());
         projectValidator.validateDuplicateProject(request.getProjectName(), request.getClientId());
         projectValidator.validateProjectDates(request.getStartDate(), request.getEndDate());
 

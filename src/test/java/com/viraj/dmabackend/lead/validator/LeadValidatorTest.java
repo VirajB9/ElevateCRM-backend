@@ -101,13 +101,27 @@ public class LeadValidatorTest {
 
     @Test
     void validateAssignedUser_ExistingActiveUser_ShouldPass() {
-        when(userRepository.existsByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(true);
+        com.viraj.dmabackend.auth.entity.User activeUser =
+                com.viraj.dmabackend.auth.entity.User.builder().id("user-1").status(UserStatus.ACTIVE).build();
+        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED))
+                .thenReturn(java.util.Optional.of(activeUser));
         assertDoesNotThrow(() -> leadValidator.validateAssignedUser("user-1"));
     }
 
     @Test
+    void validateAssignedUser_NonActiveUser_ShouldThrowBadRequest() {
+        com.viraj.dmabackend.auth.entity.User inactiveUser =
+                com.viraj.dmabackend.auth.entity.User.builder().id("user-2").status(UserStatus.SUSPENDED).build();
+        when(userRepository.findByIdAndStatusNot("user-2", UserStatus.DELETED))
+                .thenReturn(java.util.Optional.of(inactiveUser));
+        assertThrows(com.viraj.dmabackend.exception.BadRequestException.class,
+                () -> leadValidator.validateAssignedUser("user-2"));
+    }
+
+    @Test
     void validateAssignedUser_NonExistentUser_ShouldThrow() {
-        when(userRepository.existsByIdAndStatusNot("user-missing", UserStatus.DELETED)).thenReturn(false);
+        when(userRepository.findByIdAndStatusNot("user-missing", UserStatus.DELETED))
+                .thenReturn(java.util.Optional.empty());
         assertThrows(UserNotFoundException.class, () -> leadValidator.validateAssignedUser("user-missing"));
     }
 }

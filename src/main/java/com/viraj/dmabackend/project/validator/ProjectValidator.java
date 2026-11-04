@@ -29,6 +29,14 @@ public class ProjectValidator {
         }
     }
 
+    public void validateClientActiveForProject(String clientId) {
+        com.viraj.dmabackend.client.entity.Client client = clientRepository.findByIdAndStatusNot(clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)
+                .orElseThrow(() -> new ClientNotFoundException(clientId));
+        if (client.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
+            throw new BadRequestException("Cannot create a project for an inactive client.");
+        }
+    }
+
     public void validateDuplicateProject(String projectName, String clientId) {
         if (projectRepository.existsByProjectNameAndClientIdAndStatusNot(projectName, clientId, ProjectStatus.ARCHIVED)) {
             throw new DuplicateProjectException(projectName, clientId);

@@ -22,6 +22,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UpdateInvoiceRequest {
 
+    @NotNull(message = "Due date is required")
     private LocalDate dueDate;
 
     @NotEmpty(message = "At least one invoice item is required")

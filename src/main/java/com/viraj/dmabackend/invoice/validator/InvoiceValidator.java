@@ -42,7 +42,10 @@ public class InvoiceValidator {
     }
 
     private void validateClientExists(String clientId) {
-        clientService.getClientById(clientId);
+        com.viraj.dmabackend.client.dto.ClientResponse client = clientService.getClientById(clientId);
+        if (client.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
+            throw new BadRequestException("Cannot create an invoice for an inactive client.");
+        }
     }
 
     private void validateProjectBelongsToClient(String projectId, String clientId) {
@@ -50,6 +53,10 @@ public class InvoiceValidator {
 
         if (!clientId.equals(project.getClientId())) {
             throw new BadRequestException("Project does not belong to the selected client");
+        }
+
+        if (project.getStatus() == com.viraj.dmabackend.project.enums.ProjectStatus.CANCELLED) {
+            throw new BadRequestException("Cannot create an invoice for a cancelled project.");
         }
     }
 

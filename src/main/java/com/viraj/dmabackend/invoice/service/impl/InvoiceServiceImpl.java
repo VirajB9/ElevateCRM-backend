@@ -185,21 +185,26 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         BigDecimal subtotal = BigDecimal.ZERO;
 
-        for (InvoiceItem item : invoice.getItems()) {
+        if (invoice.getItems() != null) {
+            for (InvoiceItem item : invoice.getItems()) {
+                if (item == null) {
+                    continue;
+                }
 
-            BigDecimal quantity = Optional.ofNullable(item.getQuantity())
-                    .orElse(BigDecimal.ZERO);
+                BigDecimal quantity = Optional.ofNullable(item.getQuantity())
+                        .orElse(BigDecimal.ZERO);
 
-            BigDecimal unitPrice = Optional.ofNullable(item.getUnitPrice())
-                    .orElse(BigDecimal.ZERO);
+                BigDecimal unitPrice = Optional.ofNullable(item.getUnitPrice())
+                        .orElse(BigDecimal.ZERO);
 
-            BigDecimal lineTotal = quantity
-                    .multiply(unitPrice)
-                    .setScale(2, RoundingMode.HALF_UP);
+                BigDecimal lineTotal = quantity
+                        .multiply(unitPrice)
+                        .setScale(2, RoundingMode.HALF_UP);
 
-            item.setLineTotal(lineTotal);
+                item.setLineTotal(lineTotal);
 
-            subtotal = subtotal.add(lineTotal);
+                subtotal = subtotal.add(lineTotal);
+            }
         }
 
         subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
@@ -249,6 +254,14 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         if (currentStatus == InvoiceStatus.CANCELLED) {
             throw new InvalidInvoiceStatusException("Cancelled invoices cannot change status.");
+        }
+
+        if (newStatus == InvoiceStatus.DRAFT && currentStatus != InvoiceStatus.DRAFT) {
+            throw new InvalidInvoiceStatusException("Cannot revert an issued or overdue invoice back to draft.");
+        }
+
+        if (newStatus == InvoiceStatus.OVERDUE && currentStatus != InvoiceStatus.SENT) {
+            throw new InvalidInvoiceStatusException("Only sent invoices can transition to overdue.");
         }
 
         if (newStatus == InvoiceStatus.PAID

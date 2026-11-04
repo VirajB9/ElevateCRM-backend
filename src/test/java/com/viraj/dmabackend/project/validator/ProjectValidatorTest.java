@@ -79,4 +79,33 @@ public class ProjectValidatorTest {
         assertDoesNotThrow(() -> projectValidator.validateProjectStatusForUpdate(ProjectStatus.COMPLETED));
         assertDoesNotThrow(() -> projectValidator.validateProjectStatusForUpdate(ProjectStatus.ON_HOLD));
     }
+
+    @Test
+    void validateClientActiveForProject_PassesWhenActive() {
+        com.viraj.dmabackend.client.entity.Client client =
+                com.viraj.dmabackend.client.entity.Client.builder()
+                        .id("client-1")
+                        .status(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE)
+                        .build();
+
+        when(clientRepository.findByIdAndStatusNot("client-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(java.util.Optional.of(client));
+
+        assertDoesNotThrow(() -> projectValidator.validateClientActiveForProject("client-1"));
+    }
+
+    @Test
+    void validateClientActiveForProject_ThrowsWhenInactive() {
+        com.viraj.dmabackend.client.entity.Client client =
+                com.viraj.dmabackend.client.entity.Client.builder()
+                        .id("client-2")
+                        .status(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE)
+                        .build();
+
+        when(clientRepository.findByIdAndStatusNot("client-2", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(java.util.Optional.of(client));
+
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateClientActiveForProject("client-2"));
+    }
 }

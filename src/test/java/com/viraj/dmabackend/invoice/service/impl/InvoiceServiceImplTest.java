@@ -104,6 +104,35 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void calculateInvoiceTotals_whenItemsListIsNull_calculatesZeroTotalsWithoutNPE() {
+        Invoice invoice = new Invoice();
+        invoice.setItems(null);
+
+        invoiceService.calculateInvoiceTotals(invoice);
+
+        assertEquals(new BigDecimal("0.00"), invoice.getSubtotal());
+        assertEquals(new BigDecimal("0.00"), invoice.getTotalAmount());
+    }
+
+    @Test
+    void calculateInvoiceTotals_whenItemsContainNullElement_ignoresNullAndCalculatesTotals() {
+        Invoice invoice = new Invoice();
+        InvoiceItem item = new InvoiceItem();
+        item.setQuantity(new BigDecimal("2"));
+        item.setUnitPrice(new BigDecimal("50.00"));
+        
+        java.util.List<InvoiceItem> items = new java.util.ArrayList<>();
+        items.add(null);
+        items.add(item);
+        invoice.setItems(items);
+
+        invoiceService.calculateInvoiceTotals(invoice);
+
+        assertEquals(new BigDecimal("100.00"), invoice.getSubtotal());
+        assertEquals(new BigDecimal("100.00"), invoice.getTotalAmount());
+    }
+
+    @Test
     void deleteInvoice_ThrowsWhenStatusIsPaid() {
         Invoice invoice = new Invoice();
         invoice.setId("inv-123");
@@ -176,5 +205,39 @@ public class InvoiceServiceImplTest {
         var result = invoiceService.getInvoiceHistory("inv-123");
         assertNotNull(result);
         assertEquals(1, result.size());
+    }
+
+    @Test
+    void updateInvoiceStatus_ThrowsWhenRevertingSentToDraft() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.DRAFT);
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
+    void updateInvoiceStatus_ThrowsWhenTransitioningDraftToOverdue() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.DRAFT);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.OVERDUE);
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.updateInvoiceStatus("inv-123", req));
     }
 }

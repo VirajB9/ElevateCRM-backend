@@ -1,8 +1,10 @@
 package com.viraj.dmabackend.lead.validator;
 
+import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.enums.UserStatus;
 import com.viraj.dmabackend.auth.exception.UserNotFoundException;
 import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
 import com.viraj.dmabackend.lead.entity.Lead;
@@ -98,8 +100,10 @@ public class LeadValidator {
 
     public void validateAssignedUser(String assignedUserId) {
         if (assignedUserId != null && !assignedUserId.isBlank()) {
-            if (!userRepository.existsByIdAndStatusNot(assignedUserId, UserStatus.DELETED)) {
-                throw new UserNotFoundException(assignedUserId);
+            User user = userRepository.findByIdAndStatusNot(assignedUserId, UserStatus.DELETED)
+                    .orElseThrow(() -> new UserNotFoundException(assignedUserId));
+            if (user.getStatus() != UserStatus.ACTIVE) {
+                throw new BadRequestException("Cannot assign lead to an inactive, suspended, or locked user.");
             }
         }
     }
