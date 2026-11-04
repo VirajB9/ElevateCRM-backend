@@ -16,7 +16,11 @@ public interface ProjectRepository extends MongoRepository<Project, String>, Pro
 
     boolean existsByProjectNameAndClientId(String projectName, String clientId);
 
+    boolean existsByProjectNameAndClientIdAndStatusNot(String projectName, String clientId, ProjectStatus status);
+
     boolean existsByProjectNameAndClientIdAndIdNot(String projectName, String clientId, String id);
+
+    boolean existsByProjectNameAndClientIdAndIdNotAndStatusNot(String projectName, String clientId, String id, ProjectStatus status);
 
     Optional<Project> findByIdAndStatusNot(String id, ProjectStatus status);
 

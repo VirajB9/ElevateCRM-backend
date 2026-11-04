@@ -78,6 +78,8 @@ services:
       SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE}?authSource=admin&replicaSet=rs0
       JWT_SECRET: ${JWT_SECRET}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      OWNER_EMAIL: ${OWNER_EMAIL:-owner@agency.com}
+      OWNER_INITIAL_PASSWORD: ${OWNER_INITIAL_PASSWORD}
 
     ports:
       - "8080:8080"

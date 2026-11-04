@@ -141,9 +141,14 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = findInvoiceById(invoiceId);
 
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            throw new InvalidInvoiceStatusException("Paid invoices cannot be deleted.");
+        }
+
         saveInvoiceHistory(invoice);
 
         invoice.setActive(false);
+        invoice.setDeleted(true);
 
         invoiceRepository.save(invoice);
     }

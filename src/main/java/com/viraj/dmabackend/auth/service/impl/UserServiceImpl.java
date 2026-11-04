@@ -11,6 +11,7 @@ import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.CustomUserDetails;
 import com.viraj.dmabackend.auth.service.UserService;
 import com.viraj.dmabackend.auth.validator.UserValidator;
+import com.viraj.dmabackend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -102,13 +103,22 @@ public class UserServiceImpl implements UserService {
 
         userValidator.validatePhoneForUpdate(request.getPhoneNumber(), user.getId());
 
-        Role role = findRoleById(request.getRoleId());
+        Role targetRole = findRoleById(user.getRoleId());
+        Role newRole = findRoleById(request.getRoleId());
         User currentUser = findCurrentUser();
         Role currentUserRole = findRoleById(currentUser.getRoleId());
 
-        userValidator.validateRoleAssignment(currentUser, currentUserRole, role);
+        if ("OWNER".equals(targetRole.getName()) && !"OWNER".equals(currentUserRole.getName())) {
+            throw new UnauthorizedRoleAssignmentException("Only an Owner can modify the Owner account");
+        }
 
-        updateUserFields(user, request, role);
+        if ("OWNER".equals(targetRole.getName()) && !"OWNER".equals(newRole.getName())) {
+            throw new BadRequestException("The Owner account cannot be demoted");
+        }
+
+        userValidator.validateRoleAssignment(currentUser, currentUserRole, newRole);
+
+        updateUserFields(user, request, newRole);
 
         User updatedUser = userRepository.save(user);
         return mapUser(updatedUser);
@@ -121,6 +131,16 @@ public class UserServiceImpl implements UserService {
         userValidator.validateStatusUpdate(request.getStatus());
 
         User user = findUserById(userId);
+        Role targetRole = findRoleById(user.getRoleId());
+        if ("OWNER".equals(targetRole.getName())) {
+            throw new BadRequestException("The system Owner account status cannot be modified");
+        }
+
+        User currentUser = findCurrentUser();
+        if (currentUser.getId().equals(user.getId()) && request.getStatus() != UserStatus.ACTIVE) {
+            throw new BadRequestException("Users cannot deactivate their own account");
+        }
+
         user.setStatus(request.getStatus());
 
         User updatedUser = userRepository.save(user);
@@ -132,6 +152,16 @@ public class UserServiceImpl implements UserService {
     public UserResponse softDeleteUser(String userId) {
 
         User user = findUserById(userId);
+        Role targetRole = findRoleById(user.getRoleId());
+        if ("OWNER".equals(targetRole.getName())) {
+            throw new BadRequestException("The system Owner account cannot be deleted");
+        }
+
+        User currentUser = findCurrentUser();
+        if (currentUser.getId().equals(user.getId())) {
+            throw new BadRequestException("Users cannot delete their own account");
+        }
+
         user.setStatus(UserStatus.DELETED);
         user.setDeleted(true);
 

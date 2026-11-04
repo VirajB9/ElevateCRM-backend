@@ -6,10 +6,14 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -122,6 +126,62 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 response,
                 HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "Malformed request body or invalid data format",
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                String.format("Required request parameter '%s' is missing", ex.getParameterName()),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMethodArgumentTypeMismatch(
+            MethodArgumentTypeMismatchException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                String.format("Invalid parameter value for '%s'", ex.getName()),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHttpRequestMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                String.format("HTTP method '%s' is not supported for this endpoint", ex.getMethod()),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     @ExceptionHandler(Exception.class)

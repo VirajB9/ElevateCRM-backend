@@ -113,7 +113,11 @@ public class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\": \"" + tokenValue + "\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.refreshToken").exists());
+
+        RefreshToken oldToken = refreshTokenRepository.findByToken(tokenValue).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertTrue(oldToken.isRevoked());
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.viraj.dmabackend.project.validator;
 
 import com.viraj.dmabackend.client.exception.ClientNotFoundException;
 import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.project.enums.ProjectStatus;
 import com.viraj.dmabackend.project.exception.DuplicateProjectException;
 import com.viraj.dmabackend.project.exception.InvalidProjectDateException;
 import com.viraj.dmabackend.project.repository.ProjectRepository;
@@ -24,7 +25,7 @@ public class ProjectValidator {
     }
 
     public void validateDuplicateProject(String projectName, String clientId) {
-        if (projectRepository.existsByProjectNameAndClientId(projectName, clientId)) {
+        if (projectRepository.existsByProjectNameAndClientIdAndStatusNot(projectName, clientId, ProjectStatus.ARCHIVED)) {
             throw new DuplicateProjectException(projectName, clientId);
         }
     }
@@ -36,7 +37,7 @@ public class ProjectValidator {
     }
 
     public void validateDuplicateProjectForUpdate(String projectName, String clientId, String projectId) {
-        if (projectRepository.existsByProjectNameAndClientIdAndIdNot(projectName, clientId, projectId)) {
+        if (projectRepository.existsByProjectNameAndClientIdAndIdNotAndStatusNot(projectName, clientId, projectId, ProjectStatus.ARCHIVED)) {
             throw new DuplicateProjectException(projectName, clientId);
         }
     }

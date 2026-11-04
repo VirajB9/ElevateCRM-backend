@@ -23,6 +23,7 @@ import java.util.List;
 @CompoundIndex(name = "idx_client_active", def = "{'clientId': 1, 'active': 1}")
 @CompoundIndex(name = "idx_status_active", def = "{'status': 1, 'active': 1}")
 @CompoundIndex(name = "idx_project_active", def = "{'projectId': 1, 'active': 1}")
+@CompoundIndex(name = "idx_active_created_at", def = "{'active': 1, 'createdAt': -1}")
 public class Invoice extends BaseEntity {
 
     @Id

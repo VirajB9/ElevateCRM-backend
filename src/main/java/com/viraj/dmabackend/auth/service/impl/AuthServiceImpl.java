@@ -80,11 +80,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthenticationResponse refresh(String refreshTokenValue) {
 
-        RefreshToken refreshToken =
-                refreshTokenRepository
-                        .findByTokenAndRevokedFalse(refreshTokenValue)
-                        .orElseThrow(() ->
-                                new UnauthorizedException("Invalid refresh token"));
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
+                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
+
+        if (refreshToken.isRevoked()) {
+            // Compromised token reuse detected: revoke all active tokens for this user
+            refreshTokenRepository.deleteByUserId(refreshToken.getUserId());
+            throw new UnauthorizedException("Refresh token was already revoked");
+        }
 
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new UnauthorizedException("Refresh token has expired");
@@ -101,7 +104,25 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("User account is not active");
         }
 
-        return buildAuthenticationResponse(user, refreshTokenValue);
+        // Revoke the old refresh token (single-use rotation)
+        refreshToken.setRevoked(true);
+        refreshTokenRepository.save(refreshToken);
+
+        // Generate and persist new rotated refresh token
+        String newRefreshTokenValue = jwtUtil.generateRefreshToken();
+
+        RefreshToken newRefreshToken = RefreshToken.builder()
+                .token(newRefreshTokenValue)
+                .userId(user.getId())
+                .expiresAt(
+                        LocalDateTime.now()
+                                .plus(java.time.Duration.ofMillis(refreshExpiration))
+                )
+                .build();
+
+        refreshTokenRepository.save(newRefreshToken);
+
+        return buildAuthenticationResponse(user, newRefreshTokenValue);
     }
 
     @Override

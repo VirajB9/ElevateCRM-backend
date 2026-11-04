@@ -97,6 +97,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = findProjectById(projectId);
         project.setStatus(ProjectStatus.ARCHIVED);
+        project.setDeleted(true);
         projectRepository.save(project);
     }
 

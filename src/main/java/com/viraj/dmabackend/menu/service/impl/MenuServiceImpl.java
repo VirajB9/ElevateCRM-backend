@@ -83,6 +83,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @CacheEvict(value = "menuTree", allEntries = true)
     public void deactivateMenu(String menuId) {
 
         Menu menu = findMenuById(menuId);
@@ -92,7 +93,7 @@ public class MenuServiceImpl implements MenuService {
         menuRepository.save(menu);
     }
 
-    @Cacheable("menuTree")
+    @Cacheable(value = "menuTree", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication() != null ? T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getAuthorities().toString() : 'anonymous'")
     @Override
     public List<MenuTreeResponse> getMenuTree() {
 

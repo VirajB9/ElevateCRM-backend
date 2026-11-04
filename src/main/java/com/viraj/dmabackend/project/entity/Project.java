@@ -23,7 +23,8 @@ import java.time.LocalDate;
 @TypeAlias("Project")
 @CompoundIndex(name = "uk_client_project_name",
         def = "{'clientId': 1, 'projectName': 1}",
-        unique = true)
+        unique = true,
+        partialFilter = "{'deleted': false}")
 public class Project extends BaseEntity {
 
     @Id

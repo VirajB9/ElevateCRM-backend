@@ -4,6 +4,7 @@ import com.viraj.dmabackend.invoice.enums.InvoiceStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @Document(collection = "invoice_history")
 @TypeAlias("InvoiceHistory")
+@CompoundIndex(name = "idx_invoice_history_version", def = "{'invoiceId': 1, 'invoiceVersion': 1}")
 public class InvoiceHistory {
 
     @Id
