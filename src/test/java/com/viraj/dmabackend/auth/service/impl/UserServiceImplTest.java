@@ -144,4 +144,10 @@ public class UserServiceImplTest {
         assertThrows(UnauthorizedRoleAssignmentException.class,
                 () -> userService.updateUser("user-owner", request));
     }
+
+    @Test
+    void filterUsersByStatus_ThrowsWhenStatusIsDeleted() {
+        assertThrows(BadRequestException.class,
+                () -> userService.filterUsersByStatus(UserStatus.DELETED, org.springframework.data.domain.Pageable.unpaged()));
+    }
 }

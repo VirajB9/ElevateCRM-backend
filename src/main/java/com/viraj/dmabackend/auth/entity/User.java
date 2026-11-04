@@ -54,4 +54,9 @@ public class User extends BaseEntity {
     @Builder.Default
     @Indexed
     private UserStatus status = UserStatus.ACTIVE;
+
+    @Builder.Default
+    private int failedLoginAttempts = 0;
+
+    private java.time.LocalDateTime lockoutUntil;
 }

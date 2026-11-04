@@ -1,18 +1,19 @@
 package com.viraj.dmabackend.invoice.service;
 
-import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
-import com.viraj.dmabackend.invoice.dto.InvoiceResponse;
-import com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest;
-import com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest;
+import com.viraj.dmabackend.invoice.dto.*;
 import com.viraj.dmabackend.invoice.enums.InvoiceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface InvoiceService {
 
     InvoiceResponse createInvoice(CreateInvoiceRequest request);
 
     InvoiceResponse getInvoiceById(String id);
+
+    List<InvoiceHistoryResponse> getInvoiceHistory(String id);
 
     Page<InvoiceResponse> getAllInvoices(Pageable pageable);
 

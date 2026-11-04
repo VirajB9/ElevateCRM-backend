@@ -91,6 +91,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<UserResponse> filterUsersByStatus(UserStatus status, Pageable pageable) {
 
+        if (status == UserStatus.DELETED) {
+            throw new BadRequestException("Querying soft-deleted users is not permitted");
+        }
+
         Page<User> users = userRepository.findByStatus(status, pageable);
         return mapToUserResponsePage(users);
     }

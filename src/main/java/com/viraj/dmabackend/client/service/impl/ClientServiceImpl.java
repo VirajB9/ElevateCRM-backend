@@ -11,6 +11,7 @@ import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.client.validator.ClientValidator;
 import com.viraj.dmabackend.common.dto.LeadConversionData;
+import com.viraj.dmabackend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -82,6 +83,10 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public Page<ClientResponse> filterClientsByStatus(ClientStatus status, Pageable pageable) {
+
+        if (status == ClientStatus.ARCHIVED) {
+            throw new BadRequestException("Querying archived clients is not permitted");
+        }
 
         Page<Client> clients = clientRepository.findByStatus(status, pageable);
         return clients.map(clientMapper::toClientResponse);

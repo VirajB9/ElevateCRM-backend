@@ -77,6 +77,12 @@ public class LeadValidator {
         }
     }
 
+    public void validateLeadNotConverted(Lead lead) {
+        if (lead.getConvertedClientId() != null) {
+            throw new LeadAlreadyConvertedException(lead.getId());
+        }
+    }
+
     public void validateLeadConversion(Lead lead) {
         if (lead.getConvertedClientId() != null) {
             throw new LeadAlreadyConvertedException(lead.getId());

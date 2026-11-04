@@ -2,6 +2,7 @@ package com.viraj.dmabackend.invoice.mapper;
 
 import com.viraj.dmabackend.invoice.dto.*;
 import com.viraj.dmabackend.invoice.entity.Invoice;
+import com.viraj.dmabackend.invoice.entity.InvoiceHistory;
 import com.viraj.dmabackend.invoice.entity.InvoiceItem;
 import org.springframework.stereotype.Component;
 
@@ -80,6 +81,31 @@ public class InvoiceMapper {
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())
                 .lineTotal(item.getLineTotal())
+                .build();
+    }
+
+    public InvoiceHistoryResponse toHistoryResponse(InvoiceHistory history) {
+        return InvoiceHistoryResponse.builder()
+                .id(history.getId())
+                .invoiceId(history.getInvoiceId())
+                .invoiceNumber(history.getInvoiceNumber())
+                .clientId(history.getClientId())
+                .projectId(history.getProjectId())
+                .issueDate(history.getIssueDate())
+                .dueDate(history.getDueDate())
+                .items(history.getItems() != null ? toResponseItems(history.getItems()) : java.util.Collections.emptyList())
+                .subtotal(history.getSubtotal())
+                .taxPercentage(history.getTaxPercentage())
+                .taxAmount(history.getTaxAmount())
+                .discount(history.getDiscount())
+                .totalAmount(history.getTotalAmount())
+                .status(history.getStatus())
+                .notes(history.getNotes())
+                .paidDate(history.getPaidDate())
+                .active(history.getActive())
+                .invoiceVersion(history.getInvoiceVersion())
+                .changedBy(history.getChangedBy())
+                .changedAt(history.getChangedAt())
                 .build();
     }
 }

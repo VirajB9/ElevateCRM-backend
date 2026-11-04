@@ -6,6 +6,7 @@ import com.viraj.dmabackend.lead.entity.Lead;
 import com.viraj.dmabackend.lead.enums.LeadStatus;
 import com.viraj.dmabackend.lead.exception.DuplicateLeadException;
 import com.viraj.dmabackend.lead.exception.InvalidLeadStatusException;
+import com.viraj.dmabackend.lead.exception.LeadAlreadyConvertedException;
 import com.viraj.dmabackend.lead.repository.LeadRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,5 +65,24 @@ public class LeadValidatorTest {
 
         assertThrows(DuplicateLeadException.class, 
             () -> leadValidator.validateDuplicateLead(request));
+    }
+
+    @Test
+    void validateLeadNotConverted_WhenConverted_ShouldThrowException() {
+        Lead lead = new Lead();
+        lead.setId("lead-123");
+        lead.setConvertedClientId("client-456");
+
+        assertThrows(LeadAlreadyConvertedException.class,
+                () -> leadValidator.validateLeadNotConverted(lead));
+    }
+
+    @Test
+    void validateLeadNotConverted_WhenNotConverted_ShouldPass() {
+        Lead lead = new Lead();
+        lead.setId("lead-123");
+        lead.setConvertedClientId(null);
+
+        assertDoesNotThrow(() -> leadValidator.validateLeadNotConverted(lead));
     }
 }

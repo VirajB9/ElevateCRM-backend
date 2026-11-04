@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.project.service.impl;
 
+import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.project.dto.CreateProjectRequest;
 import com.viraj.dmabackend.project.dto.ProjectResponse;
 import com.viraj.dmabackend.project.dto.UpdateProjectRequest;
@@ -47,6 +48,10 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public Page<ProjectResponse> getProjectsByStatus(ProjectStatus status, Pageable pageable) {
+
+        if (status == ProjectStatus.ARCHIVED) {
+            throw new BadRequestException("Querying archived projects is not permitted");
+        }
 
         return projectRepository.findByStatus(status, pageable)
                 .map(projectMapper::toProjectResponse);

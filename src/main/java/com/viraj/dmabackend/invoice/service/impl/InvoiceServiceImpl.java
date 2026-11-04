@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.service.impl;
 
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
+import com.viraj.dmabackend.invoice.dto.InvoiceHistoryResponse;
 import com.viraj.dmabackend.invoice.dto.InvoiceResponse;
 import com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest;
 import com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest;
@@ -27,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -57,6 +59,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
+        saveInvoiceHistory(savedInvoice);
+
         return invoiceMapper.toResponse(savedInvoice);
     }
 
@@ -66,6 +70,19 @@ public class InvoiceServiceImpl implements InvoiceService {
         Invoice invoice = findInvoiceById(invoiceId);
 
         return invoiceMapper.toResponse(invoice);
+    }
+
+    @Override
+    public java.util.List<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId) {
+
+        findInvoiceById(invoiceId);
+
+        List<InvoiceHistory> historyList = invoiceHistoryRepository
+                .findByInvoiceIdOrderByInvoiceVersionAsc(invoiceId);
+
+        return historyList.stream()
+                .map(invoiceMapper::toHistoryResponse)
+                .toList();
     }
 
     @Override

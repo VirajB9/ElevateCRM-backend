@@ -84,7 +84,7 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.toRoleResponse(updatedRole);
     }
 
-    @CacheEvict(value = {"roles", "role"}, allEntries = true)
+    @CacheEvict(value = {"roles", "role", "menuTree"}, allEntries = true)
     @Override
     public RoleResponse assignPermissions(String roleId, AssignPermissionsRequest request) {
 
@@ -107,7 +107,7 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.toRoleResponse(updatedRole);
     }
 
-    @CacheEvict(value = {"roles", "role"}, allEntries = true)
+    @CacheEvict(value = {"roles", "role", "menuTree"}, allEntries = true)
     @Override
     public RoleResponse removePermissions(String roleId, RemovePermissionsRequest request) {
 

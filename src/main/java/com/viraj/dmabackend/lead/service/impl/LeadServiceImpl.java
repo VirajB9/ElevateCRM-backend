@@ -2,6 +2,7 @@ package com.viraj.dmabackend.lead.service.impl;
 
 import com.viraj.dmabackend.client.entity.Client;
 import com.viraj.dmabackend.client.service.ClientService;
+import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.LeadResponse;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
@@ -99,6 +100,10 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public Page<LeadResponse> filterByStatus(LeadStatus status, Pageable pageable) {
 
+        if (status == LeadStatus.DELETED) {
+            throw new BadRequestException("Querying soft-deleted leads is not permitted");
+        }
+
         return leadRepository.findByStatus(status, pageable)
                 .map(leadMapper::toLeadResponse);
     }
@@ -122,6 +127,7 @@ public class LeadServiceImpl implements LeadService {
 
         Lead existingLead = findLeadById(leadId);
 
+        leadValidator.validateLeadNotConverted(existingLead);
         leadValidator.validateDuplicateLeadForUpdate(existingLead, request);
         leadValidator.validateLeadStatus(existingLead.getStatus(), request.getStatus());
 
@@ -136,6 +142,7 @@ public class LeadServiceImpl implements LeadService {
     public void deleteLead(String leadId) {
 
         Lead lead = findLeadById(leadId);
+        leadValidator.validateLeadNotConverted(lead);
         lead.setStatus(LeadStatus.DELETED);
         lead.setDeleted(true);
         leadRepository.save(lead);

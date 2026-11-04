@@ -40,6 +40,9 @@ public class AuthServiceImpl implements AuthService {
     private final PermissionRepository permissionRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final int LOCKOUT_MINUTES = 15;
+
     @Value("${app.jwt.refresh-expiration}")
     private long refreshExpiration;
 
@@ -51,12 +54,28 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() ->
                         new UnauthorizedException("Invalid email or password"));
 
+        if (user.getLockoutUntil() != null && user.getLockoutUntil().isAfter(LocalDateTime.now())) {
+            throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
+        }
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            int attempts = user.getFailedLoginAttempts() + 1;
+            user.setFailedLoginAttempts(attempts);
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                user.setLockoutUntil(LocalDateTime.now().plusMinutes(LOCKOUT_MINUTES));
+            }
+            userRepository.save(user);
             throw new UnauthorizedException("Invalid email or password");
         }
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new UnauthorizedException("User account is not active");
+        }
+
+        if (user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
+            user.setFailedLoginAttempts(0);
+            user.setLockoutUntil(null);
+            userRepository.save(user);
         }
 
         refreshTokenRepository.deleteByUserId(user.getId());

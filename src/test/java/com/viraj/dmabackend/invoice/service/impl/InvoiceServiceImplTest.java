@@ -8,6 +8,7 @@ import com.viraj.dmabackend.invoice.exception.InvalidInvoiceStatusException;
 import com.viraj.dmabackend.invoice.mapper.InvoiceMapper;
 import com.viraj.dmabackend.invoice.repository.InvoiceHistoryRepository;
 import com.viraj.dmabackend.invoice.repository.InvoiceRepository;
+import com.viraj.dmabackend.invoice.service.InvoiceNumberGenerator;
 import com.viraj.dmabackend.invoice.validator.InvoiceValidator;
 import com.viraj.dmabackend.project.repository.ProjectRepository;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ public class InvoiceServiceImplTest {
 
     @Mock
     private ProjectRepository projectRepository;
+
+    @Mock
+    private InvoiceNumberGenerator invoiceNumberGenerator;
 
     @InjectMocks
     private InvoiceServiceImpl invoiceService;
@@ -126,5 +130,26 @@ public class InvoiceServiceImplTest {
         assertFalse(invoice.getActive());
         assertTrue(invoice.isDeleted());
         verify(invoiceRepository).save(invoice);
+    }
+
+    @Test
+    void getInvoiceHistory_ReturnsHistoryList() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.entity.InvoiceHistory history =
+                new com.viraj.dmabackend.invoice.entity.InvoiceHistory();
+        history.setInvoiceId("inv-123");
+        history.setInvoiceVersion(0L);
+
+        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc("inv-123"))
+                .thenReturn(List.of(history));
+
+        var result = invoiceService.getInvoiceHistory("inv-123");
+        assertNotNull(result);
+        assertEquals(1, result.size());
     }
 }

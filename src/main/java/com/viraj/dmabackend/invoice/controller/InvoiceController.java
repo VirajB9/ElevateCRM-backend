@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.controller;
 
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
+import com.viraj.dmabackend.invoice.dto.InvoiceHistoryResponse;
 import com.viraj.dmabackend.invoice.dto.InvoiceResponse;
 import com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest;
 import com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest;
@@ -55,6 +56,20 @@ public class InvoiceController {
     public InvoiceResponse getInvoiceById(
             @Parameter(description = "Unique ID of the invoice", required = true) @PathVariable String invoiceId) {
         return invoiceService.getInvoiceById(invoiceId);
+    }
+
+    @PreAuthorize("hasAuthority('invoice:read')")
+    @GetMapping("/{invoiceId}/history")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Get Invoice History", description = "Retrieves the versioned audit history of an invoice. Requires 'invoice:read' authority.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Invoice history retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Invoice not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public java.util.List<InvoiceHistoryResponse> getInvoiceHistory(
+            @Parameter(description = "Unique ID of the invoice", required = true) @PathVariable String invoiceId) {
+        return invoiceService.getInvoiceHistory(invoiceId);
     }
 
     @PreAuthorize("hasAuthority('invoice:read')")
