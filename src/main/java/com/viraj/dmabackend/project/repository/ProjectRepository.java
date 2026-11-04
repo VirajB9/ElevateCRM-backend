@@ -27,4 +27,6 @@ public interface ProjectRepository extends MongoRepository<Project, String>, Pro
     Page<Project> findByStatusNot(ProjectStatus status, Pageable pageable);
 
     Page<Project> findByClientIdAndStatusNot(String clientId, ProjectStatus status, Pageable pageable);
+
+    boolean existsByClientIdAndStatusIn(String clientId, java.util.Collection<ProjectStatus> statuses);
 }

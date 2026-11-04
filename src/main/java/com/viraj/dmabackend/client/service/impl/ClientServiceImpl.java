@@ -114,6 +114,8 @@ public class ClientServiceImpl implements ClientService {
 
         Client client = findClientById(clientId);
 
+        clientValidator.validateClientDeletable(clientId);
+
         client.setStatus(ClientStatus.ARCHIVED);
         client.setDeleted(true);
 

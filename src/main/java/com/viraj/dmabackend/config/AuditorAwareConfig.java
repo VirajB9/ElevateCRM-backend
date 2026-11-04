@@ -3,6 +3,7 @@ package com.viraj.dmabackend.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -19,7 +20,9 @@ public class AuditorAwareConfig {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null
-                    || !authentication.isAuthenticated()) {
+                    || !authentication.isAuthenticated()
+                    || authentication instanceof AnonymousAuthenticationToken
+                    || "anonymousUser".equals(authentication.getPrincipal())) {
                 return Optional.empty();
             }
 

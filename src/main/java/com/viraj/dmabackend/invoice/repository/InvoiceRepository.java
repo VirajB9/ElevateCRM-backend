@@ -20,4 +20,8 @@ public interface InvoiceRepository extends MongoRepository<Invoice, String> {
     Page<Invoice> findByActiveTrueAndProjectId(String projectId, Pageable pageable);
 
     Optional<Invoice> findByIdAndActiveTrue(String id);
+
+    boolean existsByClientIdAndActiveTrueAndStatusIn(String clientId, java.util.Collection<InvoiceStatus> statuses);
+
+    boolean existsByProjectIdAndActiveTrueAndStatusIn(String projectId, java.util.Collection<InvoiceStatus> statuses);
 }

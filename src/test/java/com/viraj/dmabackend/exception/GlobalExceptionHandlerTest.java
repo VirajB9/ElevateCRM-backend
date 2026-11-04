@@ -8,6 +8,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.http.HttpMethod;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,6 +18,15 @@ import static org.mockito.Mockito.mock;
 public class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    @Test
+    void handleNoResourceFound_ReturnsNotFound() {
+        NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "static/missing.js");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleNoResourceFound(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+    }
 
     @Test
     void handleHttpMessageNotReadable_ReturnsBadRequest() {

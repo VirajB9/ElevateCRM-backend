@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -182,6 +184,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 response,
                 HttpStatus.METHOD_NOT_ALLOWED);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNoResourceFound(
+            NoResourceFoundException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)
