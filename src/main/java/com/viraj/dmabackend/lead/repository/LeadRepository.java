@@ -15,9 +15,17 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
 
     boolean existsByPhoneNumber(String phoneNumber);
 
+    boolean existsByEmailAndStatusNot(String email, LeadStatus status);
+
+    boolean existsByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
+
     Optional<Lead> findByEmail(String email);
 
     Optional<Lead> findByPhoneNumber(String phoneNumber);
+
+    Optional<Lead> findByEmailAndStatusNot(String email, LeadStatus status);
+
+    Optional<Lead> findByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
 
     Page<Lead> findByStatus(LeadStatus status, Pageable pageable);
 

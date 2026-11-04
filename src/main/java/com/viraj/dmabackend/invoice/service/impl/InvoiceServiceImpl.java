@@ -158,7 +158,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                         new InvoiceNotFoundException(invoiceId));
     }
 
-    private void calculateInvoiceTotals(Invoice invoice) {
+    // Package-private to allow direct unit testing without reflection
+    void calculateInvoiceTotals(Invoice invoice) {
 
         BigDecimal subtotal = BigDecimal.ZERO;
 

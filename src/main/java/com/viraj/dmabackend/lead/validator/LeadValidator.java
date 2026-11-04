@@ -18,23 +18,23 @@ public class LeadValidator {
     private final LeadRepository leadRepository;
 
     public void validateDuplicateLead(CreateLeadRequest request) {
-        if (leadRepository.existsByEmail(request.getEmail())) {
+        if (leadRepository.existsByEmailAndStatusNot(request.getEmail(), LeadStatus.DELETED)) {
             throw new DuplicateLeadException("email", request.getEmail());
         }
-        if (leadRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+        if (leadRepository.existsByPhoneNumberAndStatusNot(request.getPhoneNumber(), LeadStatus.DELETED)) {
             throw new DuplicateLeadException("phone number", request.getPhoneNumber());
         }
     }
 
     public void validateDuplicateLeadForUpdate(Lead existingLead, UpdateLeadRequest request) {
-        leadRepository.findByEmail(request.getEmail())
+        leadRepository.findByEmailAndStatusNot(request.getEmail(), LeadStatus.DELETED)
                 .ifPresent(lead -> {
                     if (!lead.getId().equals(existingLead.getId())) {
                         throw new DuplicateLeadException("email", request.getEmail());
                     }
                 });
 
-        leadRepository.findByPhoneNumber(request.getPhoneNumber())
+        leadRepository.findByPhoneNumberAndStatusNot(request.getPhoneNumber(), LeadStatus.DELETED)
                 .ifPresent(lead -> {
                     if (!lead.getId().equals(existingLead.getId())) {
                         throw new DuplicateLeadException("phone number", request.getPhoneNumber());

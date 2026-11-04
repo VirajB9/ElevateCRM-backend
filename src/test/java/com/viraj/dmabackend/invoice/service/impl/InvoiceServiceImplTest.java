@@ -19,7 +19,7 @@ public class InvoiceServiceImplTest {
     private InvoiceServiceImpl invoiceService;
 
     @Test
-    void calculateInvoiceTotals_WithDiscountAndTax() throws Exception {
+    void calculateInvoiceTotals_WithDiscountAndTax() {
         Invoice invoice = new Invoice();
         invoice.setTaxPercentage(new BigDecimal("18.0"));
         invoice.setDiscount(new BigDecimal("2000.0"));
@@ -29,9 +29,7 @@ public class InvoiceServiceImplTest {
         item.setUnitPrice(new BigDecimal("10000.0"));
         invoice.setItems(List.of(item));
 
-        java.lang.reflect.Method method = InvoiceServiceImpl.class.getDeclaredMethod("calculateInvoiceTotals", Invoice.class);
-        method.setAccessible(true);
-        method.invoke(invoiceService, invoice);
+        invoiceService.calculateInvoiceTotals(invoice);
 
         assertEquals(new BigDecimal("1440.00"), invoice.getTaxAmount());
         assertEquals(new BigDecimal("9440.00"), invoice.getTotalAmount());
@@ -39,7 +37,7 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
-    void calculateInvoiceTotals_NoDiscount() throws Exception {
+    void calculateInvoiceTotals_NoDiscount() {
         Invoice invoice = new Invoice();
         invoice.setTaxPercentage(new BigDecimal("10.0"));
         
@@ -48,9 +46,7 @@ public class InvoiceServiceImplTest {
         item.setUnitPrice(new BigDecimal("5000.0"));
         invoice.setItems(List.of(item));
 
-        java.lang.reflect.Method method = InvoiceServiceImpl.class.getDeclaredMethod("calculateInvoiceTotals", Invoice.class);
-        method.setAccessible(true);
-        method.invoke(invoiceService, invoice);
+        invoiceService.calculateInvoiceTotals(invoice);
 
         assertEquals(new BigDecimal("500.00"), invoice.getTaxAmount());
         assertEquals(new BigDecimal("5500.00"), invoice.getTotalAmount());
@@ -58,7 +54,7 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
-    void calculateInvoiceTotals_100PercentDiscount() throws Exception {
+    void calculateInvoiceTotals_100PercentDiscount() {
         Invoice invoice = new Invoice();
         invoice.setTaxPercentage(new BigDecimal("18.0"));
         invoice.setDiscount(new BigDecimal("5000.0")); // Subtotal will be 5000, discount is 5000
@@ -68,9 +64,7 @@ public class InvoiceServiceImplTest {
         item.setUnitPrice(new BigDecimal("5000.0"));
         invoice.setItems(List.of(item));
 
-        java.lang.reflect.Method method = InvoiceServiceImpl.class.getDeclaredMethod("calculateInvoiceTotals", Invoice.class);
-        method.setAccessible(true);
-        method.invoke(invoiceService, invoice);
+        invoiceService.calculateInvoiceTotals(invoice);
 
         assertEquals(new BigDecimal("0.00"), invoice.getTaxAmount());
         assertEquals(new BigDecimal("0.00"), invoice.getTotalAmount());

@@ -12,13 +12,21 @@ public interface UserRepository extends MongoRepository<User, String>, UserRepos
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByEmailAndStatusNot(String email, UserStatus status);
+
     boolean existsByEmail(String email);
 
+    boolean existsByEmailAndStatusNot(String email, UserStatus status);
+
     boolean existsByPhoneNumber(String phoneNumber);
+
+    boolean existsByPhoneNumberAndStatusNot(String phoneNumber, UserStatus status);
 
     Page<User> findByStatus(UserStatus status, Pageable pageable);
 
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, String id);
+
+    boolean existsByPhoneNumberAndIdNotAndStatusNot(String phoneNumber, String id, UserStatus status);
 
     Page<User> findByRoleId(String roleId, Pageable pageable);
 

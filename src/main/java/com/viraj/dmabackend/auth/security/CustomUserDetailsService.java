@@ -30,7 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email)
             throws UsernameNotFoundException {
         User user = userRepository
-                .findByEmail(email)
+                .findByEmailAndStatusNot(email, com.viraj.dmabackend.auth.enums.UserStatus.DELETED)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found"));
 

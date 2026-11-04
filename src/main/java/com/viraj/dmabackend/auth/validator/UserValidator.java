@@ -18,19 +18,19 @@ public class UserValidator {
     private final UserRepository userRepository;
 
     public void validateDuplicateEmail(String email) {
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailAndStatusNot(email, UserStatus.DELETED)) {
             throw new DuplicateEmailException(email);
         }
     }
 
     public void validateDuplicatePhone(String phoneNumber) {
-        if (userRepository.existsByPhoneNumber(phoneNumber)) {
+        if (userRepository.existsByPhoneNumberAndStatusNot(phoneNumber, UserStatus.DELETED)) {
             throw new DuplicatePhoneException(phoneNumber);
         }
     }
 
     public void validatePhoneForUpdate(String phoneNumber, String userId) {
-        if (userRepository.existsByPhoneNumberAndIdNot(phoneNumber, userId)) {
+        if (userRepository.existsByPhoneNumberAndIdNotAndStatusNot(phoneNumber, userId, UserStatus.DELETED)) {
             throw new DuplicatePhoneException(phoneNumber);
         }
     }

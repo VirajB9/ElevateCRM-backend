@@ -7,6 +7,7 @@ spring:
         max-page-size: 100
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}&maxPoolSize=50&minPoolSize=5&connectTimeoutMS=10000&socketTimeoutMS=10000
+      auto-index-creation: true
       
   lifecycle:
     timeout-per-shutdown-phase: 30s

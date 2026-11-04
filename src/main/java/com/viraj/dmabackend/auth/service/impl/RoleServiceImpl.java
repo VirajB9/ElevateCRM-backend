@@ -155,7 +155,7 @@ public class RoleServiceImpl implements RoleService {
                         .getAuthentication()
                         .getPrincipal();
 
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailAndStatusNot(email, com.viraj.dmabackend.auth.enums.UserStatus.DELETED)
                 .orElseThrow(() -> new com.viraj.dmabackend.exception.UnauthorizedException("User not found"));
     }
 

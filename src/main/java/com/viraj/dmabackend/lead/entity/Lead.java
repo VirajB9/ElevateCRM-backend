@@ -34,11 +34,11 @@ Lead extends BaseEntity {
 
     private String companyName;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false}")
     @TextIndexed
     private String email;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false}")
     private String phoneNumber;
 
     private String website;

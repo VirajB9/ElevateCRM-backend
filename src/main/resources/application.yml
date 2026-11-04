@@ -1,6 +1,9 @@
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  data:
+    mongodb:
+      auto-index-creation: true
 
 springdoc:
   swagger-ui:

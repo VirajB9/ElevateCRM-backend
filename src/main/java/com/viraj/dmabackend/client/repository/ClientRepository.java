@@ -16,11 +16,23 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
 
     boolean existsByGstNumber(String gstNumber);
 
+    boolean existsByEmailAndStatusNot(String email, ClientStatus status);
+
+    boolean existsByPhoneNumberAndStatusNot(String phoneNumber, ClientStatus status);
+
+    boolean existsByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
+
     Optional<Client> findByEmail(String email);
 
     Optional<Client> findByPhoneNumber(String phoneNumber);
 
     Optional<Client> findByGstNumber(String gstNumber);
+
+    Optional<Client> findByEmailAndStatusNot(String email, ClientStatus status);
+
+    Optional<Client> findByPhoneNumberAndStatusNot(String phoneNumber, ClientStatus status);
+
+    Optional<Client> findByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
 
     Page<Client> findByStatus(ClientStatus status, Pageable pageable);
 
@@ -29,6 +41,12 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, String clientId);
 
     boolean existsByGstNumberAndIdNot(String gstNumber, String clientId);
+
+    boolean existsByEmailAndIdNotAndStatusNot(String email, String clientId, ClientStatus status);
+
+    boolean existsByPhoneNumberAndIdNotAndStatusNot(String phoneNumber, String clientId, ClientStatus status);
+
+    boolean existsByGstNumberAndIdNotAndStatusNot(String gstNumber, String clientId, ClientStatus status);
 
     Page<Client> findByStatusNot(ClientStatus status, Pageable pageable);
 

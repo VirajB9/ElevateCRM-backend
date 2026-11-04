@@ -1,5 +1,7 @@
 package com.viraj.dmabackend.lead.service.impl;
 
+import com.viraj.dmabackend.client.entity.Client;
+import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.LeadResponse;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
@@ -29,6 +31,7 @@ public class LeadServiceImpl implements LeadService {
     private final ApplicationEventPublisher eventPublisher;
     private final LeadMapper leadMapper;
     private final LeadValidator leadValidator;
+    private final ClientService clientService;
 
     @Override
     public LeadResponse createLead(CreateLeadRequest request) {
@@ -49,28 +52,28 @@ public class LeadServiceImpl implements LeadService {
 
         leadValidator.validateLeadConversion(lead);
 
+        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
+                .leadId(lead.getId())
+                .firstName(lead.getFirstName())
+                .lastName(lead.getLastName())
+                .companyName(lead.getCompanyName())
+                .email(lead.getEmail())
+                .phoneNumber(lead.getPhoneNumber())
+                .website(lead.getWebsite())
+                .industry(lead.getIndustry())
+                .notes(lead.getNotes())
+                .build();
+
+        Client client = clientService.createClientFromLead(data);
+
+        lead.setConvertedClientId(client.getId());
         lead.setConvertedAt(LocalDateTime.now());
 
         Lead savedLead = leadRepository.save(lead);
 
-        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
-                .leadId(savedLead.getId())
-                .firstName(savedLead.getFirstName())
-                .lastName(savedLead.getLastName())
-                .companyName(savedLead.getCompanyName())
-                .email(savedLead.getEmail())
-                .phoneNumber(savedLead.getPhoneNumber())
-                .website(savedLead.getWebsite())
-                .industry(savedLead.getIndustry())
-                .notes(savedLead.getNotes())
-                .build();
-
         eventPublisher.publishEvent(new LeadConvertedEvent(data));
 
-        Lead updatedLead = leadRepository.findById(leadId)
-                .orElseThrow(() -> new LeadNotFoundException(leadId));
-
-        return leadMapper.toLeadResponse(updatedLead);
+        return leadMapper.toLeadResponse(savedLead);
     }
 
     @Override
@@ -134,16 +137,7 @@ public class LeadServiceImpl implements LeadService {
 
         Lead lead = findLeadById(leadId);
         lead.setStatus(LeadStatus.DELETED);
-        
-        // Mutate unique fields so they don't block future registrations
-        String suffix = "_DELETED_" + System.currentTimeMillis();
-        if (lead.getEmail() != null) {
-            lead.setEmail(lead.getEmail() + suffix);
-        }
-        if (lead.getPhoneNumber() != null) {
-            lead.setPhoneNumber(lead.getPhoneNumber() + suffix);
-        }
-
+        lead.setDeleted(true);
         leadRepository.save(lead);
     }
 

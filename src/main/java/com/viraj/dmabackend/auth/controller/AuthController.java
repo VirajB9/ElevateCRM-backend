@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -73,10 +74,12 @@ public class AuthController {
 
     @Operation(
             summary = "Change password",
-            description = "Changes the authenticated user's password and issues new tokens.")
+            description = "Changes the authenticated user's password and issues new tokens.",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Password changed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request formatting or incorrect current password")
+            @ApiResponse(responseCode = "400", description = "Invalid request formatting or incorrect current password"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized: Missing, invalid, or expired JWT token")
     })
     @PatchMapping("/change-password")
     public AuthenticationResponse changePassword(

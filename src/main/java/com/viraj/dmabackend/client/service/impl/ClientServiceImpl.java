@@ -110,18 +110,7 @@ public class ClientServiceImpl implements ClientService {
         Client client = findClientById(clientId);
 
         client.setStatus(ClientStatus.ARCHIVED);
-        
-        // Mutate unique fields so they don't block future registrations
-        String suffix = "_ARCHIVED_" + System.currentTimeMillis();
-        if (client.getEmail() != null) {
-            client.setEmail(client.getEmail() + suffix);
-        }
-        if (client.getPhoneNumber() != null) {
-            client.setPhoneNumber(client.getPhoneNumber() + suffix);
-        }
-        if (client.getGstNumber() != null) {
-            client.setGstNumber(client.getGstNumber() + suffix);
-        }
+        client.setDeleted(true);
 
         clientRepository.save(client);
     }

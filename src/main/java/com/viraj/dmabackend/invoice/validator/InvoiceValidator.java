@@ -1,15 +1,14 @@
 package com.viraj.dmabackend.invoice.validator;
 
-import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.exception.BadRequestException;
-import com.viraj.dmabackend.exception.ResourceNotFoundException;
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
 import com.viraj.dmabackend.invoice.dto.InvoiceItemRequest;
 import com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest;
 import com.viraj.dmabackend.invoice.entity.Invoice;
 import com.viraj.dmabackend.invoice.exception.InvalidInvoiceDateException;
-import com.viraj.dmabackend.project.entity.Project;
-import com.viraj.dmabackend.project.repository.ProjectRepository;
+import com.viraj.dmabackend.project.dto.ProjectResponse;
+import com.viraj.dmabackend.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InvoiceValidator {
 
-    private final ClientRepository clientRepository;
-    private final ProjectRepository projectRepository;
+    private final ClientService clientService;
+    private final ProjectService projectService;
 
     public void validateCreateInvoice(CreateInvoiceRequest request) {
 
@@ -43,17 +42,11 @@ public class InvoiceValidator {
     }
 
     private void validateClientExists(String clientId) {
-
-        if (!clientRepository.existsByIdAndStatusNot(clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
-            throw new ResourceNotFoundException("Client not found with id: " + clientId);
-        }
+        clientService.getClientById(clientId);
     }
 
     private void validateProjectBelongsToClient(String projectId, String clientId) {
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Project not found with id: " + projectId));
+        ProjectResponse project = projectService.getProjectById(projectId);
 
         if (!clientId.equals(project.getClientId())) {
             throw new BadRequestException("Project does not belong to the selected client");
@@ -73,11 +66,20 @@ public class InvoiceValidator {
 
     private void validateDiscount(List<InvoiceItemRequest> items, BigDecimal discount) {
 
+        if (discount == null) {
+            return;
+        }
+
         if (discount.compareTo(BigDecimal.ZERO) < 0) {
             throw new BadRequestException("Discount cannot be negative");
         }
 
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+
         BigDecimal subtotal = items.stream()
+                .filter(item -> item != null && item.getQuantity() != null && item.getUnitPrice() != null)
                 .map(item -> item.getQuantity()
                         .multiply(item.getUnitPrice()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

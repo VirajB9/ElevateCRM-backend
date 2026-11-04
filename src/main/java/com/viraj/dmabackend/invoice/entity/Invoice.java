@@ -20,9 +20,9 @@ import java.util.List;
 @AllArgsConstructor
 @Document(collection = "invoices")
 @TypeAlias("Invoice")
-@CompoundIndex(name = "idx_active_client", def = "{'active': 1, 'clientId': 1}")
-@CompoundIndex(name = "idx_active_status", def = "{'active': 1, 'status': 1}")
-@CompoundIndex(name = "idx_active_project", def = "{'active': 1, 'projectId': 1}")
+@CompoundIndex(name = "idx_client_active", def = "{'clientId': 1, 'active': 1}")
+@CompoundIndex(name = "idx_status_active", def = "{'status': 1, 'active': 1}")
+@CompoundIndex(name = "idx_project_active", def = "{'projectId': 1, 'active': 1}")
 public class Invoice extends BaseEntity {
 
     @Id

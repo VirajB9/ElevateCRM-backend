@@ -32,11 +32,11 @@ public class User extends BaseEntity {
     @TextIndexed
     private String lastName;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false}")
     @TextIndexed
     private String email;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false}")
     private String phoneNumber;
 
     /**

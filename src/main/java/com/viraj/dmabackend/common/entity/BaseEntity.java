@@ -32,4 +32,6 @@ public abstract class BaseEntity {
 
     @Version
     private Long version;
+
+    private boolean deleted = false;
 }

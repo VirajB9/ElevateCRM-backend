@@ -47,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthenticationResponse login(LoginRequest request) {
 
         User user = userRepository
-                .findByEmail(request.getEmail())
+                .findByEmailAndStatusNot(request.getEmail(), UserStatus.DELETED)
                 .orElseThrow(() ->
                         new UnauthorizedException("Invalid email or password"));
 
@@ -123,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
 
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndStatusNot(email, UserStatus.DELETED)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {

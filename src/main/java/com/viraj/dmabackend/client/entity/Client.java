@@ -32,17 +32,17 @@ public class Client extends BaseEntity {
     private String contactPerson;
 
     @TextIndexed
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false}")
     private String email;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false}")
     private String phoneNumber;
 
     private String website;
 
     private String industry;
 
-    @Indexed(unique = true, sparse = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false, 'gstNumber': {'$type': 'string'}}")
     private String gstNumber;
 
     private String address;
