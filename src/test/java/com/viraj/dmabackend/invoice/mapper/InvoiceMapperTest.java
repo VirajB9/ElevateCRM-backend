@@ -22,11 +22,15 @@ class InvoiceMapperTest {
                 .invoiceNumber("INV-2026-00001")
                 .items(null)
                 .build();
+        invoice.setCreatedBy("admin@agency.com");
+        invoice.setUpdatedBy("owner@agency.com");
 
         InvoiceResponse response = invoiceMapper.toResponse(invoice);
 
         assertThat(response).isNotNull();
         assertThat(response.getItems()).isEmpty();
+        assertThat(response.getCreatedBy()).isEqualTo("admin@agency.com");
+        assertThat(response.getUpdatedBy()).isEqualTo("owner@agency.com");
     }
 
     @Test
@@ -46,5 +50,33 @@ class InvoiceMapperTest {
         assertThat(response).isNotNull();
         assertThat(response.getItems()).hasSize(1);
         assertThat(response.getItems().get(0).getDescription()).isEqualTo("Dev");
+    }
+
+    @Test
+    void toResponse_whenInvoiceIsNull_returnsNullWithoutNPE() {
+        assertThat(invoiceMapper.toResponse(null)).isNull();
+    }
+
+    @Test
+    void toHistoryResponse_whenHistoryIsNull_returnsNullWithoutNPE() {
+        assertThat(invoiceMapper.toHistoryResponse(null)).isNull();
+    }
+
+    @Test
+    void toEntity_trimsItemDescriptions() {
+        com.viraj.dmabackend.invoice.dto.InvoiceItemRequest itemReq =
+                com.viraj.dmabackend.invoice.dto.InvoiceItemRequest.builder()
+                        .description("   Consulting Services   ")
+                        .build();
+
+        com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest req =
+                com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest.builder()
+                        .items(List.of(itemReq))
+                        .build();
+
+        Invoice entity = invoiceMapper.toEntity(req);
+        assertThat(entity).isNotNull();
+        assertThat(entity.getItems()).hasSize(1);
+        assertThat(entity.getItems().get(0).getDescription()).isEqualTo("Consulting Services");
     }
 }

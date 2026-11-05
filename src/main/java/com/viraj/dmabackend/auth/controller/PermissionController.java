@@ -1,7 +1,7 @@
 package com.viraj.dmabackend.auth.controller;
 
 import com.viraj.dmabackend.auth.dto.PermissionResponse;
-import com.viraj.dmabackend.auth.service.impl.PermissionServiceImpl;
+import com.viraj.dmabackend.auth.service.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -20,11 +20,11 @@ import java.util.List;
 @SecurityRequirement(name = "Bearer Authentication")
 public class PermissionController {
 
-    private final PermissionServiceImpl permissionService;
+    private final PermissionService permissionService;
 
-    @PreAuthorize("hasAuthority('user:read')")
+    @PreAuthorize("hasAnyAuthority('role:read', 'role:update', 'user:read')")
     @GetMapping
-    @Operation(summary = "Get All Permissions", description = "Retrieves a flat list of all available permissions in the system. Requires 'user:read' authority.")
+    @Operation(summary = "Get All Permissions", description = "Retrieves a flat list of all available permissions in the system. Requires 'role:read', 'role:update', or 'user:read' authority.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Permissions retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
@@ -33,3 +33,4 @@ public class PermissionController {
         return permissionService.getAllPermissions();
     }
 }
+

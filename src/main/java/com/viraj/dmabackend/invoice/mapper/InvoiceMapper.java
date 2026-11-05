@@ -12,6 +12,9 @@ import java.util.List;
 public class InvoiceMapper {
 
     public Invoice toEntity(CreateInvoiceRequest request) {
+        if (request == null) {
+            return null;
+        }
         return Invoice.builder()
                 .clientId(request.getClientId())
                 .projectId(request.getProjectId())
@@ -25,6 +28,9 @@ public class InvoiceMapper {
     }
 
     public void updateEntity(Invoice invoice, UpdateInvoiceRequest request) {
+        if (invoice == null || request == null) {
+            return;
+        }
         invoice.setDueDate(request.getDueDate());
         invoice.setItems(toEntityItems(request.getItems()));
         invoice.setTaxPercentage(request.getTaxPercentage());
@@ -33,6 +39,9 @@ public class InvoiceMapper {
     }
 
     public InvoiceResponse toResponse(Invoice invoice) {
+        if (invoice == null) {
+            return null;
+        }
         return InvoiceResponse.builder()
                 .id(invoice.getId())
                 .invoiceNumber(invoice.getInvoiceNumber())
@@ -52,6 +61,8 @@ public class InvoiceMapper {
                 .active(invoice.getActive())
                 .createdAt(invoice.getCreatedAt())
                 .updatedAt(invoice.getUpdatedAt())
+                .createdBy(invoice.getCreatedBy())
+                .updatedBy(invoice.getUpdatedBy())
                 .build();
     }
 
@@ -67,7 +78,7 @@ public class InvoiceMapper {
 
     private InvoiceItem toEntityItem(InvoiceItemRequest itemRequest) {
         return InvoiceItem.builder()
-                .description(itemRequest.getDescription())
+                .description(itemRequest.getDescription() != null ? itemRequest.getDescription().trim() : null)
                 .quantity(itemRequest.getQuantity())
                 .unitPrice(itemRequest.getUnitPrice())
                 .build();
@@ -93,6 +104,9 @@ public class InvoiceMapper {
     }
 
     public InvoiceHistoryResponse toHistoryResponse(InvoiceHistory history) {
+        if (history == null) {
+            return null;
+        }
         return InvoiceHistoryResponse.builder()
                 .id(history.getId())
                 .invoiceId(history.getInvoiceId())

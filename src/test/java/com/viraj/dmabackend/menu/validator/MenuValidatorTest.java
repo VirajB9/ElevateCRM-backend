@@ -58,6 +58,15 @@ class MenuValidatorTest {
     }
 
     @Test
+    void validateParentExists_whenParentHasSurroundingWhitespace_trimsAndFindsParent() {
+        Menu parent = Menu.builder().id("parent-1").title("Parent").active(true).build();
+        when(menuRepository.findById("parent-1")).thenReturn(Optional.of(parent));
+
+        assertThatCode(() -> menuValidator.validateParentExists("  parent-1  "))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void validateMenuDeactivation_whenActiveChildrenExist_throwsBadRequestException() {
         when(menuRepository.existsByParentIdAndActiveTrue("menu-1")).thenReturn(true);
 

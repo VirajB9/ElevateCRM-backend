@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,5 +95,55 @@ public class SearchRepositoriesTest {
         ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
         verify(mongoTemplate).find(captor.capture(), eq(Project.class));
         assertFalse(captor.getValue().getQueryObject().containsKey("$text"));
+    }
+
+    @Test
+    void searchUsers_ClampsExcessivePageSize() {
+        when(mongoTemplate.count(any(Query.class), eq(User.class))).thenReturn(0L);
+        when(mongoTemplate.find(any(Query.class), eq(User.class))).thenReturn(Collections.emptyList());
+
+        Pageable excessive = PageRequest.of(1, 500);
+        Page<User> result = userRepositoryCustom.searchUsers("test", excessive);
+
+        assertNotNull(result);
+        assertEquals(100, result.getPageable().getPageSize());
+        assertEquals(1, result.getPageable().getPageNumber());
+    }
+
+    @Test
+    void searchClients_ClampsExcessivePageSize() {
+        when(mongoTemplate.count(any(Query.class), eq(Client.class))).thenReturn(0L);
+        when(mongoTemplate.find(any(Query.class), eq(Client.class))).thenReturn(Collections.emptyList());
+
+        Pageable excessive = PageRequest.of(0, 1000);
+        Page<Client> result = clientRepositoryCustom.searchClients("acme", excessive);
+
+        assertNotNull(result);
+        assertEquals(100, result.getPageable().getPageSize());
+    }
+
+    @Test
+    void searchLeads_ClampsExcessivePageSize() {
+        when(mongoTemplate.count(any(Query.class), eq(Lead.class))).thenReturn(0L);
+        when(mongoTemplate.find(any(Query.class), eq(Lead.class))).thenReturn(Collections.emptyList());
+
+        Pageable excessive = PageRequest.of(2, 250);
+        Page<Lead> result = leadRepositoryCustom.searchLeads("lead", excessive);
+
+        assertNotNull(result);
+        assertEquals(100, result.getPageable().getPageSize());
+        assertEquals(2, result.getPageable().getPageNumber());
+    }
+
+    @Test
+    void searchProjects_ClampsExcessivePageSize() {
+        when(mongoTemplate.count(any(Query.class), eq(Project.class))).thenReturn(0L);
+        when(mongoTemplate.find(any(Query.class), eq(Project.class))).thenReturn(Collections.emptyList());
+
+        Pageable excessive = PageRequest.of(0, 9999);
+        Page<Project> result = projectRepositoryCustom.searchProjects("crm", excessive);
+
+        assertNotNull(result);
+        assertEquals(100, result.getPageable().getPageSize());
     }
 }

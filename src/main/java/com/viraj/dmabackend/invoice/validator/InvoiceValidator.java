@@ -36,6 +36,14 @@ public class InvoiceValidator {
 
     public void validateUpdateInvoice(Invoice invoice, UpdateInvoiceRequest request) {
 
+        if (invoice.getClientId() != null) {
+            validateClientActiveForInvoice(invoice.getClientId());
+        }
+
+        if (invoice.getProjectId() != null && invoice.getClientId() != null) {
+            validateProjectBelongsToClient(invoice.getProjectId(), invoice.getClientId());
+        }
+
         validateDates(invoice.getIssueDate(), request.getDueDate());
 
         validateDiscount(request.getItems(), request.getDiscount());

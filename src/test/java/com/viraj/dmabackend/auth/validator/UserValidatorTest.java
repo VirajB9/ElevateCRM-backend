@@ -110,6 +110,15 @@ public class UserValidatorTest {
     }
 
     @Test
+    void validateUserManagement_ManagerCanManageSelf() {
+        Role managerRole = Role.builder().name("MANAGER").build();
+        User manager = User.builder().id("m-1").build();
+
+        assertDoesNotThrow(() ->
+                userValidator.validateUserManagement(manager, managerRole, manager, managerRole));
+    }
+
+    @Test
     void validateDuplicateEmail_NormalizesCaseAndWhitespace() {
         when(userRepository.existsByEmailAndStatusNot("john@example.com", com.viraj.dmabackend.auth.enums.UserStatus.DELETED))
                 .thenReturn(true);

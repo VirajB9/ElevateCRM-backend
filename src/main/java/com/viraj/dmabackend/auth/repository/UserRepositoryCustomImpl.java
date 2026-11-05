@@ -2,6 +2,7 @@ package com.viraj.dmabackend.auth.repository;
 
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.enums.UserStatus;
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -36,10 +37,11 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
         long total = mongoTemplate.count(query, User.class);
 
-        query.with(pageable);
+        Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        query.with(effectivePageable);
 
         List<User> users = mongoTemplate.find(query, User.class);
 
-        return new PageImpl<>(users, pageable, total);
+        return new PageImpl<>(users, effectivePageable, total);
     }
 }

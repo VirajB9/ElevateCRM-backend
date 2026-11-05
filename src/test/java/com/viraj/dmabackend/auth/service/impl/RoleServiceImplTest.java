@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.auth.service.impl;
 
 import com.viraj.dmabackend.auth.dto.UserResponse;
+import com.viraj.dmabackend.auth.entity.Permission;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.enums.UserStatus;
@@ -24,8 +25,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -89,7 +92,7 @@ public class RoleServiceImplTest {
         when(roleRepository.findById("role-2")).thenReturn(Optional.of(targetRole));
         when(permissionRepository.findAllById(List.of("p1"))).thenReturn(List.of(permission));
         when(roleRepository.save(any(Role.class))).thenReturn(targetRole);
-        when(roleMapper.toRoleResponse(any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+        when(roleMapper.toRoleResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
 
         com.viraj.dmabackend.auth.dto.AssignPermissionsRequest request = new com.viraj.dmabackend.auth.dto.AssignPermissionsRequest();
         request.setPermissionIds(List.of("p1"));
@@ -114,7 +117,7 @@ public class RoleServiceImplTest {
         when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
         when(roleRepository.findById("role-2")).thenReturn(Optional.of(targetRole));
         when(roleRepository.save(any(Role.class))).thenReturn(targetRole);
-        when(roleMapper.toRoleResponse(any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+        when(roleMapper.toRoleResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
 
         com.viraj.dmabackend.auth.dto.RemovePermissionsRequest request = new com.viraj.dmabackend.auth.dto.RemovePermissionsRequest();
         request.setPermissionIds(List.of("p1"));
@@ -181,7 +184,7 @@ public class RoleServiceImplTest {
         when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
         when(roleRepository.findById("role-target")).thenReturn(Optional.of(targetRole));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(roleMapper.toRoleResponse(any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+        when(roleMapper.toRoleResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
 
         com.viraj.dmabackend.auth.dto.UpdateRoleRequest request = new com.viraj.dmabackend.auth.dto.UpdateRoleRequest();
         request.setDescription("  Updated Employee description  ");
@@ -191,5 +194,26 @@ public class RoleServiceImplTest {
         verify(roleValidator).validateDescription("  Updated Employee description  ");
         verify(roleRepository).save(targetRole);
         assertEquals("Updated Employee description", targetRole.getDescription());
+    }
+
+    @Test
+    void getAllRoles_FetchesPermissionsInBulkSingleQuery() {
+        Role role1 = Role.builder().id("r1").name("MGR").permissionIds(List.of("p1", "p2")).build();
+        Role role2 = Role.builder().id("r2").name("EMP").permissionIds(List.of("p2", "p3")).build();
+
+        Permission p1 = Permission.builder().id("p1").build();
+        Permission p2 = Permission.builder().id("p2").build();
+        Permission p3 = Permission.builder().id("p3").build();
+
+        when(roleRepository.findAll()).thenReturn(List.of(role1, role2));
+        when(permissionRepository.findAllById(List.of("p1", "p2", "p3"))).thenReturn(List.of(p1, p2, p3));
+        when(roleMapper.toRoleResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+
+        List<com.viraj.dmabackend.auth.dto.RoleResponse> responses = roleService.getAllRoles();
+
+        assertNotNull(responses);
+        assertEquals(2, responses.size());
+        verify(permissionRepository, times(1)).findAllById(List.of("p1", "p2", "p3"));
+        verify(roleMapper, times(2)).toRoleResponse(any(), any());
     }
 }

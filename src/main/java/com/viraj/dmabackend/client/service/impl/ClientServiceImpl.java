@@ -174,7 +174,7 @@ public class ClientServiceImpl implements ClientService {
         if (gstNumber == null || gstNumber.isBlank()) {
             return null;
         }
-        return gstNumber.trim();
+        return gstNumber.trim().toUpperCase();
     }
 
     private String normalizeEmail(String email) {

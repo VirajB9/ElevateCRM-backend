@@ -2,6 +2,7 @@ package com.viraj.dmabackend.client.repository;
 
 import com.viraj.dmabackend.client.entity.Client;
 import com.viraj.dmabackend.client.enums.ClientStatus;
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -38,10 +39,11 @@ public class ClientRepositoryCustomImpl implements ClientRepositoryCustom {
 
         long total = mongoTemplate.count(query, Client.class);
 
-        query.with(pageable);
+        Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        query.with(effectivePageable);
 
         List<Client> clients = mongoTemplate.find(query, Client.class);
 
-        return new PageImpl<>(clients, pageable, total);
+        return new PageImpl<>(clients, effectivePageable, total);
     }
 }

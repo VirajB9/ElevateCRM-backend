@@ -247,4 +247,73 @@ public class UserServiceImplTest {
         verify(refreshTokenRepository, never()).deleteByUserId("user-manager");
         verify(userRepository).save(managerUser);
     }
+
+    @Test
+    void getAllUsers_WhenRoleMissingOrNull_GracefullyFallsBackToUnknownRole() {
+        User user1 = User.builder().id("u1").roleId("missing-role").build();
+        User user2 = User.builder().id("u2").roleId(null).build();
+        org.springframework.data.domain.Page<User> page =
+                new org.springframework.data.domain.PageImpl<>(java.util.List.of(user1, user2));
+
+        when(userRepository.findByStatusNot(eq(UserStatus.DELETED), any())).thenReturn(page);
+        when(roleRepository.findAllById(java.util.List.of("missing-role"))).thenReturn(java.util.Collections.emptyList());
+        when(userMapper.toUserResponse(any(User.class), eq("UNKNOWN")))
+                .thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().roleName("UNKNOWN").build());
+
+        org.springframework.data.domain.Page<com.viraj.dmabackend.auth.dto.UserResponse> result =
+                userService.getAllUsers(org.springframework.data.domain.PageRequest.of(0, 10));
+
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertEquals(2, result.getContent().size());
+        verify(userMapper, times(2)).toUserResponse(any(User.class), eq("UNKNOWN"));
+    }
+
+    @Test
+    void updateUser_ManagerCanUpdateSelf_RetainingRole() {
+        authenticateAs(managerUser);
+
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(userRepository.findByEmailAndStatusNot("manager@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(userRepository.save(any(User.class))).thenReturn(managerUser);
+        when(userMapper.toUserResponse(any(User.class), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.UpdateUserRequest request = new com.viraj.dmabackend.auth.dto.UpdateUserRequest();
+        request.setFirstName("UpdatedManager");
+        request.setLastName("User");
+        request.setPhoneNumber("9876543210");
+        request.setRoleId("role-manager");
+
+        userService.updateUser("user-manager", request);
+
+        verify(userValidator).validateUserManagement(managerUser, managerRole, managerUser, managerRole);
+        verify(userValidator, never()).validateRoleAssignment(any(), any(), any());
+        verify(userRepository).save(managerUser);
+    }
+
+    @Test
+    void updateUser_ManagerCannotChangeOwnRole() {
+        authenticateAs(managerUser);
+
+        Role employeeRole = new Role();
+        employeeRole.setId("role-employee");
+        employeeRole.setName("EMPLOYEE");
+
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleRepository.findById("role-employee")).thenReturn(Optional.of(employeeRole));
+        when(userRepository.findByEmailAndStatusNot("manager@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+
+        com.viraj.dmabackend.auth.dto.UpdateUserRequest request = new com.viraj.dmabackend.auth.dto.UpdateUserRequest();
+        request.setFirstName("UpdatedManager");
+        request.setLastName("User");
+        request.setPhoneNumber("9876543210");
+        request.setRoleId("role-employee");
+
+        assertThrows(BadRequestException.class, () -> userService.updateUser("user-manager", request));
+    }
 }

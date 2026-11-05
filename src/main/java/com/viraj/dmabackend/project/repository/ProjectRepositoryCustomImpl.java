@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.project.repository;
 
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.project.entity.Project;
 import com.viraj.dmabackend.project.enums.ProjectStatus;
 import lombok.RequiredArgsConstructor;
@@ -42,10 +43,11 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
 
         long total = mongoTemplate.count(query, Project.class);
 
-        query.with(pageable);
+        Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        query.with(effectivePageable);
 
         List<Project> projects = mongoTemplate.find(query, Project.class);
 
-        return new PageImpl<>(projects, pageable, total);
+        return new PageImpl<>(projects, effectivePageable, total);
     }
 }

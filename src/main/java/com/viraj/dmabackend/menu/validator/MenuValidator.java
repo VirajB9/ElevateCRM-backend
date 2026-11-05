@@ -41,8 +41,9 @@ public class MenuValidator {
         if (parentId == null || parentId.isBlank()) {
             return;
         }
-        Menu parent = menuRepository.findById(parentId)
-                .orElseThrow(() -> new ParentMenuNotFoundException(parentId));
+        String trimmedParentId = parentId.trim();
+        Menu parent = menuRepository.findById(trimmedParentId)
+                .orElseThrow(() -> new ParentMenuNotFoundException(trimmedParentId));
         if (Boolean.FALSE.equals(parent.getActive())) {
             throw new BadRequestException("Cannot assign inactive menu as parent");
         }

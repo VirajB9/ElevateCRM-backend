@@ -107,4 +107,51 @@ class InvoiceValidatorTest {
         when(projectService.getProjectById("proj-123")).thenReturn(ProjectResponse.builder().id("proj-123").build());
         assertThatCode(() -> invoiceValidator.validateProjectExists("proj-123")).doesNotThrowAnyException();
     }
+
+    @Test
+    void validateUpdateInvoice_whenClientIsInactive_throwsBadRequestException() {
+        ClientResponse inactiveClient = ClientResponse.builder().id("client-1").status(ClientStatus.INACTIVE).build();
+        when(clientService.getClientById("client-1")).thenReturn(inactiveClient);
+
+        com.viraj.dmabackend.invoice.entity.Invoice invoice = com.viraj.dmabackend.invoice.entity.Invoice.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .build();
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest request = com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest.builder()
+                .dueDate(LocalDate.now().plusDays(5))
+                .items(Collections.emptyList())
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        assertThatThrownBy(() -> invoiceValidator.validateUpdateInvoice(invoice, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Cannot create an invoice for an inactive client");
+    }
+
+    @Test
+    void validateUpdateInvoice_whenProjectIsCancelled_throwsBadRequestException() {
+        ClientResponse activeClient = ClientResponse.builder().id("client-1").status(ClientStatus.ACTIVE).build();
+        ProjectResponse cancelledProject = ProjectResponse.builder().id("proj-1").clientId("client-1").status(ProjectStatus.CANCELLED).build();
+
+        when(clientService.getClientById("client-1")).thenReturn(activeClient);
+        when(projectService.getProjectById("proj-1")).thenReturn(cancelledProject);
+
+        com.viraj.dmabackend.invoice.entity.Invoice invoice = com.viraj.dmabackend.invoice.entity.Invoice.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .build();
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest request = com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest.builder()
+                .dueDate(LocalDate.now().plusDays(5))
+                .items(Collections.emptyList())
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        assertThatThrownBy(() -> invoiceValidator.validateUpdateInvoice(invoice, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Cannot create an invoice for a cancelled project");
+    }
 }

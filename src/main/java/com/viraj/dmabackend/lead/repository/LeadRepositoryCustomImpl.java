@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.lead.repository;
 
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.lead.entity.Lead;
 import com.viraj.dmabackend.lead.enums.LeadStatus;
 import lombok.RequiredArgsConstructor;
@@ -37,10 +38,11 @@ public class LeadRepositoryCustomImpl
 
         long total = mongoTemplate.count(query, Lead.class);
 
-        query.with(pageable);
+        Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        query.with(effectivePageable);
 
         List<Lead> leads = mongoTemplate.find(query, Lead.class);
 
-        return new PageImpl<>(leads, pageable, total);
+        return new PageImpl<>(leads, effectivePageable, total);
     }
 }

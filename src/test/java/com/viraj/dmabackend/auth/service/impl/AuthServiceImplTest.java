@@ -246,4 +246,42 @@ public class AuthServiceImplTest {
 
         verify(refreshTokenRepository, never()).findByToken(any());
     }
+
+    @Test
+    void login_ResetsCounterWhenLockoutExpired_IncrementsToOneOnWrongPassword() {
+        user.setFailedLoginAttempts(5);
+        user.setLockoutUntil(LocalDateTime.now().minusMinutes(5));
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@agency.com");
+        request.setPassword("wrong");
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong", "hashedpassword")).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class, () -> authService.login(request));
+
+        assertEquals(1, user.getFailedLoginAttempts());
+        assertNull(user.getLockoutUntil());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void changePassword_ThrowsWhenNewPasswordHasWhitespace() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("test@agency.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("currentPass123", "hashedpassword")).thenReturn(true);
+
+        com.viraj.dmabackend.auth.dto.ChangePasswordRequest request = new com.viraj.dmabackend.auth.dto.ChangePasswordRequest();
+        request.setCurrentPassword("currentPass123");
+        request.setNewPassword("  newSecretPass  ");
+
+        com.viraj.dmabackend.exception.BadRequestException ex =
+                assertThrows(com.viraj.dmabackend.exception.BadRequestException.class, () -> authService.changePassword(request));
+        assertTrue(ex.getMessage().contains("whitespace"));
+    }
 }

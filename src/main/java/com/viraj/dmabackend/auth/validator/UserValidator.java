@@ -77,10 +77,13 @@ public class UserValidator {
         }
 
         if ("MANAGER".equals(currentUserRole.getName())) {
-            if ("MANAGER".equals(targetUserRole.getName())) {
+            boolean isSelf = currentUser.getId() != null && currentUser.getId().equals(targetUser.getId());
+            if ("MANAGER".equals(targetUserRole.getName()) && !isSelf) {
                 throw new UnauthorizedRoleAssignmentException("Managers cannot modify or delete other Managers");
             }
-            if (!"EMPLOYEE".equals(targetUserRole.getName()) && !"INTERN".equals(targetUserRole.getName())) {
+            if (!isSelf
+                    && !"EMPLOYEE".equals(targetUserRole.getName())
+                    && !"INTERN".equals(targetUserRole.getName())) {
                 throw new UnauthorizedRoleAssignmentException("Managers can only manage Employees or Interns");
             }
             return;

@@ -4,30 +4,26 @@ import com.viraj.dmabackend.auth.dto.RoleResponse;
 import com.viraj.dmabackend.auth.entity.Permission;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.enums.PermissionType;
-import com.viraj.dmabackend.auth.repository.PermissionRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 public class RoleMapperTest {
 
-    @Mock
-    private PermissionRepository permissionRepository;
-
-    @InjectMocks
     private RoleMapper roleMapper;
+
+    @BeforeEach
+    void setUp() {
+        roleMapper = new RoleMapper();
+    }
 
     @Test
     void toRoleResponse_ReturnsNullWhenRoleIsNull() {
         assertNull(roleMapper.toRoleResponse(null));
+        assertNull(roleMapper.toRoleResponse(null, List.of()));
     }
 
     @Test
@@ -66,13 +62,13 @@ public class RoleMapperTest {
                 .description("Read user")
                 .build();
 
-        when(permissionRepository.findAllById(List.of("perm-1"))).thenReturn(List.of(permission));
-
-        RoleResponse response = roleMapper.toRoleResponse(role);
+        RoleResponse response = roleMapper.toRoleResponse(role, List.of(permission));
 
         assertNotNull(response);
         assertEquals("role-2", response.getId());
+        assertNotNull(response.getPermissions());
         assertEquals(1, response.getPermissions().size());
         assertEquals("USER_READ", response.getPermissions().get(0).getName());
     }
 }
+

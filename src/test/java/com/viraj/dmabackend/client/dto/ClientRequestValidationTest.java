@@ -49,4 +49,28 @@ public class ClientRequestValidationTest {
 
         assertFalse(validator.validate(request).isEmpty());
     }
+
+    @Test
+    void createClientRequest_WithInvalidGst_FailsValidation() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@example.com");
+        request.setPhoneNumber("9876543210");
+        request.setGstNumber("INVALID_GST");
+
+        assertFalse(validator.validate(request).isEmpty());
+    }
+
+    @Test
+    void createClientRequest_WithValidGst_PassesValidation() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@example.com");
+        request.setPhoneNumber("9876543210");
+        request.setGstNumber("27ABCDE1234F1Z5");
+
+        assertTrue(validator.validate(request).isEmpty());
+    }
 }

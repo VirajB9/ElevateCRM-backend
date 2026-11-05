@@ -56,8 +56,13 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() ->
                         new UnauthorizedException("Invalid email or password"));
 
-        if (user.getLockoutUntil() != null && user.getLockoutUntil().isAfter(LocalDateTime.now())) {
-            throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
+        if (user.getLockoutUntil() != null) {
+            if (user.getLockoutUntil().isAfter(LocalDateTime.now())) {
+                throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
+            } else {
+                user.setFailedLoginAttempts(0);
+                user.setLockoutUntil(null);
+            }
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -174,6 +179,10 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new BadRequestException("Current password is incorrect");
+        }
+
+        if (request.getNewPassword() == null || !request.getNewPassword().equals(request.getNewPassword().trim())) {
+            throw new BadRequestException("New password cannot contain leading or trailing whitespace");
         }
 
         if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {

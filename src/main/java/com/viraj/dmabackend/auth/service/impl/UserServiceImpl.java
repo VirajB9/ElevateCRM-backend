@@ -123,8 +123,17 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("The Owner account cannot be demoted");
         }
 
+        boolean isSelf = currentUser.getId() != null && currentUser.getId().equals(user.getId());
+
+        if (isSelf && !targetRole.getId().equals(newRole.getId())) {
+            throw new BadRequestException("Users cannot change their own role");
+        }
+
         userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
-        userValidator.validateRoleAssignment(currentUser, currentUserRole, newRole);
+
+        if (!isSelf || !targetRole.getId().equals(newRole.getId())) {
+            userValidator.validateRoleAssignment(currentUser, currentUserRole, newRole);
+        }
 
         boolean roleChanged = !targetRole.getId().equals(newRole.getId());
         updateUserFields(user, request, newRole);
@@ -247,33 +256,38 @@ public class UserServiceImpl implements UserService {
         List<String> roleIds = users.getContent()
                 .stream()
                 .map(User::getRoleId)
+                .filter(java.util.Objects::nonNull)
                 .distinct()
                 .toList();
 
-        Map<String, Role> rolesById = roleRepository
-                .findAllById(roleIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        Role::getId,
-                        Function.identity()));
+        Map<String, Role> rolesById = roleIds.isEmpty()
+                ? java.util.Collections.emptyMap()
+                : roleRepository
+                        .findAllById(roleIds)
+                        .stream()
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toMap(
+                                Role::getId,
+                                Function.identity(),
+                                (a, b) -> a));
 
         return users.map(user -> {
 
-            Role role = rolesById.get(user.getRoleId());
-
-            if (role == null) {
-                throw new RoleNotFoundException(user.getRoleId());
-            }
+            Role role = user.getRoleId() != null ? rolesById.get(user.getRoleId()) : null;
+            String roleName = role != null && role.getName() != null ? role.getName() : "UNKNOWN";
 
             return userMapper.toUserResponse(
                     user,
-                    role.getName());
+                    roleName);
         });
     }
 
     private UserResponse mapUser(User user) {
 
-        Role role = findRoleById(user.getRoleId());
-        return userMapper.toUserResponse(user, role.getName());
+        Role role = user.getRoleId() != null
+                ? roleRepository.findById(user.getRoleId()).orElse(null)
+                : null;
+        String roleName = role != null && role.getName() != null ? role.getName() : "UNKNOWN";
+        return userMapper.toUserResponse(user, roleName);
     }
 }

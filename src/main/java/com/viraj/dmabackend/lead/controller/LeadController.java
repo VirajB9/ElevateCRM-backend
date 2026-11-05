@@ -4,6 +4,7 @@ import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.LeadResponse;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
 import com.viraj.dmabackend.lead.enums.LeadSource;
+import com.viraj.dmabackend.lead.enums.LeadStatus;
 import com.viraj.dmabackend.lead.service.LeadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -95,6 +96,21 @@ public class LeadController {
             @Parameter(description = "Lead source", required = true) @RequestParam LeadSource source,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return leadService.filterBySource(source, pageable);
+    }
+
+    @PreAuthorize("hasAuthority('lead:read')")
+    @GetMapping("/status")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Filter leads by status", description = "Retrieves leads filtered by status. Requires 'lead:read' authority.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Filtered leads returned successfully"),
+            @ApiResponse(responseCode = "400", description = "Querying soft-deleted leads is not permitted"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public Page<LeadResponse> filterByStatus(
+            @Parameter(description = "Lead status", required = true) @RequestParam LeadStatus status,
+            @Parameter(description = "Pagination parameters") Pageable pageable) {
+        return leadService.filterByStatus(status, pageable);
     }
 
     @PreAuthorize("hasAuthority('lead:read')")

@@ -99,12 +99,12 @@ public class ClientValidatorTest {
     }
 
     @Test
-    void validateDuplicateGst_NormalizesWhitespace() {
+    void validateDuplicateGst_NormalizesWhitespaceAndUppercase() {
         when(clientRepository.existsByGstNumberAndStatusNot("27ABCDE1234F1Z5", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
                 .thenReturn(true);
 
         assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientGstException.class,
-                () -> clientValidator.validateDuplicateGst("  27ABCDE1234F1Z5  "));
+                () -> clientValidator.validateDuplicateGst("  27abcde1234f1z5  "));
     }
 
     @Test
@@ -117,11 +117,11 @@ public class ClientValidatorTest {
     }
 
     @Test
-    void validateGstForUpdate_NormalizesWhitespace() {
+    void validateGstForUpdate_NormalizesWhitespaceAndUppercase() {
         when(clientRepository.existsByGstNumberAndIdNotAndStatusNot("27ABCDE1234F1Z5", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
                 .thenReturn(true);
 
         assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientGstException.class,
-                () -> clientValidator.validateGstForUpdate("  27ABCDE1234F1Z5  ", "c-1"));
+                () -> clientValidator.validateGstForUpdate("  27abcde1234f1z5  ", "c-1"));
     }
 }

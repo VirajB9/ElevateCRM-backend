@@ -56,9 +56,31 @@ public class RoleServiceImpl implements RoleService {
         if (roles.size() > 100) {
             log.warn("Role count exceeds expected threshold: {}", roles.size());
         }
+
+        List<String> allPermissionIds = roles.stream()
+                .map(Role::getPermissionIds)
+                .filter(java.util.Objects::nonNull)
+                .flatMap(List::stream)
+                .distinct()
+                .toList();
+
+        java.util.Map<String, Permission> permissionsById = allPermissionIds.isEmpty()
+                ? java.util.Collections.emptyMap()
+                : permissionRepository.findAllById(allPermissionIds)
+                        .stream()
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toMap(Permission::getId, java.util.function.Function.identity(), (a, b) -> a));
         
         return roles.stream()
-                .map(roleMapper::toRoleResponse)
+                .map(role -> {
+                    List<Permission> rolePermissions = role.getPermissionIds() != null
+                            ? role.getPermissionIds().stream()
+                                    .map(permissionsById::get)
+                                    .filter(java.util.Objects::nonNull)
+                                    .toList()
+                            : null;
+                    return roleMapper.toRoleResponse(role, rolePermissions);
+                })
                 .toList();
     }
 
@@ -66,7 +88,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public RoleResponse getRoleById(String roleId) {
         Role role = findRoleById(roleId);
-        return roleMapper.toRoleResponse(role);
+        return mapRoleWithPermissions(role);
     }
 
     @CacheEvict(value = {"roles", "role"}, allEntries = true)
@@ -87,7 +109,7 @@ public class RoleServiceImpl implements RoleService {
 
         Role updatedRole = roleRepository.save(role);
 
-        return roleMapper.toRoleResponse(updatedRole);
+        return mapRoleWithPermissions(updatedRole);
     }
 
     @CacheEvict(value = {"roles", "role", "menuTree"}, allEntries = true)
@@ -110,7 +132,7 @@ public class RoleServiceImpl implements RoleService {
 
         Role updatedRole = roleRepository.save(role);
 
-        return roleMapper.toRoleResponse(updatedRole);
+        return mapRoleWithPermissions(updatedRole);
     }
 
     @CacheEvict(value = {"roles", "role", "menuTree"}, allEntries = true)
@@ -131,7 +153,7 @@ public class RoleServiceImpl implements RoleService {
 
         Role updatedRole = roleRepository.save(role);
 
-        return roleMapper.toRoleResponse(updatedRole);
+        return mapRoleWithPermissions(updatedRole);
     }
 
     @Override
@@ -147,6 +169,13 @@ public class RoleServiceImpl implements RoleService {
     // =========================
     // Helper Methods
     // =========================
+    private RoleResponse mapRoleWithPermissions(Role role) {
+        List<Permission> permissions = (role.getPermissionIds() != null && !role.getPermissionIds().isEmpty())
+                ? permissionRepository.findAllById(role.getPermissionIds())
+                : java.util.Collections.emptyList();
+        return roleMapper.toRoleResponse(role, permissions);
+    }
+
     private Role findRoleById(String roleId) {
 
         return roleRepository.findById(roleId)
