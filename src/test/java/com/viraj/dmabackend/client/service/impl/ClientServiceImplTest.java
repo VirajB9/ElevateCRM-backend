@@ -123,4 +123,33 @@ public class ClientServiceImplTest {
         verify(clientValidator).validateClientStatusForUpdate(ClientStatus.INACTIVE);
         verify(clientRepository).save(client);
     }
+
+    @Test
+    void createClientFromLead_BuildsContactPersonWithoutNullConcatenation() {
+        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
+                .leadId("lead-1")
+                .firstName("  Jane  ")
+                .lastName(null)
+                .companyName("  Acme Inc  ")
+                .email("  jane@acme.com  ")
+                .phoneNumber("  9876543210  ")
+                .website("  https://acme.com  ")
+                .industry("  Tech  ")
+                .notes("Some note")
+                .build();
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        clientService.createClientFromLead(data);
+
+        ArgumentCaptor<Client> captor = ArgumentCaptor.forClass(Client.class);
+        verify(clientRepository).save(captor.capture());
+        Client saved = captor.getValue();
+        assertEquals("Jane", saved.getContactPerson());
+        assertEquals("Acme Inc", saved.getCompanyName());
+        assertEquals("jane@acme.com", saved.getEmail());
+        assertEquals("9876543210", saved.getPhoneNumber());
+        assertEquals("https://acme.com", saved.getWebsite());
+        assertEquals("Tech", saved.getIndustry());
+    }
 }

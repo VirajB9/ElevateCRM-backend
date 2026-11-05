@@ -62,6 +62,12 @@ public class ProjectValidator {
         }
     }
 
+    public void validateProjectEditable(ProjectStatus currentStatus) {
+        if (currentStatus == ProjectStatus.CANCELLED) {
+            throw new BadRequestException("Cancelled projects cannot be edited.");
+        }
+    }
+
     public void validateProjectStatusForUpdate(ProjectStatus status) {
         if (status == ProjectStatus.ARCHIVED) {
             throw new BadRequestException("Projects cannot be archived via update. Please use the delete project endpoint.");

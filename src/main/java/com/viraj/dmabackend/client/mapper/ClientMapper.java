@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 public class ClientMapper {
 
     public ClientResponse toClientResponse(Client client) {
+        if (client == null) {
+            return null;
+        }
         return ClientResponse.builder()
                 .id(client.getId())
                 .companyName(client.getCompanyName())

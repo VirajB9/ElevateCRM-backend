@@ -57,4 +57,48 @@ public class ProjectServiceImplTest {
         assertThrows(BadRequestException.class, () -> projectService.updateProject("proj-1", req));
         verify(projectRepository, never()).save(any());
     }
+
+    @Test
+    void updateProject_ThrowsWhenProjectIsCancelled() {
+        Project project = new Project();
+        project.setId("proj-1");
+        project.setClientId("client-1");
+        project.setProjectName("Test Project");
+        project.setStatus(ProjectStatus.CANCELLED);
+
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+        doThrow(new BadRequestException("Cancelled projects cannot be edited."))
+                .when(projectValidator).validateProjectEditable(ProjectStatus.CANCELLED);
+
+        UpdateProjectRequest req = new UpdateProjectRequest();
+        req.setProjectName("Test Project");
+        req.setPriority(ProjectPriority.MEDIUM);
+        req.setStatus(ProjectStatus.ACTIVE);
+        req.setStartDate(LocalDate.now());
+
+        assertThrows(BadRequestException.class, () -> projectService.updateProject("proj-1", req));
+        verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    void createProject_NormalizesTrimProjectName() {
+        com.viraj.dmabackend.project.dto.CreateProjectRequest req = new com.viraj.dmabackend.project.dto.CreateProjectRequest();
+        req.setClientId(" client-1 ");
+        req.setProjectName("   Trimmed Project Name   ");
+        req.setDescription("   Some description   ");
+        req.setPriority(ProjectPriority.HIGH);
+        req.setStartDate(LocalDate.now());
+
+        org.mockito.ArgumentCaptor<Project> captor = org.mockito.ArgumentCaptor.forClass(Project.class);
+        when(projectRepository.save(captor.capture())).thenAnswer(i -> i.getArgument(0));
+        when(projectMapper.toProjectResponse(any())).thenReturn(com.viraj.dmabackend.project.dto.ProjectResponse.builder().build());
+
+        projectService.createProject(req);
+
+        Project saved = captor.getValue();
+        org.junit.jupiter.api.Assertions.assertEquals("client-1", saved.getClientId());
+        org.junit.jupiter.api.Assertions.assertEquals("Trimmed Project Name", saved.getProjectName());
+        org.junit.jupiter.api.Assertions.assertEquals("Some description", saved.getDescription());
+    }
 }

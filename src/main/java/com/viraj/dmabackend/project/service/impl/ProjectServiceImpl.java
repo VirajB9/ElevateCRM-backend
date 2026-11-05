@@ -86,8 +86,12 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = findProjectById(projectId);
 
+        projectValidator.validateProjectEditable(project.getStatus());
         projectValidator.validateProjectStatusForUpdate(request.getStatus());
-        projectValidator.validateDuplicateProjectForUpdate(request.getProjectName(), project.getClientId(), projectId);
+        projectValidator.validateDuplicateProjectForUpdate(
+                request.getProjectName() != null ? request.getProjectName().trim() : null,
+                project.getClientId(),
+                projectId);
         projectValidator.validateProjectDates(request.getStartDate(), request.getEndDate());
 
         updateProjectFields(project, request);
@@ -121,9 +125,9 @@ public class ProjectServiceImpl implements ProjectService {
     private Project buildProject(CreateProjectRequest request) {
 
         return Project.builder()
-                .clientId(request.getClientId())
-                .projectName(request.getProjectName())
-                .description(request.getDescription())
+                .clientId(normalizeTrim(request.getClientId()))
+                .projectName(normalizeTrim(request.getProjectName()))
+                .description(normalizeTrim(request.getDescription()))
                 .priority(request.getPriority())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
@@ -134,13 +138,17 @@ public class ProjectServiceImpl implements ProjectService {
 
     private void updateProjectFields(Project project, UpdateProjectRequest request) {
 
-        project.setProjectName(request.getProjectName());
-        project.setDescription(request.getDescription());
+        project.setProjectName(normalizeTrim(request.getProjectName()));
+        project.setDescription(normalizeTrim(request.getDescription()));
         project.setPriority(request.getPriority());
         project.setStatus(request.getStatus());
         project.setStartDate(request.getStartDate());
         project.setEndDate(request.getEndDate());
         project.setBudget(request.getBudget());
         project.setNotes(request.getNotes());
+    }
+
+    private String normalizeTrim(String value) {
+        return value != null ? value.trim() : null;
     }
 }

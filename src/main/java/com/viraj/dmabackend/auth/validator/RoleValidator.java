@@ -13,12 +13,20 @@ public class RoleValidator {
 
     public void validatePermissionIds(List<String> permissionIds) {
 
+        if (permissionIds == null || permissionIds.isEmpty()) {
+            throw new BadRequestException("Permission IDs list cannot be empty");
+        }
+
         Set<String> uniquePermissionIds = new HashSet<>();
 
         for (String permissionId : permissionIds) {
 
-            if (!uniquePermissionIds.add(permissionId)) {
-                throw new DuplicatePermissionException(permissionId);
+            if (permissionId == null || permissionId.isBlank()) {
+                throw new BadRequestException("Permission ID cannot be null or blank");
+            }
+
+            if (!uniquePermissionIds.add(permissionId.trim())) {
+                throw new DuplicatePermissionException(permissionId.trim());
             }
         }
     }

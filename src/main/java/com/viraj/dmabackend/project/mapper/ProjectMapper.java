@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 public class ProjectMapper {
 
     public ProjectResponse toProjectResponse(Project project) {
+        if (project == null) {
+            return null;
+        }
         return ProjectResponse.builder()
                 .id(project.getId())
                 .clientId(project.getClientId())

@@ -48,12 +48,12 @@ public class ClientServiceImpl implements ClientService {
         clientValidator.validateDuplicatePhone(data.getPhoneNumber());
 
         Client client = Client.builder()
-                .companyName(data.getCompanyName())
-                .contactPerson(data.getFirstName() + " " + data.getLastName())
-                .email(data.getEmail())
-                .phoneNumber(data.getPhoneNumber())
-                .website(data.getWebsite())
-                .industry(data.getIndustry())
+                .companyName(normalizeTrim(data.getCompanyName()))
+                .contactPerson(buildContactPerson(data.getFirstName(), data.getLastName()))
+                .email(normalizeTrim(data.getEmail()))
+                .phoneNumber(normalizeTrim(data.getPhoneNumber()))
+                .website(normalizeTrim(data.getWebsite()))
+                .industry(normalizeTrim(data.getIndustry()))
                 .notes(data.getNotes())
                 .build();
 
@@ -179,5 +179,21 @@ public class ClientServiceImpl implements ClientService {
 
     private String normalizeTrim(String value) {
         return value != null ? value.trim() : null;
+    }
+
+    private String buildContactPerson(String firstName, String lastName) {
+        String first = normalizeTrim(firstName);
+        String last = normalizeTrim(lastName);
+
+        if (first == null && last == null) {
+            return null;
+        }
+        if (first == null) {
+            return last;
+        }
+        if (last == null) {
+            return first;
+        }
+        return first + " " + last;
     }
 }

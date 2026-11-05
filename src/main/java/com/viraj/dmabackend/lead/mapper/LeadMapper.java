@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 public class LeadMapper {
 
     public LeadResponse toLeadResponse(Lead lead) {
+        if (lead == null) {
+            return null;
+        }
         return LeadResponse.builder()
                 .id(lead.getId())
                 .firstName(lead.getFirstName())

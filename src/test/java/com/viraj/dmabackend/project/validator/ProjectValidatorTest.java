@@ -68,6 +68,18 @@ public class ProjectValidatorTest {
     }
 
     @Test
+    void validateProjectEditable_ThrowsWhenCancelled() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectEditable(ProjectStatus.CANCELLED));
+    }
+
+    @Test
+    void validateProjectEditable_PassesWhenNotCancelled() {
+        assertDoesNotThrow(() -> projectValidator.validateProjectEditable(ProjectStatus.ACTIVE));
+        assertDoesNotThrow(() -> projectValidator.validateProjectEditable(ProjectStatus.PLANNING));
+    }
+
+    @Test
     void validateProjectStatusForUpdate_ThrowsWhenArchived() {
         assertThrows(BadRequestException.class,
                 () -> projectValidator.validateProjectStatusForUpdate(ProjectStatus.ARCHIVED));
