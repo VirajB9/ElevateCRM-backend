@@ -37,7 +37,7 @@ public class UpdateLeadRequest {
     private String email;
 
     @NotBlank(message = "Phone number is required.")
-    
+    @jakarta.validation.constraints.Pattern(regexp = "^\\s*\\+?[0-9]{10,15}\\s*$", message = "Phone number must be a valid phone number with 10 to 15 digits")
     @jakarta.validation.constraints.Size(max = 20)
     private String phoneNumber;
 

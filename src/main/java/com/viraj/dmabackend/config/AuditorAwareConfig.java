@@ -28,8 +28,12 @@ public class AuditorAwareConfig {
 
             Object principal = authentication.getPrincipal();
 
-            if (principal instanceof String email) {
-                return Optional.of(email);
+            if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+                return Optional.ofNullable(userDetails.getUsername())
+                        .filter(username -> !username.isBlank());
+            } else if (principal instanceof String email) {
+                return Optional.of(email)
+                        .filter(value -> !value.isBlank());
             }
 
             return Optional.empty();

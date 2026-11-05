@@ -124,4 +124,72 @@ public class RoleServiceImplTest {
         verify(roleRepository).save(targetRole);
         org.assertj.core.api.Assertions.assertThat(targetRole.getPermissionIds()).isEmpty();
     }
+
+    @Test
+    void updateRole_ThrowsWhenCallerIsNotOwner() {
+        Role managerRole = Role.builder().id("mgr-role").name("MANAGER").build();
+        User currentUser = User.builder().id("mgr-user").email("mgr@test.com").roleId("mgr-role").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("mgr@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("mgr@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("mgr-role")).thenReturn(Optional.of(managerRole));
+
+        com.viraj.dmabackend.auth.dto.UpdateRoleRequest request = new com.viraj.dmabackend.auth.dto.UpdateRoleRequest();
+        request.setDescription("New desc");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException.class,
+                () -> roleService.updateRole("any-role", request)
+        );
+    }
+
+    @Test
+    void updateRole_ThrowsWhenTargetRoleIsOwner() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+
+        com.viraj.dmabackend.auth.dto.UpdateRoleRequest request = new com.viraj.dmabackend.auth.dto.UpdateRoleRequest();
+        request.setDescription("New desc");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.viraj.dmabackend.auth.exception.SystemRoleModificationException.class,
+                () -> roleService.updateRole("owner-role", request)
+        );
+    }
+
+    @Test
+    void updateRole_SucceedsWhenCallerIsOwnerAndTargetIsNotOwner() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-target").name("EMPLOYEE").description("Old desc").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-target")).thenReturn(Optional.of(targetRole));
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleMapper.toRoleResponse(any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.UpdateRoleRequest request = new com.viraj.dmabackend.auth.dto.UpdateRoleRequest();
+        request.setDescription("  Updated Employee description  ");
+
+        roleService.updateRole("role-target", request);
+
+        verify(roleValidator).validateDescription("  Updated Employee description  ");
+        verify(roleRepository).save(targetRole);
+        assertEquals("Updated Employee description", targetRole.getDescription());
+    }
 }

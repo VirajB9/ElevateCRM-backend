@@ -4,6 +4,7 @@ import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException;
 import com.viraj.dmabackend.auth.exception.DuplicateEmailException;
+import com.viraj.dmabackend.auth.exception.DuplicatePhoneException;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -115,5 +116,23 @@ public class UserValidatorTest {
 
         assertThrows(DuplicateEmailException.class,
                 () -> userValidator.validateDuplicateEmail("  John@Example.com  "));
+    }
+
+    @Test
+    void validateDuplicatePhone_NormalizesWhitespace() {
+        when(userRepository.existsByPhoneNumberAndStatusNot("9876543210", com.viraj.dmabackend.auth.enums.UserStatus.DELETED))
+                .thenReturn(true);
+
+        assertThrows(DuplicatePhoneException.class,
+                () -> userValidator.validateDuplicatePhone("  9876543210  "));
+    }
+
+    @Test
+    void validatePhoneForUpdate_NormalizesWhitespace() {
+        when(userRepository.existsByPhoneNumberAndIdNotAndStatusNot("9876543210", "u-1", com.viraj.dmabackend.auth.enums.UserStatus.DELETED))
+                .thenReturn(true);
+
+        assertThrows(DuplicatePhoneException.class,
+                () -> userValidator.validatePhoneForUpdate("  9876543210  ", "u-1"));
     }
 }

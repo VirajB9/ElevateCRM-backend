@@ -145,10 +145,10 @@ public class InvoiceController {
         return invoiceService.updateInvoice(invoiceId, request);
     }
 
-    @PreAuthorize("hasAnyAuthority('invoice:update', 'invoice:pay')")
+    @PreAuthorize("hasAuthority('invoice:update')")
     @PatchMapping("/{invoiceId}/status")
     @ResponseStatus(HttpStatus.OK)
-    @Operation(summary = "Update Invoice Status", description = "Updates only the status of an invoice. Requires 'invoice:update' or 'invoice:pay' authority.")
+    @Operation(summary = "Update Invoice Status", description = "Updates only the status of an invoice. Requires 'invoice:update' authority.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Invoice status updated successfully"),
             @ApiResponse(responseCode = "404", description = "Invoice not found"),

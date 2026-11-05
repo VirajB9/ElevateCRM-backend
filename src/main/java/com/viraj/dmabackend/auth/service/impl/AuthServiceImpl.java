@@ -166,7 +166,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthenticationResponse changePassword(ChangePasswordRequest request) {
 
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = com.viraj.dmabackend.auth.security.SecurityUtils.getCurrentUserEmail()
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
 
         User user = userRepository.findByEmailAndStatusNot(email, UserStatus.DELETED)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));

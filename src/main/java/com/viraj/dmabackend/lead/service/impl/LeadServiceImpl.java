@@ -165,7 +165,7 @@ public class LeadServiceImpl implements LeadService {
                 .firstName(normalizeTrim(request.getFirstName()))
                 .lastName(normalizeTrim(request.getLastName()))
                 .companyName(normalizeTrim(request.getCompanyName()))
-                .email(normalizeTrim(request.getEmail()))
+                .email(normalizeEmail(request.getEmail()))
                 .phoneNumber(normalizeTrim(request.getPhoneNumber()))
                 .website(normalizeTrim(request.getWebsite()))
                 .industry(normalizeTrim(request.getIndustry()))
@@ -182,7 +182,7 @@ public class LeadServiceImpl implements LeadService {
         lead.setFirstName(normalizeTrim(request.getFirstName()));
         lead.setLastName(normalizeTrim(request.getLastName()));
         lead.setCompanyName(normalizeTrim(request.getCompanyName()));
-        lead.setEmail(normalizeTrim(request.getEmail()));
+        lead.setEmail(normalizeEmail(request.getEmail()));
         lead.setPhoneNumber(normalizeTrim(request.getPhoneNumber()));
         lead.setWebsite(normalizeTrim(request.getWebsite()));
         lead.setIndustry(normalizeTrim(request.getIndustry()));
@@ -192,6 +192,13 @@ public class LeadServiceImpl implements LeadService {
         lead.setEstimatedBudget(request.getEstimatedBudget());
         lead.setRequirements(normalizeTrim(request.getRequirements()));
         lead.setNotes(normalizeTrim(request.getNotes()));
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
     }
 
     private String normalizeTrim(String value) {

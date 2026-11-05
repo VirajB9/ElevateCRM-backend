@@ -30,13 +30,15 @@ public class ClientValidator {
     }
 
     public void validateDuplicatePhone(String phoneNumber) {
-        if (clientRepository.existsByPhoneNumberAndStatusNot(phoneNumber, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String normalizedPhone = phoneNumber != null ? phoneNumber.trim() : null;
+        if (normalizedPhone != null && clientRepository.existsByPhoneNumberAndStatusNot(normalizedPhone, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientPhoneException(phoneNumber);
         }
     }
 
     public void validateDuplicateGst(String gstNumber) {
-        if (gstNumber != null && !gstNumber.isBlank() && clientRepository.existsByGstNumberAndStatusNot(gstNumber, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String normalizedGst = gstNumber != null ? gstNumber.trim() : null;
+        if (normalizedGst != null && !normalizedGst.isBlank() && clientRepository.existsByGstNumberAndStatusNot(normalizedGst, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientGstException(gstNumber);
         }
     }
@@ -49,13 +51,15 @@ public class ClientValidator {
     }
 
     public void validatePhoneForUpdate(String phoneNumber, String clientId) {
-        if (clientRepository.existsByPhoneNumberAndIdNotAndStatusNot(phoneNumber, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String normalizedPhone = phoneNumber != null ? phoneNumber.trim() : null;
+        if (normalizedPhone != null && clientRepository.existsByPhoneNumberAndIdNotAndStatusNot(normalizedPhone, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientPhoneException(phoneNumber);
         }
     }
 
     public void validateGstForUpdate(String gstNumber, String clientId) {
-        if (gstNumber != null && !gstNumber.isBlank() && clientRepository.existsByGstNumberAndIdNotAndStatusNot(gstNumber, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String normalizedGst = gstNumber != null ? gstNumber.trim() : null;
+        if (normalizedGst != null && !normalizedGst.isBlank() && clientRepository.existsByGstNumberAndIdNotAndStatusNot(normalizedGst, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientGstException(gstNumber);
         }
     }

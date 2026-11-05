@@ -74,9 +74,45 @@ public class ProjectValidatorTest {
     }
 
     @Test
-    void validateProjectEditable_PassesWhenNotCancelled() {
+    void validateProjectEditable_ThrowsWhenCompleted() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectEditable(ProjectStatus.COMPLETED));
+    }
+
+    @Test
+    void validateProjectEditable_PassesWhenActiveOrPlanning() {
         assertDoesNotThrow(() -> projectValidator.validateProjectEditable(ProjectStatus.ACTIVE));
         assertDoesNotThrow(() -> projectValidator.validateProjectEditable(ProjectStatus.PLANNING));
+        assertDoesNotThrow(() -> projectValidator.validateProjectEditable(ProjectStatus.ON_HOLD));
+    }
+
+    @Test
+    void validateProjectStatusTransition_ThrowsWhenCurrentStatusIsCompletedOrCancelled() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusTransition(ProjectStatus.COMPLETED, ProjectStatus.ACTIVE));
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusTransition(ProjectStatus.CANCELLED, ProjectStatus.ACTIVE));
+    }
+
+    @Test
+    void validateProjectStatusTransition_ThrowsWhenPlanningDirectToCompleted() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusTransition(ProjectStatus.PLANNING, ProjectStatus.COMPLETED));
+    }
+
+    @Test
+    void validateProjectStatusTransition_ThrowsWhenOnHoldDirectToCompleted() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusTransition(ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED));
+    }
+
+    @Test
+    void validateProjectStatusTransition_ValidTransitionsPass() {
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusTransition(ProjectStatus.PLANNING, ProjectStatus.ACTIVE));
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.COMPLETED));
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD));
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusTransition(ProjectStatus.ON_HOLD, ProjectStatus.ACTIVE));
+        assertDoesNotThrow(() -> projectValidator.validateProjectStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.ACTIVE));
     }
 
     @Test

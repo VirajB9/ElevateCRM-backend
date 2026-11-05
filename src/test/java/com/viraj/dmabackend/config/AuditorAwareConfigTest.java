@@ -62,4 +62,24 @@ public class AuditorAwareConfigTest {
         assertTrue(auditor.isPresent());
         assertEquals("john.doe@example.com", auditor.get());
     }
+
+    @Test
+    void getCurrentAuditor_WhenPrincipalIsUserDetails_ReturnsUsername() {
+        org.springframework.security.core.userdetails.User userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        "auditor@example.com",
+                        "password",
+                        AuthorityUtils.createAuthorityList("ROLE_USER")
+                );
+
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                "credentials",
+                userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        Optional<String> auditor = auditorAware.getCurrentAuditor();
+        assertTrue(auditor.isPresent());
+        assertEquals("auditor@example.com", auditor.get());
+    }
 }

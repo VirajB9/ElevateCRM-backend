@@ -317,6 +317,45 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void saveInvoiceHistory_CapturesUsernameWhenPrincipalIsUserDetails() {
+        org.springframework.security.core.userdetails.User userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        "accountant@example.com",
+                        "password",
+                        org.springframework.security.core.authority.AuthorityUtils.createAuthorityList("ROLE_USER")
+                );
+
+        org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        "credentials",
+                        userDetails.getAuthorities()
+                );
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+
+        Invoice invoice = Invoice.builder()
+                .id("inv-user-audit")
+                .invoiceNumber("INV-2026-0002")
+                .clientId("client-1")
+                .projectId("proj-1")
+                .status(InvoiceStatus.DRAFT)
+                .active(true)
+                .build();
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-user-audit")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+
+        invoiceService.deleteInvoice("inv-user-audit");
+
+        org.mockito.ArgumentCaptor<InvoiceHistory> captor = org.mockito.ArgumentCaptor.forClass(InvoiceHistory.class);
+        verify(invoiceHistoryRepository, atLeastOnce()).save(captor.capture());
+        InvoiceHistory savedHistory = captor.getValue();
+
+        assertEquals("accountant@example.com", savedHistory.getChangedBy());
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    @Test
     void getInvoicesByClientId_ValidatesClientAndReturnsPage() {
         String clientId = "client-123";
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
@@ -356,5 +395,45 @@ public class InvoiceServiceImplTest {
         assertEquals(1, result.getTotalElements());
         verify(invoiceValidator).validateProjectExists(projectId);
         verify(invoiceRepository).findByActiveTrueAndProjectId(projectId, pageable);
+    }
+
+    @Test
+    void updateInvoice_ThrowsWhenStatusIsNotDraft() {
+        for (InvoiceStatus nonDraftStatus : List.of(InvoiceStatus.SENT, InvoiceStatus.OVERDUE, InvoiceStatus.PAID, InvoiceStatus.CANCELLED)) {
+            Invoice invoice = new Invoice();
+            invoice.setId("inv-" + nonDraftStatus);
+            invoice.setStatus(nonDraftStatus);
+            invoice.setActive(true);
+
+            when(invoiceRepository.findByIdAndActiveTrue("inv-" + nonDraftStatus)).thenReturn(Optional.of(invoice));
+
+            com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest request =
+                    new com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest();
+
+            assertThrows(InvalidInvoiceStatusException.class,
+                    () -> invoiceService.updateInvoice("inv-" + nonDraftStatus, request));
+        }
+    }
+
+    @Test
+    void updateInvoice_SucceedsWhenStatusIsDraft() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-draft");
+        invoice.setStatus(InvoiceStatus.DRAFT);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-draft")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(invoiceMapper.toResponse(any())).thenReturn(new com.viraj.dmabackend.invoice.dto.InvoiceResponse());
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest request =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest();
+        request.setDueDate(java.time.LocalDate.now().plusDays(10));
+        request.setTaxPercentage(BigDecimal.TEN);
+        request.setDiscount(BigDecimal.ZERO);
+
+        assertDoesNotThrow(() -> invoiceService.updateInvoice("inv-draft", request));
+        verify(invoiceValidator).validateUpdateInvoice(invoice, request);
+        verify(invoiceRepository).save(invoice);
     }
 }

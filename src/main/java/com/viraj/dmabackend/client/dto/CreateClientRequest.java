@@ -24,6 +24,7 @@ public class CreateClientRequest {
     private String email;
 
     @NotBlank
+    @jakarta.validation.constraints.Pattern(regexp = "^\\s*\\+?[0-9]{10,15}\\s*$", message = "Phone number must be a valid phone number with 10 to 15 digits")
     @Size(max = 20)
     private String phoneNumber;
 

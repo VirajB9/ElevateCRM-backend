@@ -245,12 +245,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     private void validateInvoiceEditable(Invoice invoice) {
 
-        if (invoice.getStatus() == InvoiceStatus.PAID) {
-            throw new InvalidInvoiceStatusException("Paid invoices cannot be edited.");
-        }
-
-        if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
-            throw new InvalidInvoiceStatusException("Cancelled invoices cannot be edited.");
+        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            throw new InvalidInvoiceStatusException(
+                    String.format("Only draft invoices can be edited. Current status is %s.", invoice.getStatus())
+            );
         }
     }
 
@@ -281,17 +279,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     private String getCurrentUserEmail() {
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth == null || !auth.isAuthenticated()) {
-            return "SYSTEM";
-        }
-
-        if (auth.getPrincipal() instanceof String email) {
-            return email;
-        }
-
-        return "SYSTEM";
+        return com.viraj.dmabackend.auth.security.SecurityUtils.getCurrentUserEmail()
+                .orElse("SYSTEM");
     }
 
     private void saveInvoiceHistory(Invoice invoice) {

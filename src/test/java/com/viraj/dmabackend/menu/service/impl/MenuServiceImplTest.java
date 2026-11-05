@@ -122,6 +122,27 @@ class MenuServiceImplTest {
     }
 
     @Test
+    void getMenuTree_promotesOrphanSubmenuToRootWhenParentIsMissingOrRestricted() {
+        Menu childMenu = Menu.builder()
+                .id("child-1")
+                .parentId("parent-missing")
+                .title("Sub Report")
+                .path("/reports/sub")
+                .orderIndex(1)
+                .requiredPermission(null)
+                .active(true)
+                .build();
+
+        when(menuRepository.findByActiveTrueOrderByOrderIndexAsc())
+                .thenReturn(List.of(childMenu));
+
+        List<MenuTreeResponse> result = menuService.getMenuTree();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Sub Report");
+    }
+
+    @Test
     void deactivateMenu_validatesActiveChildrenBeforeDeactivating() {
         Menu menu = Menu.builder().id("menu-1").title("Parent").active(true).build();
         when(menuRepository.findById("menu-1")).thenReturn(java.util.Optional.of(menu));

@@ -124,4 +124,56 @@ public class LeadValidatorTest {
                 .thenReturn(java.util.Optional.empty());
         assertThrows(UserNotFoundException.class, () -> leadValidator.validateAssignedUser("user-missing"));
     }
+
+    @Test
+    void validateDuplicateLead_NormalizesEmailToLowercaseAndTrim() {
+        CreateLeadRequest request = new CreateLeadRequest();
+        request.setEmail("  Lead.Test@EXAMPLE.COM  ");
+
+        when(leadRepository.existsByEmailAndStatusNot("lead.test@example.com", LeadStatus.DELETED))
+                .thenReturn(true);
+
+        assertThrows(DuplicateLeadException.class, () -> leadValidator.validateDuplicateLead(request));
+    }
+
+    @Test
+    void validateDuplicateLeadForUpdate_NormalizesEmailToLowercaseAndTrim() {
+        Lead existing = Lead.builder().id("lead-1").build();
+        Lead conflict = Lead.builder().id("lead-2").build();
+
+        UpdateLeadRequest request = new UpdateLeadRequest();
+        request.setEmail("  Other.Lead@EXAMPLE.COM  ");
+
+        when(leadRepository.findByEmailAndStatusNot("other.lead@example.com", LeadStatus.DELETED))
+                .thenReturn(Optional.of(conflict));
+
+        assertThrows(DuplicateLeadException.class,
+                () -> leadValidator.validateDuplicateLeadForUpdate(existing, request));
+    }
+
+    @Test
+    void validateDuplicateLead_NormalizesPhoneWhitespace() {
+        CreateLeadRequest request = new CreateLeadRequest();
+        request.setPhoneNumber("  9876543210  ");
+
+        when(leadRepository.existsByPhoneNumberAndStatusNot("9876543210", LeadStatus.DELETED))
+                .thenReturn(true);
+
+        assertThrows(DuplicateLeadException.class, () -> leadValidator.validateDuplicateLead(request));
+    }
+
+    @Test
+    void validateDuplicateLeadForUpdate_NormalizesPhoneWhitespace() {
+        Lead existing = Lead.builder().id("lead-1").build();
+        Lead conflict = Lead.builder().id("lead-2").build();
+
+        UpdateLeadRequest request = new UpdateLeadRequest();
+        request.setPhoneNumber("  9876543210  ");
+
+        when(leadRepository.findByPhoneNumberAndStatusNot("9876543210", LeadStatus.DELETED))
+                .thenReturn(Optional.of(conflict));
+
+        assertThrows(DuplicateLeadException.class,
+                () -> leadValidator.validateDuplicateLeadForUpdate(existing, request));
+    }
 }

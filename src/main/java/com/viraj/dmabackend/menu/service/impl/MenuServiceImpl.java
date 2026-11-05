@@ -231,6 +231,8 @@ public class MenuServiceImpl implements MenuService {
 
                 if (parentMenu != null) {
                     parentMenu.getChildren().add(currentMenu);
+                } else {
+                    rootMenus.add(currentMenu);
                 }
             }
         }

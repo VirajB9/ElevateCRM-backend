@@ -213,10 +213,8 @@ public class UserServiceImpl implements UserService {
 
     private User findCurrentUser() {
 
-        String email = (String) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
+        String email = com.viraj.dmabackend.auth.security.SecurityUtils.getCurrentUserEmail()
+                .orElseThrow(() -> new com.viraj.dmabackend.exception.UnauthorizedException("User not found"));
                 
         return userRepository.findByEmailAndStatusNot(email, UserStatus.DELETED)
                 .orElseThrow(() -> new com.viraj.dmabackend.exception.UnauthorizedException("User not found"));

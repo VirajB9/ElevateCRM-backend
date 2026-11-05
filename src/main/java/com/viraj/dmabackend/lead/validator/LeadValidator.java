@@ -24,28 +24,36 @@ public class LeadValidator {
     private final UserRepository userRepository;
 
     public void validateDuplicateLead(CreateLeadRequest request) {
-        if (leadRepository.existsByEmailAndStatusNot(request.getEmail(), LeadStatus.DELETED)) {
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
+        if (email != null && leadRepository.existsByEmailAndStatusNot(email, LeadStatus.DELETED)) {
             throw new DuplicateLeadException("email", request.getEmail());
         }
-        if (leadRepository.existsByPhoneNumberAndStatusNot(request.getPhoneNumber(), LeadStatus.DELETED)) {
+        String phone = request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null;
+        if (phone != null && leadRepository.existsByPhoneNumberAndStatusNot(phone, LeadStatus.DELETED)) {
             throw new DuplicateLeadException("phone number", request.getPhoneNumber());
         }
     }
 
     public void validateDuplicateLeadForUpdate(Lead existingLead, UpdateLeadRequest request) {
-        leadRepository.findByEmailAndStatusNot(request.getEmail(), LeadStatus.DELETED)
-                .ifPresent(lead -> {
-                    if (!lead.getId().equals(existingLead.getId())) {
-                        throw new DuplicateLeadException("email", request.getEmail());
-                    }
-                });
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
+        if (email != null) {
+            leadRepository.findByEmailAndStatusNot(email, LeadStatus.DELETED)
+                    .ifPresent(lead -> {
+                        if (!lead.getId().equals(existingLead.getId())) {
+                            throw new DuplicateLeadException("email", request.getEmail());
+                        }
+                    });
+        }
 
-        leadRepository.findByPhoneNumberAndStatusNot(request.getPhoneNumber(), LeadStatus.DELETED)
-                .ifPresent(lead -> {
-                    if (!lead.getId().equals(existingLead.getId())) {
-                        throw new DuplicateLeadException("phone number", request.getPhoneNumber());
-                    }
-                });
+        String phone = request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null;
+        if (phone != null) {
+            leadRepository.findByPhoneNumberAndStatusNot(phone, LeadStatus.DELETED)
+                    .ifPresent(lead -> {
+                        if (!lead.getId().equals(existingLead.getId())) {
+                            throw new DuplicateLeadException("phone number", request.getPhoneNumber());
+                        }
+                    });
+        }
     }
 
     public void validateLeadStatus(LeadStatus currentStatus, LeadStatus newStatus) {

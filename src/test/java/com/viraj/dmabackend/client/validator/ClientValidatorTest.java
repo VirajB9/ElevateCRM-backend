@@ -88,4 +88,40 @@ public class ClientValidatorTest {
         assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientEmailException.class,
                 () -> clientValidator.validateEmailForUpdate("  Client@EXAMPLE.com  ", "c-1"));
     }
+
+    @Test
+    void validateDuplicatePhone_NormalizesWhitespace() {
+        when(clientRepository.existsByPhoneNumberAndStatusNot("9876543210", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientPhoneException.class,
+                () -> clientValidator.validateDuplicatePhone("  9876543210  "));
+    }
+
+    @Test
+    void validateDuplicateGst_NormalizesWhitespace() {
+        when(clientRepository.existsByGstNumberAndStatusNot("27ABCDE1234F1Z5", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientGstException.class,
+                () -> clientValidator.validateDuplicateGst("  27ABCDE1234F1Z5  "));
+    }
+
+    @Test
+    void validatePhoneForUpdate_NormalizesWhitespace() {
+        when(clientRepository.existsByPhoneNumberAndIdNotAndStatusNot("9876543210", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientPhoneException.class,
+                () -> clientValidator.validatePhoneForUpdate("  9876543210  ", "c-1"));
+    }
+
+    @Test
+    void validateGstForUpdate_NormalizesWhitespace() {
+        when(clientRepository.existsByGstNumberAndIdNotAndStatusNot("27ABCDE1234F1Z5", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientGstException.class,
+                () -> clientValidator.validateGstForUpdate("  27ABCDE1234F1Z5  ", "c-1"));
+    }
 }

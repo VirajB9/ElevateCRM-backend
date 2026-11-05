@@ -88,6 +88,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectValidator.validateProjectEditable(project.getStatus());
         projectValidator.validateProjectStatusForUpdate(request.getStatus());
+        projectValidator.validateProjectStatusTransition(project.getStatus(), request.getStatus());
         projectValidator.validateDuplicateProjectForUpdate(
                 request.getProjectName() != null ? request.getProjectName().trim() : null,
                 project.getClientId(),

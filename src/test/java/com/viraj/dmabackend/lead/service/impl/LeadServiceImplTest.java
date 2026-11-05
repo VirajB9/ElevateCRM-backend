@@ -84,7 +84,7 @@ public class LeadServiceImplTest {
         request.setFirstName("  John  ");
         request.setLastName("  Doe  ");
         request.setCompanyName("  Acme Inc  ");
-        request.setEmail("  john@example.com  ");
+        request.setEmail("  John.Doe@EXAMPLE.COM  ");
         request.setPhoneNumber("  9876543210  ");
         request.setWebsite("  https://acme.com  ");
         request.setIndustry("  Tech  ");
@@ -103,7 +103,7 @@ public class LeadServiceImplTest {
         assertEquals("John", savedLead.getFirstName());
         assertEquals("Doe", savedLead.getLastName());
         assertEquals("Acme Inc", savedLead.getCompanyName());
-        assertEquals("john@example.com", savedLead.getEmail());
+        assertEquals("john.doe@example.com", savedLead.getEmail());
         assertEquals("9876543210", savedLead.getPhoneNumber());
         assertEquals("https://acme.com", savedLead.getWebsite());
         assertEquals("Tech", savedLead.getIndustry());
@@ -128,7 +128,7 @@ public class LeadServiceImplTest {
         updateReq.setFirstName("  Jane  ");
         updateReq.setLastName("  Smith  ");
         updateReq.setCompanyName("  Beta Corp  ");
-        updateReq.setEmail("  jane@beta.com  ");
+        updateReq.setEmail("  Jane.Smith@BETA.COM  ");
         updateReq.setPhoneNumber("  9876543211  ");
         updateReq.setWebsite("  https://beta.com  ");
         updateReq.setIndustry("  Finance  ");
@@ -143,7 +143,7 @@ public class LeadServiceImplTest {
         assertEquals("Jane", existingLead.getFirstName());
         assertEquals("Smith", existingLead.getLastName());
         assertEquals("Beta Corp", existingLead.getCompanyName());
-        assertEquals("jane@beta.com", existingLead.getEmail());
+        assertEquals("jane.smith@beta.com", existingLead.getEmail());
         assertEquals("9876543211", existingLead.getPhoneNumber());
         assertEquals("https://beta.com", existingLead.getWebsite());
         assertEquals("Finance", existingLead.getIndustry());

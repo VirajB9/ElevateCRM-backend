@@ -12,9 +12,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -24,15 +23,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final Duration REFILL_DURATION = Duration.ofMinutes(1);
     private static final int MAX_CACHE_SIZE = 10000;
 
-    // AUDIT-005 FIX: Bounded LRU Cache instead of unbounded ConcurrentHashMap to prevent OOM
-    private final Map<String, Bucket> buckets = Collections.synchronizedMap(
-            new LinkedHashMap<String, Bucket>(MAX_CACHE_SIZE, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, Bucket> eldest) {
-                    return size() > MAX_CACHE_SIZE;
-                }
-            }
-    );
+    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>(MAX_CACHE_SIZE);
 
     @Override
     protected void doFilterInternal(
@@ -55,9 +46,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String clientIp = getClientIp(request);
 
-        Bucket bucket = buckets.computeIfAbsent(
-                clientIp,
-                key -> createBucket());
+        Bucket bucket = getBucket(clientIp);
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
@@ -75,6 +64,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     "data": null
                 }
                 """);
+    }
+
+    private Bucket getBucket(String clientIp) {
+        if (buckets.size() >= MAX_CACHE_SIZE && !buckets.containsKey(clientIp)) {
+            var iterator = buckets.keySet().iterator();
+            int count = 0;
+            while (iterator.hasNext() && count < 500) {
+                iterator.next();
+                iterator.remove();
+                count++;
+            }
+        }
+        return buckets.computeIfAbsent(clientIp, k -> createBucket());
     }
 
     private Bucket createBucket() {

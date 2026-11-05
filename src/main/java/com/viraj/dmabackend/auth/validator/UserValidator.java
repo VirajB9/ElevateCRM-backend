@@ -25,13 +25,15 @@ public class UserValidator {
     }
 
     public void validateDuplicatePhone(String phoneNumber) {
-        if (userRepository.existsByPhoneNumberAndStatusNot(phoneNumber, UserStatus.DELETED)) {
+        String normalizedPhone = phoneNumber != null ? phoneNumber.trim() : null;
+        if (normalizedPhone != null && userRepository.existsByPhoneNumberAndStatusNot(normalizedPhone, UserStatus.DELETED)) {
             throw new DuplicatePhoneException(phoneNumber);
         }
     }
 
     public void validatePhoneForUpdate(String phoneNumber, String userId) {
-        if (userRepository.existsByPhoneNumberAndIdNotAndStatusNot(phoneNumber, userId, UserStatus.DELETED)) {
+        String normalizedPhone = phoneNumber != null ? phoneNumber.trim() : null;
+        if (normalizedPhone != null && userRepository.existsByPhoneNumberAndIdNotAndStatusNot(normalizedPhone, userId, UserStatus.DELETED)) {
             throw new DuplicatePhoneException(phoneNumber);
         }
     }

@@ -66,11 +66,47 @@ public class ProjectValidator {
         if (currentStatus == ProjectStatus.CANCELLED) {
             throw new BadRequestException("Cancelled projects cannot be edited.");
         }
+        if (currentStatus == ProjectStatus.COMPLETED) {
+            throw new BadRequestException("Completed projects cannot be edited.");
+        }
     }
 
     public void validateProjectStatusForUpdate(ProjectStatus status) {
         if (status == ProjectStatus.ARCHIVED) {
             throw new BadRequestException("Projects cannot be archived via update. Please use the delete project endpoint.");
+        }
+    }
+
+    public void validateProjectStatusTransition(ProjectStatus currentStatus, ProjectStatus newStatus) {
+        if (currentStatus == null || newStatus == null || currentStatus == newStatus) {
+            return;
+        }
+
+        if (currentStatus == ProjectStatus.CANCELLED) {
+            throw new BadRequestException("Cancelled projects cannot change status.");
+        }
+
+        if (currentStatus == ProjectStatus.COMPLETED) {
+            throw new BadRequestException("Completed projects cannot change status.");
+        }
+
+        if (newStatus == ProjectStatus.ARCHIVED) {
+            throw new BadRequestException("Projects cannot be archived via update. Please use the delete project endpoint.");
+        }
+
+        switch (currentStatus) {
+            case PLANNING -> {
+                if (newStatus == ProjectStatus.COMPLETED) {
+                    throw new BadRequestException("Planning projects cannot be marked completed directly without being active.");
+                }
+            }
+            case ON_HOLD -> {
+                if (newStatus == ProjectStatus.COMPLETED) {
+                    throw new BadRequestException("On-hold projects cannot be marked completed directly. Reactivate the project first.");
+                }
+            }
+            default -> {
+            }
         }
     }
 }

@@ -73,7 +73,13 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public RoleResponse updateRole(String roleId, UpdateRoleRequest request) {
 
+        User currentUser = findCurrentUser();
+
+        ensureOwner(currentUser);
+
         Role role = findRoleById(roleId);
+
+        preventOwnerModification(role);
 
         roleValidator.validateDescription(request.getDescription());
 
@@ -150,10 +156,8 @@ public class RoleServiceImpl implements RoleService {
 
     private User findCurrentUser() {
 
-        String email = (String) SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getPrincipal();
+        String email = com.viraj.dmabackend.auth.security.SecurityUtils.getCurrentUserEmail()
+                .orElseThrow(() -> new com.viraj.dmabackend.exception.UnauthorizedException("User not found"));
 
         return userRepository.findByEmailAndStatusNot(email, com.viraj.dmabackend.auth.enums.UserStatus.DELETED)
                 .orElseThrow(() -> new com.viraj.dmabackend.exception.UnauthorizedException("User not found"));
