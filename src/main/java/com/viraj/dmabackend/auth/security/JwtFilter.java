@@ -51,10 +51,16 @@ public class JwtFilter extends OncePerRequestFilter {
                 .getContext()
                 .getAuthentication() == null) {
 
-            List<SimpleGrantedAuthority> authorities =
-                    permissions.stream()
-                            .map(SimpleGrantedAuthority::new)
-                            .toList();
+            List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+            if (role != null && !role.isBlank()) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.trim()));
+            }
+            if (permissions != null) {
+                permissions.stream()
+                        .filter(java.util.Objects::nonNull)
+                        .map(SimpleGrantedAuthority::new)
+                        .forEach(authorities::add);
+            }
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(

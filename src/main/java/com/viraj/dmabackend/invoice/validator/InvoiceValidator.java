@@ -25,7 +25,7 @@ public class InvoiceValidator {
 
     public void validateCreateInvoice(CreateInvoiceRequest request) {
 
-        validateClientExists(request.getClientId());
+        validateClientActiveForInvoice(request.getClientId());
 
         validateProjectBelongsToClient(request.getProjectId(), request.getClientId());
 
@@ -41,7 +41,15 @@ public class InvoiceValidator {
         validateDiscount(request.getItems(), request.getDiscount());
     }
 
-    private void validateClientExists(String clientId) {
+    public void validateClientExists(String clientId) {
+        clientService.getClientById(clientId);
+    }
+
+    public void validateProjectExists(String projectId) {
+        projectService.getProjectById(projectId);
+    }
+
+    private void validateClientActiveForInvoice(String clientId) {
         com.viraj.dmabackend.client.dto.ClientResponse client = clientService.getClientById(clientId);
         if (client.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
             throw new BadRequestException("Cannot create an invoice for an inactive client.");

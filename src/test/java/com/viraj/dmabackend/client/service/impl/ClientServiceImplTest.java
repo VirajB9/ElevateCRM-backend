@@ -152,4 +152,50 @@ public class ClientServiceImplTest {
         assertEquals("https://acme.com", saved.getWebsite());
         assertEquals("Tech", saved.getIndustry());
     }
+
+    @Test
+    void createClient_NormalizesEmailToLowercase() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName("Acme");
+        request.setContactPerson("John");
+        request.setEmail("  John.Doe@ACME.COM  ");
+        request.setPhoneNumber("1234567890");
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class))).thenReturn(ClientResponse.builder().build());
+
+        clientService.createClient(request);
+
+        ArgumentCaptor<Client> captor = ArgumentCaptor.forClass(Client.class);
+        verify(clientRepository).save(captor.capture());
+        assertEquals("john.doe@acme.com", captor.getValue().getEmail());
+    }
+
+    @Test
+    void updateClient_NormalizesEmailToLowercase() {
+        Client client = Client.builder()
+                .id("client-1")
+                .companyName("Acme")
+                .contactPerson("John")
+                .email("old@acme.com")
+                .phoneNumber("1234567890")
+                .status(ClientStatus.ACTIVE)
+                .build();
+
+        UpdateClientRequest request = new UpdateClientRequest();
+        request.setCompanyName("Acme");
+        request.setContactPerson("John");
+        request.setEmail("  Updated.John@ACME.COM  ");
+        request.setPhoneNumber("1234567890");
+        request.setStatus(ClientStatus.ACTIVE);
+
+        when(clientRepository.findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED))
+                .thenReturn(Optional.of(client));
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class))).thenReturn(ClientResponse.builder().build());
+
+        clientService.updateClient("client-1", request);
+
+        assertEquals("updated.john@acme.com", client.getEmail());
+    }
 }

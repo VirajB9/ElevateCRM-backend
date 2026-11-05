@@ -9,6 +9,10 @@ public class UserMapper {
 
     public UserResponse toUserResponse(User user, String roleName) {
 
+        if (user == null) {
+            return null;
+        }
+
         return UserResponse.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())

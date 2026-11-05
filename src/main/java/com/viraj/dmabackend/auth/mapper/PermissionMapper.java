@@ -9,9 +9,13 @@ public class PermissionMapper {
 
     public PermissionResponse toPermissionResponse(Permission permission) {
 
+        if (permission == null) {
+            return null;
+        }
+
         return PermissionResponse.builder()
                 .id(permission.getId())
-                .name(permission.getPermissionType().name())
+                .name(permission.getPermissionType() != null ? permission.getPermissionType().name() : null)
                 .description(permission.getDescription())
                 .build();
     }

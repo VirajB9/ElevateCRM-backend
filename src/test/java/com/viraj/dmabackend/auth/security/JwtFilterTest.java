@@ -97,4 +97,48 @@ public class JwtFilterTest {
         assertTrue(response.getContentAsString().contains("\"success\": false"));
         assertTrue(response.getContentAsString().contains("\"Password change required\""));
     }
+
+    @Test
+    void doFilter_WithNullPermissions_SetsAuthenticationWithoutNPE() throws ServletException, IOException {
+        String token = "valid-token";
+        when(jwtUtil.validateToken(token)).thenReturn(true);
+        when(jwtUtil.extractEmail(token)).thenReturn("user@example.com");
+        when(jwtUtil.extractRole(token)).thenReturn("EMPLOYEE");
+        when(jwtUtil.extractPermissions(token)).thenReturn(null);
+        when(jwtUtil.extractPasswordChangeRequired(token)).thenReturn(false);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/clients");
+        request.setServletPath("/api/v1/clients");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        org.assertj.core.api.Assertions.assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
+                .extracting("authority")
+                .containsExactly("ROLE_EMPLOYEE");
+    }
+
+    @Test
+    void doFilter_PopulatesRoleAuthorityInSecurityContext() throws ServletException, IOException {
+        String token = "valid-token";
+        when(jwtUtil.validateToken(token)).thenReturn(true);
+        when(jwtUtil.extractEmail(token)).thenReturn("user@example.com");
+        when(jwtUtil.extractRole(token)).thenReturn("EMPLOYEE");
+        when(jwtUtil.extractPermissions(token)).thenReturn(List.of("client:read"));
+        when(jwtUtil.extractPasswordChangeRequired(token)).thenReturn(false);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/clients");
+        request.setServletPath("/api/v1/clients");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        org.assertj.core.api.Assertions.assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
+                .extracting("authority")
+                .containsExactlyInAnyOrder("ROLE_EMPLOYEE", "client:read");
+    }
 }

@@ -175,7 +175,7 @@ public class MenuServiceImpl implements MenuService {
                 .title(request.getTitle().trim())
                 .path(request.getPath().trim())
                 .icon(request.getIcon() != null ? request.getIcon().trim() : null)
-                .parentId(request.getParentId())
+                .parentId(normalizeParentId(request.getParentId()))
                 .orderIndex(request.getOrderIndex())
                 .requiredPermission(request.getRequiredPermission() != null && !request.getRequiredPermission().isBlank()
                         ? request.getRequiredPermission().trim()
@@ -189,13 +189,20 @@ public class MenuServiceImpl implements MenuService {
         menu.setTitle(request.getTitle().trim());
         menu.setPath(request.getPath().trim());
         menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
-        menu.setParentId(request.getParentId());
+        menu.setParentId(normalizeParentId(request.getParentId()));
         menu.setOrderIndex(request.getOrderIndex());
         menu.setRequiredPermission(request.getRequiredPermission() != null && !request.getRequiredPermission().isBlank()
                 ? request.getRequiredPermission().trim()
                 : null);
         menu.setActive(request.getActive());
 
+    }
+
+    private String normalizeParentId(String parentId) {
+        if (parentId == null || parentId.isBlank()) {
+            return null;
+        }
+        return parentId.trim();
     }
 
     private List<MenuTreeResponse> buildMenuTree(List<Menu> menus) {

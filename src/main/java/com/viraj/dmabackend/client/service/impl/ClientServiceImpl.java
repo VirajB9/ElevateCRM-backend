@@ -50,7 +50,7 @@ public class ClientServiceImpl implements ClientService {
         Client client = Client.builder()
                 .companyName(normalizeTrim(data.getCompanyName()))
                 .contactPerson(buildContactPerson(data.getFirstName(), data.getLastName()))
-                .email(normalizeTrim(data.getEmail()))
+                .email(normalizeEmail(data.getEmail()))
                 .phoneNumber(normalizeTrim(data.getPhoneNumber()))
                 .website(normalizeTrim(data.getWebsite()))
                 .industry(normalizeTrim(data.getIndustry()))
@@ -138,7 +138,7 @@ public class ClientServiceImpl implements ClientService {
         return Client.builder()
                 .companyName(normalizeTrim(request.getCompanyName()))
                 .contactPerson(normalizeTrim(request.getContactPerson()))
-                .email(normalizeTrim(request.getEmail()))
+                .email(normalizeEmail(request.getEmail()))
                 .phoneNumber(normalizeTrim(request.getPhoneNumber()))
                 .website(normalizeTrim(request.getWebsite()))
                 .industry(normalizeTrim(request.getIndustry()))
@@ -156,7 +156,7 @@ public class ClientServiceImpl implements ClientService {
 
         client.setCompanyName(normalizeTrim(request.getCompanyName()));
         client.setContactPerson(normalizeTrim(request.getContactPerson()));
-        client.setEmail(normalizeTrim(request.getEmail()));
+        client.setEmail(normalizeEmail(request.getEmail()));
         client.setPhoneNumber(normalizeTrim(request.getPhoneNumber()));
         client.setWebsite(normalizeTrim(request.getWebsite()));
         client.setIndustry(normalizeTrim(request.getIndustry()));
@@ -175,6 +175,13 @@ public class ClientServiceImpl implements ClientService {
             return null;
         }
         return gstNumber.trim();
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
     }
 
     private String normalizeTrim(String value) {

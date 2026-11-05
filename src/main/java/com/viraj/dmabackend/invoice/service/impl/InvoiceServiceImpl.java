@@ -102,12 +102,16 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public Page<InvoiceResponse> getInvoicesByClientId(String clientId, Pageable pageable) {
 
+        invoiceValidator.validateClientExists(clientId);
+
         return invoiceRepository.findByActiveTrueAndClientId(clientId, pageable)
                 .map(invoiceMapper::toResponse);
     }
 
     @Override
     public Page<InvoiceResponse> getInvoicesByProjectId(String projectId, Pageable pageable) {
+
+        invoiceValidator.validateProjectExists(projectId);
 
         return invoiceRepository.findByActiveTrueAndProjectId(projectId, pageable)
                 .map(invoiceMapper::toResponse);
@@ -160,6 +164,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         if (invoice.getStatus() == InvoiceStatus.PAID) {
             throw new InvalidInvoiceStatusException("Paid invoices cannot be deleted.");
+        }
+
+        if (invoice.getStatus() == InvoiceStatus.SENT || invoice.getStatus() == InvoiceStatus.OVERDUE) {
+            throw new InvalidInvoiceStatusException("Issued or overdue invoices cannot be deleted. Please cancel the invoice instead.");
         }
 
         invoice.setActive(false);
@@ -295,7 +303,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .projectId(invoice.getProjectId())
                 .issueDate(invoice.getIssueDate())
                 .dueDate(invoice.getDueDate())
-                .items(invoice.getItems())
+                .items(copyItems(invoice.getItems()))
                 .subtotal(invoice.getSubtotal())
                 .taxPercentage(invoice.getTaxPercentage())
                 .taxAmount(invoice.getTaxAmount())
@@ -311,5 +319,20 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .build();
 
         invoiceHistoryRepository.save(history);
+    }
+
+    private List<InvoiceItem> copyItems(List<InvoiceItem> items) {
+        if (items == null) {
+            return java.util.Collections.emptyList();
+        }
+        return items.stream()
+                .filter(java.util.Objects::nonNull)
+                .map(item -> InvoiceItem.builder()
+                        .description(item.getDescription())
+                        .quantity(item.getQuantity())
+                        .unitPrice(item.getUnitPrice())
+                        .lineTotal(item.getLineTotal())
+                        .build())
+                .toList();
     }
 }

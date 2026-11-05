@@ -222,4 +222,50 @@ class MenuServiceImplTest {
                 .build();
         assertThat(validator.validate(updateReq)).isEmpty();
     }
+
+    @Test
+    void createMenu_NormalizesWhitespaceParentIdToNull() {
+        com.viraj.dmabackend.menu.dto.CreateMenuRequest request = com.viraj.dmabackend.menu.dto.CreateMenuRequest.builder()
+                .title("Settings")
+                .path("/settings")
+                .icon("settings-icon")
+                .parentId("   ")
+                .orderIndex(10)
+                .build();
+
+        org.mockito.ArgumentCaptor<Menu> captor = org.mockito.ArgumentCaptor.forClass(Menu.class);
+        when(menuRepository.save(captor.capture())).thenAnswer(i -> i.getArgument(0));
+
+        menuService.createMenu(request);
+
+        Menu saved = captor.getValue();
+        assertThat(saved.getParentId()).isNull();
+    }
+
+    @Test
+    void updateMenu_NormalizesWhitespaceParentIdToNull() {
+        Menu existing = Menu.builder()
+                .id("menu-sub")
+                .title("Sub Menu")
+                .path("/sub")
+                .parentId("parent-1")
+                .orderIndex(1)
+                .active(true)
+                .build();
+
+        when(menuRepository.findById("menu-sub")).thenReturn(java.util.Optional.of(existing));
+        when(menuRepository.save(any(Menu.class))).thenAnswer(i -> i.getArgument(0));
+
+        com.viraj.dmabackend.menu.dto.UpdateMenuRequest request = com.viraj.dmabackend.menu.dto.UpdateMenuRequest.builder()
+                .title("Sub Menu")
+                .path("/sub")
+                .parentId("   ")
+                .orderIndex(1)
+                .active(true)
+                .build();
+
+        menuService.updateMenu("menu-sub", request);
+
+        assertThat(existing.getParentId()).isNull();
+    }
 }

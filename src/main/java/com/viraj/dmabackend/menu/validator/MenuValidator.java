@@ -57,15 +57,16 @@ public class MenuValidator {
 
     public void validateParentRelationship(String menuId, String parentId) {
 
-        if (menuId == null || parentId == null) {
+        if (menuId == null || parentId == null || parentId.isBlank()) {
             return;
         }
 
-        if (menuId.equals(parentId)) {
+        String trimmedParentId = parentId.trim();
+        if (menuId.equals(trimmedParentId)) {
             throw new SelfParentMenuException();
         }
 
-        String currentParent = parentId;
+        String currentParent = trimmedParentId;
         Set<String> visited = new HashSet<>();
 
         while (currentParent != null) {

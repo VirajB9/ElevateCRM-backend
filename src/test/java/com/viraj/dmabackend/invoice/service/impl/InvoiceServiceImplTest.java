@@ -2,6 +2,7 @@ package com.viraj.dmabackend.invoice.service.impl;
 
 import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.invoice.entity.Invoice;
+import com.viraj.dmabackend.invoice.entity.InvoiceHistory;
 import com.viraj.dmabackend.invoice.entity.InvoiceItem;
 import com.viraj.dmabackend.invoice.enums.InvoiceStatus;
 import com.viraj.dmabackend.invoice.exception.InvalidInvoiceStatusException;
@@ -239,5 +240,121 @@ public class InvoiceServiceImplTest {
 
         assertThrows(InvalidInvoiceStatusException.class,
                 () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
+    void deleteInvoice_ThrowsWhenStatusIsSentOrOverdue() {
+        Invoice sentInvoice = new Invoice();
+        sentInvoice.setId("inv-sent");
+        sentInvoice.setStatus(InvoiceStatus.SENT);
+        sentInvoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-sent")).thenReturn(Optional.of(sentInvoice));
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.deleteInvoice("inv-sent"));
+
+        Invoice overdueInvoice = new Invoice();
+        overdueInvoice.setId("inv-overdue");
+        overdueInvoice.setStatus(InvoiceStatus.OVERDUE);
+        overdueInvoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-overdue")).thenReturn(Optional.of(overdueInvoice));
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.deleteInvoice("inv-overdue"));
+    }
+
+    @Test
+    void deleteInvoice_SucceedsWhenStatusIsDraft() {
+        Invoice draftInvoice = new Invoice();
+        draftInvoice.setId("inv-draft");
+        draftInvoice.setStatus(InvoiceStatus.DRAFT);
+        draftInvoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-draft")).thenReturn(Optional.of(draftInvoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(draftInvoice);
+
+        assertDoesNotThrow(() -> invoiceService.deleteInvoice("inv-draft"));
+        verify(invoiceRepository).save(draftInvoice);
+        assertFalse(draftInvoice.getActive());
+        assertTrue(draftInvoice.isDeleted());
+    }
+
+    @Test
+    void saveInvoiceHistory_defensivelyClonesInvoiceItems() {
+        InvoiceItem item = InvoiceItem.builder()
+                .description("Initial Desc")
+                .quantity(new BigDecimal("1"))
+                .unitPrice(new BigDecimal("100.00"))
+                .lineTotal(new BigDecimal("100.00"))
+                .build();
+
+        Invoice invoice = Invoice.builder()
+                .id("inv-clone")
+                .invoiceNumber("INV-2026-0001")
+                .clientId("client-1")
+                .projectId("proj-1")
+                .items(new java.util.ArrayList<>(List.of(item)))
+                .status(InvoiceStatus.DRAFT)
+                .active(true)
+                .build();
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-clone")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+
+        invoiceService.deleteInvoice("inv-clone");
+
+        org.mockito.ArgumentCaptor<InvoiceHistory> captor = org.mockito.ArgumentCaptor.forClass(InvoiceHistory.class);
+        verify(invoiceHistoryRepository).save(captor.capture());
+        InvoiceHistory savedHistory = captor.getValue();
+
+        // Mutate original item
+        item.setDescription("Mutated Desc");
+
+        // Verify history retains cloned snapshot
+        assertEquals("Initial Desc", savedHistory.getItems().get(0).getDescription());
+    }
+
+    @Test
+    void getInvoicesByClientId_ValidatesClientAndReturnsPage() {
+        String clientId = "client-123";
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-1");
+        com.viraj.dmabackend.invoice.dto.InvoiceResponse response = new com.viraj.dmabackend.invoice.dto.InvoiceResponse();
+
+        org.springframework.data.domain.Page<Invoice> page = new org.springframework.data.domain.PageImpl<>(List.of(invoice));
+        when(invoiceRepository.findByActiveTrueAndClientId(clientId, pageable)).thenReturn(page);
+        when(invoiceMapper.toResponse(invoice)).thenReturn(response);
+
+        org.springframework.data.domain.Page<com.viraj.dmabackend.invoice.dto.InvoiceResponse> result =
+                invoiceService.getInvoicesByClientId(clientId, pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(invoiceValidator).validateClientExists(clientId);
+        verify(invoiceRepository).findByActiveTrueAndClientId(clientId, pageable);
+    }
+
+    @Test
+    void getInvoicesByProjectId_ValidatesProjectAndReturnsPage() {
+        String projectId = "proj-123";
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-2");
+        com.viraj.dmabackend.invoice.dto.InvoiceResponse response = new com.viraj.dmabackend.invoice.dto.InvoiceResponse();
+
+        org.springframework.data.domain.Page<Invoice> page = new org.springframework.data.domain.PageImpl<>(List.of(invoice));
+        when(invoiceRepository.findByActiveTrueAndProjectId(projectId, pageable)).thenReturn(page);
+        when(invoiceMapper.toResponse(invoice)).thenReturn(response);
+
+        org.springframework.data.domain.Page<com.viraj.dmabackend.invoice.dto.InvoiceResponse> result =
+                invoiceService.getInvoicesByProjectId(projectId, pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(invoiceValidator).validateProjectExists(projectId);
+        verify(invoiceRepository).findByActiveTrueAndProjectId(projectId, pageable);
     }
 }

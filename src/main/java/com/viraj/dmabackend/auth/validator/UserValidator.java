@@ -18,8 +18,9 @@ public class UserValidator {
     private final UserRepository userRepository;
 
     public void validateDuplicateEmail(String email) {
-        if (userRepository.existsByEmailAndStatusNot(email, UserStatus.DELETED)) {
-            throw new DuplicateEmailException(email);
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
+        if (normalizedEmail != null && userRepository.existsByEmailAndStatusNot(normalizedEmail, UserStatus.DELETED)) {
+            throw new DuplicateEmailException(normalizedEmail);
         }
     }
 

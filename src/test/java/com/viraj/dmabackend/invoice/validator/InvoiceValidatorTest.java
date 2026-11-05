@@ -95,4 +95,16 @@ class InvoiceValidatorTest {
         assertThatCode(() -> invoiceValidator.validateCreateInvoice(request))
                 .doesNotThrowAnyException();
     }
+
+    @Test
+    void validateClientExists_callsClientService() {
+        when(clientService.getClientById("client-123")).thenReturn(ClientResponse.builder().id("client-123").build());
+        assertThatCode(() -> invoiceValidator.validateClientExists("client-123")).doesNotThrowAnyException();
+    }
+
+    @Test
+    void validateProjectExists_callsProjectService() {
+        when(projectService.getProjectById("proj-123")).thenReturn(ProjectResponse.builder().id("proj-123").build());
+        assertThatCode(() -> invoiceValidator.validateProjectExists("proj-123")).doesNotThrowAnyException();
+    }
 }

@@ -74,7 +74,8 @@ class CustomUserDetailsServiceTest {
         UserDetails userDetails = customUserDetailsService.loadUserByUsername("user@example.com");
 
         assertThat(userDetails).isNotNull();
-        assertThat(userDetails.getAuthorities()).isEmpty();
+        assertThat(userDetails.getAuthorities()).extracting("authority")
+                .containsExactly("ROLE_EMPLOYEE");
     }
 
     @Test
@@ -92,6 +93,6 @@ class CustomUserDetailsServiceTest {
 
         assertThat(userDetails).isNotNull();
         assertThat(userDetails.getAuthorities()).extracting("authority")
-                .containsExactly("lead:read");
+                .containsExactlyInAnyOrder("ROLE_MANAGER", "lead:read");
     }
 }

@@ -23,7 +23,8 @@ public class ClientValidator {
     private final InvoiceRepository invoiceRepository;
 
     public void validateDuplicateEmail(String email) {
-        if (clientRepository.existsByEmailAndStatusNot(email, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
+        if (clientRepository.existsByEmailAndStatusNot(normalizedEmail, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientEmailException(email);
         }
     }
@@ -41,7 +42,8 @@ public class ClientValidator {
     }
 
     public void validateEmailForUpdate(String email, String clientId) {
-        if (clientRepository.existsByEmailAndIdNotAndStatusNot(email, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
+        if (clientRepository.existsByEmailAndIdNotAndStatusNot(normalizedEmail, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientEmailException(email);
         }
     }

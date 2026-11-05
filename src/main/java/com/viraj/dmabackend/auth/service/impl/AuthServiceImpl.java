@@ -49,8 +49,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthenticationResponse login(LoginRequest request) {
 
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
+
         User user = userRepository
-                .findByEmailAndStatusNot(request.getEmail(), UserStatus.DELETED)
+                .findByEmailAndStatusNot(email, UserStatus.DELETED)
                 .orElseThrow(() ->
                         new UnauthorizedException("Invalid email or password"));
 

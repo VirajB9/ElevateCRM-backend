@@ -3,15 +3,22 @@ package com.viraj.dmabackend.auth.validator;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
 import com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException;
+import com.viraj.dmabackend.auth.exception.DuplicateEmailException;
+import com.viraj.dmabackend.auth.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserValidatorTest {
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private UserValidator userValidator;
@@ -99,5 +106,14 @@ public class UserValidatorTest {
 
         assertDoesNotThrow(() ->
                 userValidator.validateUserManagement(new User(), managerRole, new User(), employeeRole));
+    }
+
+    @Test
+    void validateDuplicateEmail_NormalizesCaseAndWhitespace() {
+        when(userRepository.existsByEmailAndStatusNot("john@example.com", com.viraj.dmabackend.auth.enums.UserStatus.DELETED))
+                .thenReturn(true);
+
+        assertThrows(DuplicateEmailException.class,
+                () -> userValidator.validateDuplicateEmail("  John@Example.com  "));
     }
 }

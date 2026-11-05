@@ -46,18 +46,22 @@ public class CustomUserDetailsService implements UserDetailsService {
         List<Permission> permissions =
                 permissionRepository.findAllById(permissionIds);
 
-        List<SimpleGrantedAuthority> authorities =
-                permissions.stream()
-                        .filter(permission -> permission != null && permission.getPermissionType() != null)
-                        .map(permission ->
-                                new SimpleGrantedAuthority(
-                                        permission.getPermissionType()
-                                                .name()
-                                                .toLowerCase()
-                                                .replace("_", ":")
-                                )
+        List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+        if (role.getName() != null && !role.getName().isBlank()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName().trim()));
+        }
+
+        permissions.stream()
+                .filter(permission -> permission != null && permission.getPermissionType() != null)
+                .map(permission ->
+                        new SimpleGrantedAuthority(
+                                permission.getPermissionType()
+                                        .name()
+                                        .toLowerCase()
+                                        .replace("_", ":")
                         )
-                        .toList();
+                )
+                .forEach(authorities::add);
 
         return new CustomUserDetails(
                 user,

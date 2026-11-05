@@ -10,6 +10,10 @@ public class MenuMapper {
 
     public MenuResponse toMenuResponse(Menu menu) {
 
+        if (menu == null) {
+            return null;
+        }
+
         return MenuResponse.builder()
                 .id(menu.getId())
                 .title(menu.getTitle())
@@ -23,6 +27,10 @@ public class MenuMapper {
     }
 
     public MenuTreeResponse toMenuTreeResponse(Menu menu) {
+
+        if (menu == null) {
+            return null;
+        }
 
         return MenuTreeResponse.builder()
                 .id(menu.getId())

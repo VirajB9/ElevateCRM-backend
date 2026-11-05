@@ -18,6 +18,10 @@ public class RoleMapper {
 
     public RoleResponse toRoleResponse(Role role) {
 
+        if (role == null) {
+            return null;
+        }
+
         List<PermissionResponse> permissionResponses = null;
 
         if (role.getPermissionIds() != null && !role.getPermissionIds().isEmpty()) {
@@ -25,7 +29,7 @@ public class RoleMapper {
                     .stream()
                     .map(p -> PermissionResponse.builder()
                             .id(p.getId())
-                            .name(p.getPermissionType().name())
+                            .name(p.getPermissionType() != null ? p.getPermissionType().name() : null)
                             .description(p.getDescription())
                             .build())
                     .collect(Collectors.toList());

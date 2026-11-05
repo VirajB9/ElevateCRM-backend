@@ -193,4 +193,58 @@ public class UserServiceImplTest {
         verify(refreshTokenRepository).deleteByUserId("user-manager");
         verify(userRepository).save(managerUser);
     }
+
+    @Test
+    void updateUser_deletesRefreshTokensWhenRoleChanges() {
+        authenticateAs(ownerUser);
+        Role employeeRole = new Role();
+        employeeRole.setId("role-employee");
+        employeeRole.setName("EMPLOYEE");
+
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleRepository.findById("role-employee")).thenReturn(Optional.of(employeeRole));
+        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(ownerUser));
+        when(userRepository.save(any(User.class))).thenReturn(managerUser);
+        when(userMapper.toUserResponse(any(User.class), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.UpdateUserRequest request = new com.viraj.dmabackend.auth.dto.UpdateUserRequest();
+        request.setFirstName("Manager");
+        request.setLastName("User");
+        request.setPhoneNumber("9876543210");
+        request.setRoleId("role-employee");
+
+        userService.updateUser("user-manager", request);
+
+        verify(refreshTokenRepository).deleteByUserId("user-manager");
+        verify(userRepository).save(managerUser);
+    }
+
+    @Test
+    void updateUser_doesNotDeleteRefreshTokensWhenRoleUnchanged() {
+        authenticateAs(ownerUser);
+
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(ownerUser));
+        when(userRepository.save(any(User.class))).thenReturn(managerUser);
+        when(userMapper.toUserResponse(any(User.class), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.UpdateUserRequest request = new com.viraj.dmabackend.auth.dto.UpdateUserRequest();
+        request.setFirstName("NewManager");
+        request.setLastName("User");
+        request.setPhoneNumber("9876543210");
+        request.setRoleId("role-manager");
+
+        userService.updateUser("user-manager", request);
+
+        verify(refreshTokenRepository, never()).deleteByUserId("user-manager");
+        verify(userRepository).save(managerUser);
+    }
 }

@@ -70,4 +70,22 @@ public class ClientValidatorTest {
         assertDoesNotThrow(() -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE));
         assertDoesNotThrow(() -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE));
     }
+
+    @Test
+    void validateDuplicateEmail_NormalizesToLowercaseAndTrim() {
+        when(clientRepository.existsByEmailAndStatusNot("client@example.com", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientEmailException.class,
+                () -> clientValidator.validateDuplicateEmail("  Client@EXAMPLE.com  "));
+    }
+
+    @Test
+    void validateEmailForUpdate_NormalizesToLowercaseAndTrim() {
+        when(clientRepository.existsByEmailAndIdNotAndStatusNot("client@example.com", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientEmailException.class,
+                () -> clientValidator.validateEmailForUpdate("  Client@EXAMPLE.com  ", "c-1"));
+    }
 }

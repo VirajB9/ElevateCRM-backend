@@ -28,8 +28,14 @@ public class OwnerBootstrap implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        String ownerEmail = ownerProperties.getEmail();
+        String ownerEmail = ownerProperties.getEmail() != null
+                ? ownerProperties.getEmail().trim().toLowerCase()
+                : null;
         String initialPassword = ownerProperties.getInitialPassword();
+
+        if (ownerEmail == null || ownerEmail.isBlank()) {
+            throw new IllegalStateException("OWNER_EMAIL must be configured");
+        }
 
         if (userRepository.findByEmail(ownerEmail).isPresent()) {
             return;

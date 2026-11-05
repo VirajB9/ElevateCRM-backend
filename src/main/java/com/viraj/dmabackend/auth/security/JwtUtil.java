@@ -60,7 +60,8 @@ public class JwtUtil {
 
     @SuppressWarnings("unchecked")
     public List<String> extractPermissions(String token) {
-        return extractClaims(token).get("permissions", List.class);
+        List<String> permissions = extractClaims(token).get("permissions", List.class);
+        return permissions != null ? permissions : java.util.Collections.emptyList();
     }
 
     public boolean extractPasswordChangeRequired(String token) {

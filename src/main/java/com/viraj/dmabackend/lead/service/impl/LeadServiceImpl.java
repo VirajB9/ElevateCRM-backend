@@ -162,35 +162,46 @@ public class LeadServiceImpl implements LeadService {
     private Lead buildLead(CreateLeadRequest request) {
 
         return Lead.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .companyName(request.getCompanyName())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .website(request.getWebsite())
-                .industry(request.getIndustry())
+                .firstName(normalizeTrim(request.getFirstName()))
+                .lastName(normalizeTrim(request.getLastName()))
+                .companyName(normalizeTrim(request.getCompanyName()))
+                .email(normalizeTrim(request.getEmail()))
+                .phoneNumber(normalizeTrim(request.getPhoneNumber()))
+                .website(normalizeTrim(request.getWebsite()))
+                .industry(normalizeTrim(request.getIndustry()))
                 .source(request.getSource())
-                .assignedUserId(request.getAssignedUserId())
+                .assignedUserId(normalizeAssignedUserId(request.getAssignedUserId()))
                 .estimatedBudget(request.getEstimatedBudget())
-                .requirements(request.getRequirements())
-                .notes(request.getNotes())
+                .requirements(normalizeTrim(request.getRequirements()))
+                .notes(normalizeTrim(request.getNotes()))
                 .build();
     }
 
     private void updateLeadFields(Lead lead, UpdateLeadRequest request) {
 
-        lead.setFirstName(request.getFirstName());
-        lead.setLastName(request.getLastName());
-        lead.setCompanyName(request.getCompanyName());
-        lead.setEmail(request.getEmail());
-        lead.setPhoneNumber(request.getPhoneNumber());
-        lead.setWebsite(request.getWebsite());
-        lead.setIndustry(request.getIndustry());
+        lead.setFirstName(normalizeTrim(request.getFirstName()));
+        lead.setLastName(normalizeTrim(request.getLastName()));
+        lead.setCompanyName(normalizeTrim(request.getCompanyName()));
+        lead.setEmail(normalizeTrim(request.getEmail()));
+        lead.setPhoneNumber(normalizeTrim(request.getPhoneNumber()));
+        lead.setWebsite(normalizeTrim(request.getWebsite()));
+        lead.setIndustry(normalizeTrim(request.getIndustry()));
         lead.setSource(request.getSource());
         lead.setStatus(request.getStatus());
-        lead.setAssignedUserId(request.getAssignedUserId());
+        lead.setAssignedUserId(normalizeAssignedUserId(request.getAssignedUserId()));
         lead.setEstimatedBudget(request.getEstimatedBudget());
-        lead.setRequirements(request.getRequirements());
-        lead.setNotes(request.getNotes());
+        lead.setRequirements(normalizeTrim(request.getRequirements()));
+        lead.setNotes(normalizeTrim(request.getNotes()));
+    }
+
+    private String normalizeTrim(String value) {
+        return value != null ? value.trim() : null;
+    }
+
+    private String normalizeAssignedUserId(String assignedUserId) {
+        if (assignedUserId == null || assignedUserId.isBlank()) {
+            return null;
+        }
+        return assignedUserId.trim();
     }
 }

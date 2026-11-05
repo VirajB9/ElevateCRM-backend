@@ -126,7 +126,12 @@ public class UserServiceImpl implements UserService {
         userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
         userValidator.validateRoleAssignment(currentUser, currentUserRole, newRole);
 
+        boolean roleChanged = !targetRole.getId().equals(newRole.getId());
         updateUserFields(user, request, newRole);
+
+        if (roleChanged) {
+            refreshTokenRepository.deleteByUserId(user.getId());
+        }
 
         User updatedUser = userRepository.save(user);
         return mapUser(updatedUser);
@@ -220,10 +225,10 @@ public class UserServiceImpl implements UserService {
     private User buildUser(CreateUserRequest request, Role role, String encodedPassword) {
 
         return User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
+                .firstName(request.getFirstName() != null ? request.getFirstName().trim() : null)
+                .lastName(request.getLastName() != null ? request.getLastName().trim() : null)
+                .email(request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null)
+                .phoneNumber(request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null)
                 .password(encodedPassword)
                 .roleId(role.getId())
                 .status(UserStatus.ACTIVE)
@@ -232,9 +237,9 @@ public class UserServiceImpl implements UserService {
 
     private void updateUserFields(User user, UpdateUserRequest request, Role role) {
 
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhoneNumber());
+        user.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : null);
+        user.setLastName(request.getLastName() != null ? request.getLastName().trim() : null);
+        user.setPhoneNumber(request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null);
         user.setRoleId(role.getId());
     }
 
