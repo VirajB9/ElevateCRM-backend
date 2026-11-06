@@ -95,4 +95,20 @@ class CustomUserDetailsServiceTest {
         assertThat(userDetails.getAuthorities()).extracting("authority")
                 .containsExactlyInAnyOrder("ROLE_MANAGER", "lead:read");
     }
+
+    @Test
+    void loadUserByUsername_normalizesEmailCasingAndWhitespace() {
+        User user = User.builder().id("u1").email("user@example.com").roleId("r1").status(UserStatus.ACTIVE).build();
+        Role role = Role.builder().id("r1").name("EMPLOYEE").permissionIds(Collections.emptyList()).build();
+
+        when(userRepository.findByEmailAndStatusNot("user@example.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+        when(roleRepository.findById("r1")).thenReturn(Optional.of(role));
+        when(permissionRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername("  User@Example.COM  ");
+
+        assertThat(userDetails).isNotNull();
+        assertThat(userDetails.getUsername()).isEqualTo("user@example.com");
+    }
 }

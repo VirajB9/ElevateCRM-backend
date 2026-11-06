@@ -43,7 +43,24 @@ public class RoleMapperTest {
         assertEquals("MANAGER", response.getName());
         assertEquals("Manager Role", response.getDescription());
         assertFalse(response.isSystemRole());
-        assertNull(response.getPermissions());
+        assertNotNull(response.getPermissions());
+        assertTrue(response.getPermissions().isEmpty());
+    }
+
+    @Test
+    void toRoleResponse_EmptyPermissionsList_ReturnsEmptyList() {
+        Role role = Role.builder()
+                .id("role-1")
+                .name("MANAGER")
+                .description("Manager Role")
+                .systemRole(false)
+                .build();
+
+        RoleResponse response = roleMapper.toRoleResponse(role, List.of());
+
+        assertNotNull(response);
+        assertNotNull(response.getPermissions());
+        assertTrue(response.getPermissions().isEmpty());
     }
 
     @Test

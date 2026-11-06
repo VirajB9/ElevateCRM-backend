@@ -27,10 +27,13 @@ public class UserMapperTest {
                 .lastName("Doe")
                 .email("john@example.com")
                 .phoneNumber("9876543210")
+                .roleId("role-admin")
                 .status(UserStatus.ACTIVE)
                 .build();
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
+        user.setCreatedBy("creator@example.com");
+        user.setUpdatedBy("modifier@example.com");
 
         UserResponse response = userMapper.toUserResponse(user, "ADMIN");
 
@@ -40,9 +43,12 @@ public class UserMapperTest {
         assertEquals("Doe", response.getLastName());
         assertEquals("john@example.com", response.getEmail());
         assertEquals("9876543210", response.getPhoneNumber());
+        assertEquals("role-admin", response.getRoleId());
         assertEquals("ADMIN", response.getRoleName());
         assertEquals(UserStatus.ACTIVE, response.getStatus());
         assertEquals(now, response.getCreatedAt());
         assertEquals(now, response.getUpdatedAt());
+        assertEquals("creator@example.com", response.getCreatedBy());
+        assertEquals("modifier@example.com", response.getUpdatedBy());
     }
 }

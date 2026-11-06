@@ -23,7 +23,7 @@ public class RoleMapper {
             return null;
         }
 
-        List<PermissionResponse> permissionResponses = null;
+        List<PermissionResponse> permissionResponses = java.util.Collections.emptyList();
 
         if (permissions != null && !permissions.isEmpty()) {
             permissionResponses = permissions.stream()

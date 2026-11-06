@@ -106,4 +106,38 @@ class MenuValidatorTest {
         assertThatThrownBy(() -> menuValidator.validateParentRelationship("id1", "id1"))
                 .isInstanceOf(SelfParentMenuException.class);
     }
+
+    @Test
+    void validateDuplicateTitle_trimsAndFindsDuplicate() {
+        when(menuRepository.findByTitle("Dashboard"))
+                .thenReturn(Optional.of(Menu.builder().id("m1").title("Dashboard").build()));
+
+        assertThatThrownBy(() -> menuValidator.validateDuplicateTitle("  Dashboard  "))
+                .isInstanceOf(DuplicateMenuTitleException.class);
+    }
+
+    @Test
+    void validateDuplicatePath_trimsAndFindsDuplicate() {
+        when(menuRepository.findByPath("/dashboard"))
+                .thenReturn(Optional.of(Menu.builder().id("m1").path("/dashboard").build()));
+
+        assertThatThrownBy(() -> menuValidator.validateDuplicatePath("  /dashboard  "))
+                .isInstanceOf(DuplicateMenuPathException.class);
+    }
+
+    @Test
+    void validateDuplicateTitleForUpdate_trimsAndFindsDuplicate() {
+        when(menuRepository.existsByTitleAndIdNot("Settings", "m2")).thenReturn(true);
+
+        assertThatThrownBy(() -> menuValidator.validateDuplicateTitleForUpdate("  Settings  ", "m2"))
+                .isInstanceOf(DuplicateMenuTitleException.class);
+    }
+
+    @Test
+    void validateDuplicatePathForUpdate_trimsAndFindsDuplicate() {
+        when(menuRepository.existsByPathAndIdNot("/settings", "m2")).thenReturn(true);
+
+        assertThatThrownBy(() -> menuValidator.validateDuplicatePathForUpdate("  /settings  ", "m2"))
+                .isInstanceOf(DuplicateMenuPathException.class);
+    }
 }

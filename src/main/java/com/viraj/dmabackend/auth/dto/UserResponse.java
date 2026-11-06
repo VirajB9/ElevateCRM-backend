@@ -20,6 +20,8 @@ public class UserResponse {
 
     private String phoneNumber;
 
+    private String roleId;
+
     private String roleName;
 
     private UserStatus status;
@@ -27,4 +29,8 @@ public class UserResponse {
     private java.time.LocalDateTime createdAt;
 
     private java.time.LocalDateTime updatedAt;
+
+    private String createdBy;
+
+    private String updatedBy;
 }

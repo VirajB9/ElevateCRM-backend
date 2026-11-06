@@ -156,4 +156,22 @@ public class ProjectValidatorTest {
         assertThrows(BadRequestException.class,
                 () -> projectValidator.validateClientActiveForProject("client-2"));
     }
+
+    @Test
+    void validateDuplicateProject_TrimsProjectNameBeforeQuery() {
+        when(projectRepository.existsByProjectNameAndClientIdAndStatusNot("CRM App", "client-123", ProjectStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(DuplicateProjectException.class,
+                () -> projectValidator.validateDuplicateProject("  CRM App  ", "client-123"));
+    }
+
+    @Test
+    void validateDuplicateProjectForUpdate_TrimsProjectNameBeforeQuery() {
+        when(projectRepository.existsByProjectNameAndClientIdAndIdNotAndStatusNot("CRM App", "client-123", "proj-9", ProjectStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(DuplicateProjectException.class,
+                () -> projectValidator.validateDuplicateProjectForUpdate("  CRM App  ", "client-123", "proj-9"));
+    }
 }

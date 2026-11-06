@@ -122,7 +122,7 @@ class MenuServiceImplTest {
     }
 
     @Test
-    void getMenuTree_promotesOrphanSubmenuToRootWhenParentIsMissingOrRestricted() {
+    void getMenuTree_doesNotPromoteOrphanSubmenuToRootWhenParentIsMissingOrRestricted() {
         Menu childMenu = Menu.builder()
                 .id("child-1")
                 .parentId("parent-missing")
@@ -138,8 +138,7 @@ class MenuServiceImplTest {
 
         List<MenuTreeResponse> result = menuService.getMenuTree();
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).isEqualTo("Sub Report");
+        assertThat(result).isEmpty();
     }
 
     @Test

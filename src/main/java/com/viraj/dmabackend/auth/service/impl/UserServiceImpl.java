@@ -237,6 +237,7 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null)
                 .phoneNumber(request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null)
                 .password(encodedPassword)
+                .passwordChangeRequired(true)
                 .roleId(role.getId())
                 .status(UserStatus.ACTIVE)
                 .build();

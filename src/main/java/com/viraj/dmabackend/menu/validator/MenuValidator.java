@@ -23,16 +23,22 @@ public class MenuValidator {
     private final MenuRepository menuRepository;
 
     public void validateDuplicateTitle(String title) {
-
-        if (menuRepository.findByTitle(title).isPresent()) {
-            throw new DuplicateMenuTitleException(title);
+        if (title == null) {
+            return;
+        }
+        String trimmedTitle = title.trim();
+        if (menuRepository.findByTitle(trimmedTitle).isPresent()) {
+            throw new DuplicateMenuTitleException(trimmedTitle);
         }
     }
 
     public void validateDuplicatePath(String path) {
-
-        if (menuRepository.findByPath(path).isPresent()) {
-            throw new DuplicateMenuPathException(path);
+        if (path == null) {
+            return;
+        }
+        String trimmedPath = path.trim();
+        if (menuRepository.findByPath(trimmedPath).isPresent()) {
+            throw new DuplicateMenuPathException(trimmedPath);
         }
     }
 
@@ -94,16 +100,22 @@ public class MenuValidator {
     }
 
     public void validateDuplicateTitleForUpdate(String title, String menuId) {
-
-        if (menuRepository.existsByTitleAndIdNot(title, menuId)) {
-            throw new DuplicateMenuTitleException(title);
+        if (title == null) {
+            return;
+        }
+        String trimmedTitle = title.trim();
+        if (menuRepository.existsByTitleAndIdNot(trimmedTitle, menuId)) {
+            throw new DuplicateMenuTitleException(trimmedTitle);
         }
     }
 
     public void validateDuplicatePathForUpdate(String path, String menuId) {
-
-        if (menuRepository.existsByPathAndIdNot(path, menuId)) {
-            throw new DuplicateMenuPathException(path);
+        if (path == null) {
+            return;
+        }
+        String trimmedPath = path.trim();
+        if (menuRepository.existsByPathAndIdNot(trimmedPath, menuId)) {
+            throw new DuplicateMenuPathException(trimmedPath);
         }
     }
 }

@@ -38,8 +38,9 @@ public class ProjectValidator {
     }
 
     public void validateDuplicateProject(String projectName, String clientId) {
-        if (projectRepository.existsByProjectNameAndClientIdAndStatusNot(projectName, clientId, ProjectStatus.ARCHIVED)) {
-            throw new DuplicateProjectException(projectName, clientId);
+        String normalizedProjectName = projectName != null ? projectName.trim() : null;
+        if (projectRepository.existsByProjectNameAndClientIdAndStatusNot(normalizedProjectName, clientId, ProjectStatus.ARCHIVED)) {
+            throw new DuplicateProjectException(normalizedProjectName, clientId);
         }
     }
 
@@ -50,8 +51,9 @@ public class ProjectValidator {
     }
 
     public void validateDuplicateProjectForUpdate(String projectName, String clientId, String projectId) {
-        if (projectRepository.existsByProjectNameAndClientIdAndIdNotAndStatusNot(projectName, clientId, projectId, ProjectStatus.ARCHIVED)) {
-            throw new DuplicateProjectException(projectName, clientId);
+        String normalizedProjectName = projectName != null ? projectName.trim() : null;
+        if (projectRepository.existsByProjectNameAndClientIdAndIdNotAndStatusNot(normalizedProjectName, clientId, projectId, ProjectStatus.ARCHIVED)) {
+            throw new DuplicateProjectException(normalizedProjectName, clientId);
         }
     }
 

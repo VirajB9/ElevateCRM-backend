@@ -24,7 +24,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -315,5 +318,34 @@ public class UserServiceImplTest {
         request.setRoleId("role-employee");
 
         assertThrows(BadRequestException.class, () -> userService.updateUser("user-manager", request));
+    }
+
+    @Test
+    void createUser_SetsPasswordChangeRequiredToTrue() {
+        authenticateAs(ownerUser);
+
+        Role employeeRole = new Role();
+        employeeRole.setId("role-employee");
+        employeeRole.setName("EMPLOYEE");
+
+        when(roleRepository.findById("role-employee")).thenReturn(Optional.of(employeeRole));
+        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed-pwd");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.viraj.dmabackend.auth.dto.CreateUserRequest request = new com.viraj.dmabackend.auth.dto.CreateUserRequest();
+        request.setFirstName("New");
+        request.setLastName("Employee");
+        request.setEmail("new.employee@agency.com");
+        request.setPhoneNumber("9123456780");
+        request.setRoleId("role-employee");
+
+        userService.createUser(request);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        User savedUser = captor.getValue();
+        assertTrue(savedUser.isPasswordChangeRequired(), "Newly created user must have passwordChangeRequired set to true");
+        assertEquals("new.employee@agency.com", savedUser.getEmail());
     }
 }

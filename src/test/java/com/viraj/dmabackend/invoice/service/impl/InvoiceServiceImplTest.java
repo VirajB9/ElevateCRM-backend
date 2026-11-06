@@ -193,7 +193,7 @@ public class InvoiceServiceImplTest {
         invoice.setId("inv-123");
         invoice.setActive(true);
 
-        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findById("inv-123")).thenReturn(Optional.of(invoice));
 
         com.viraj.dmabackend.invoice.entity.InvoiceHistory history =
                 new com.viraj.dmabackend.invoice.entity.InvoiceHistory();
@@ -204,6 +204,28 @@ public class InvoiceServiceImplTest {
                 .thenReturn(List.of(history));
 
         var result = invoiceService.getInvoiceHistory("inv-123");
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getInvoiceHistory_ReturnsHistoryList_WhenInvoiceIsSoftDeleted() {
+        Invoice deletedInvoice = new Invoice();
+        deletedInvoice.setId("inv-deleted");
+        deletedInvoice.setActive(false);
+        deletedInvoice.setDeleted(true);
+
+        when(invoiceRepository.findById("inv-deleted")).thenReturn(Optional.of(deletedInvoice));
+
+        com.viraj.dmabackend.invoice.entity.InvoiceHistory history =
+                new com.viraj.dmabackend.invoice.entity.InvoiceHistory();
+        history.setInvoiceId("inv-deleted");
+        history.setActive(false);
+
+        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc("inv-deleted"))
+                .thenReturn(List.of(history));
+
+        var result = invoiceService.getInvoiceHistory("inv-deleted");
         assertNotNull(result);
         assertEquals(1, result.size());
     }

@@ -75,7 +75,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public java.util.List<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId) {
 
-        findInvoiceById(invoiceId);
+        invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
 
         List<InvoiceHistory> historyList = invoiceHistoryRepository
                 .findByInvoiceIdOrderByInvoiceVersionAsc(invoiceId);
