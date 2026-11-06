@@ -28,4 +28,12 @@ public class MenuResponse {
     private String requiredPermission;
 
     private Boolean active;
+
+    private java.time.LocalDateTime createdAt;
+
+    private java.time.LocalDateTime updatedAt;
+
+    private String createdBy;
+
+    private String updatedBy;
 }

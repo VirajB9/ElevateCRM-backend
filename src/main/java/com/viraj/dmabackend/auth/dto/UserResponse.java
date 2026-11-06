@@ -26,6 +26,8 @@ public class UserResponse {
 
     private UserStatus status;
 
+    private boolean passwordChangeRequired;
+
     private java.time.LocalDateTime createdAt;
 
     private java.time.LocalDateTime updatedAt;

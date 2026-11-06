@@ -26,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -56,12 +57,14 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() ->
                         new UnauthorizedException("Invalid email or password"));
 
+        boolean lockoutStateChanged = false;
         if (user.getLockoutUntil() != null) {
-            if (user.getLockoutUntil().isAfter(LocalDateTime.now())) {
+            if (user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
                 throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
             } else {
                 user.setFailedLoginAttempts(0);
                 user.setLockoutUntil(null);
+                lockoutStateChanged = true;
             }
         }
 
@@ -69,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
             int attempts = user.getFailedLoginAttempts() + 1;
             user.setFailedLoginAttempts(attempts);
             if (attempts >= MAX_FAILED_ATTEMPTS) {
-                user.setLockoutUntil(LocalDateTime.now().plusMinutes(LOCKOUT_MINUTES));
+                user.setLockoutUntil(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES));
             }
             userRepository.save(user);
             throw new UnauthorizedException("Invalid email or password");
@@ -79,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("User account is not active");
         }
 
-        if (user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
+        if (lockoutStateChanged || user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
             user.setFailedLoginAttempts(0);
             user.setLockoutUntil(null);
             userRepository.save(user);
@@ -93,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
                 .token(refreshTokenValue)
                 .userId(user.getId())
                 .expiresAt(
-                        LocalDateTime.now()
+                        LocalDateTime.now(ZoneOffset.UTC)
                                 .plus(java.time.Duration.ofMillis(refreshExpiration))
                 )
                 .build();
@@ -115,7 +118,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Refresh token was already revoked");
         }
 
-        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
             throw new UnauthorizedException("Refresh token has expired");
         }
 
@@ -141,7 +144,7 @@ public class AuthServiceImpl implements AuthService {
                 .token(newRefreshTokenValue)
                 .userId(user.getId())
                 .expiresAt(
-                        LocalDateTime.now()
+                        LocalDateTime.now(ZoneOffset.UTC)
                                 .plus(java.time.Duration.ofMillis(refreshExpiration))
                 )
                 .build();
@@ -177,6 +180,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailAndStatusNot(email, UserStatus.DELETED)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
 
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new UnauthorizedException("User account is not active");
+        }
+
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new BadRequestException("Current password is incorrect");
         }
@@ -201,7 +208,7 @@ public class AuthServiceImpl implements AuthService {
                 .token(refreshTokenValue)
                 .userId(user.getId())
                 .expiresAt(
-                        LocalDateTime.now()
+                        LocalDateTime.now(ZoneOffset.UTC)
                                 .plus(java.time.Duration.ofMillis(refreshExpiration))
                 )
                 .build();

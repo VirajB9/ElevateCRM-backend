@@ -2,6 +2,7 @@ package com.viraj.dmabackend.lead.service.impl;
 
 import com.viraj.dmabackend.client.entity.Client;
 import com.viraj.dmabackend.client.service.ClientService;
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.LeadResponse;
@@ -22,7 +23,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Service
 @RequiredArgsConstructor
@@ -69,11 +73,15 @@ public class LeadServiceImpl implements LeadService {
         Client client = clientService.createClientFromLead(data);
 
         lead.setConvertedClientId(client.getId());
-        lead.setConvertedAt(LocalDateTime.now());
+        lead.setConvertedAt(LocalDateTime.now(ZoneOffset.UTC));
 
         Lead savedLead = leadRepository.save(lead);
 
-        eventPublisher.publishEvent(new LeadConvertedEvent(data));
+        com.viraj.dmabackend.common.dto.LeadConversionData eventData = data.toBuilder()
+                .clientId(client.getId())
+                .build();
+
+        eventPublisher.publishEvent(new LeadConvertedEvent(eventData));
 
         return leadMapper.toLeadResponse(savedLead);
     }
@@ -88,14 +96,14 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public Page<LeadResponse> getAllLeads(Pageable pageable) {
 
-        return leadRepository.findByStatusNot(com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, pageable)
+        return leadRepository.findByStatusNot(com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
     }
 
     @Override
     public Page<LeadResponse> searchLeads(String keyword, Pageable pageable) {
 
-        return leadRepository.searchLeads(keyword, pageable).map(leadMapper::toLeadResponse);
+        return leadRepository.searchLeads(keyword, PaginationUtils.clampPageable(pageable)).map(leadMapper::toLeadResponse);
     }
 
     @Override
@@ -105,21 +113,25 @@ public class LeadServiceImpl implements LeadService {
             throw new BadRequestException("Querying soft-deleted leads is not permitted");
         }
 
-        return leadRepository.findByStatus(status, pageable)
+        return leadRepository.findByStatus(status, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
     }
 
     @Override
     public Page<LeadResponse> filterBySource(LeadSource source, Pageable pageable) {
 
-        return leadRepository.findBySourceAndStatusNot(source, LeadStatus.DELETED, pageable)
+        return leadRepository.findBySourceAndStatusNot(source, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
     }
 
     @Override
     public Page<LeadResponse> filterByAssignedUser(String userId, Pageable pageable) {
 
-        return leadRepository.findByAssignedUserIdAndStatusNot(userId, LeadStatus.DELETED, pageable)
+        String normalizedUserId = userId != null ? userId.trim() : null;
+
+        leadValidator.validateUserExists(normalizedUserId);
+
+        return leadRepository.findByAssignedUserIdAndStatusNot(normalizedUserId, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
     }
 
@@ -155,7 +167,8 @@ public class LeadServiceImpl implements LeadService {
     // Helper Methods
     // =========================
     private Lead findLeadById(String leadId) {
-        return leadRepository.findByIdAndStatusNot(leadId, LeadStatus.DELETED)
+        String trimmedLeadId = leadId != null ? leadId.trim() : null;
+        return leadRepository.findByIdAndStatusNot(trimmedLeadId, LeadStatus.DELETED)
                 .orElseThrow(() -> new LeadNotFoundException(leadId));
     }
 
@@ -171,7 +184,7 @@ public class LeadServiceImpl implements LeadService {
                 .industry(normalizeTrim(request.getIndustry()))
                 .source(request.getSource())
                 .assignedUserId(normalizeAssignedUserId(request.getAssignedUserId()))
-                .estimatedBudget(request.getEstimatedBudget())
+                .estimatedBudget(normalizeBudget(request.getEstimatedBudget()))
                 .requirements(normalizeTrim(request.getRequirements()))
                 .notes(normalizeTrim(request.getNotes()))
                 .build();
@@ -189,9 +202,13 @@ public class LeadServiceImpl implements LeadService {
         lead.setSource(request.getSource());
         lead.setStatus(request.getStatus());
         lead.setAssignedUserId(normalizeAssignedUserId(request.getAssignedUserId()));
-        lead.setEstimatedBudget(request.getEstimatedBudget());
+        lead.setEstimatedBudget(normalizeBudget(request.getEstimatedBudget()));
         lead.setRequirements(normalizeTrim(request.getRequirements()));
         lead.setNotes(normalizeTrim(request.getNotes()));
+    }
+
+    private BigDecimal normalizeBudget(BigDecimal budget) {
+        return budget != null ? budget.setScale(2, RoundingMode.HALF_UP) : null;
     }
 
     private String normalizeEmail(String email) {

@@ -1,6 +1,10 @@
 package com.viraj.dmabackend.lead.service.impl;
 
+import com.viraj.dmabackend.client.entity.Client;
 import com.viraj.dmabackend.client.service.ClientService;
+import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
+
+import java.math.BigDecimal;
 import com.viraj.dmabackend.lead.dto.LeadResponse;
 import com.viraj.dmabackend.lead.entity.Lead;
 import com.viraj.dmabackend.lead.enums.LeadSource;
@@ -72,9 +76,10 @@ public class LeadServiceImplTest {
         when(leadMapper.toLeadResponse(any(Lead.class)))
                 .thenReturn(LeadResponse.builder().id("lead-2").status(LeadStatus.CONTACTED).build());
 
-        Page<LeadResponse> response = leadService.filterByAssignedUser("user-1", pageable);
+        Page<LeadResponse> response = leadService.filterByAssignedUser("  user-1  ", pageable);
 
         assertEquals(1, response.getTotalElements());
+        verify(leadValidator).validateUserExists("user-1");
         verify(leadRepository).findByAssignedUserIdAndStatusNot(eq("user-1"), eq(LeadStatus.DELETED), eq(pageable));
     }
 
@@ -150,5 +155,76 @@ public class LeadServiceImplTest {
         org.junit.jupiter.api.Assertions.assertNull(existingLead.getAssignedUserId());
         assertEquals("Updated req", existingLead.getRequirements());
         assertEquals("Updated notes", existingLead.getNotes());
+    }
+
+    @Test
+    void convertLeadToClient_SetsConvertedAtWithUtcTimestamp() {
+        Lead lead = Lead.builder()
+                .id("lead-1")
+                .firstName("Alice")
+                .lastName("Smith")
+                .companyName("Acme")
+                .email("alice@acme.com")
+                .status(LeadStatus.QUALIFIED)
+                .build();
+
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+
+        Client client = Client.builder().id("client-123").build();
+        when(clientService.createClientFromLead(any())).thenReturn(client);
+
+        org.mockito.ArgumentCaptor<Lead> captor = org.mockito.ArgumentCaptor.forClass(Lead.class);
+        when(leadRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(leadMapper.toLeadResponse(any(Lead.class)))
+                .thenReturn(LeadResponse.builder().id("lead-1").convertedClientId("client-123").build());
+
+        leadService.convertLeadToClient("lead-1");
+
+        Lead saved = captor.getValue();
+        assertEquals("client-123", saved.getConvertedClientId());
+        org.junit.jupiter.api.Assertions.assertNotNull(saved.getConvertedAt());
+        org.junit.jupiter.api.Assertions.assertTrue(saved.getConvertedAt().isAfter(java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(1)));
+        org.junit.jupiter.api.Assertions.assertTrue(saved.getConvertedAt().isBefore(java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(1)));
+
+        org.mockito.ArgumentCaptor<com.viraj.dmabackend.lead.event.LeadConvertedEvent> eventCaptor =
+                org.mockito.ArgumentCaptor.forClass(com.viraj.dmabackend.lead.event.LeadConvertedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertEquals("client-123", eventCaptor.getValue().getClientId());
+        assertEquals("lead-1", eventCaptor.getValue().getLeadId());
+        assertEquals("client-123", eventCaptor.getValue().getData().getClientId());
+    }
+
+    @Test
+    void createLead_NormalizesEstimatedBudgetToTwoDecimalPlaces() {
+        CreateLeadRequest request = new CreateLeadRequest();
+        request.setFirstName("Jane");
+        request.setLastName("Doe");
+        request.setCompanyName("Acme");
+        request.setEmail("jane@example.com");
+        request.setEstimatedBudget(new BigDecimal("5000.789"));
+
+        org.mockito.ArgumentCaptor<Lead> captor = org.mockito.ArgumentCaptor.forClass(Lead.class);
+        when(leadRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(leadMapper.toLeadResponse(any(Lead.class))).thenReturn(LeadResponse.builder().id("lead-1").build());
+
+        leadService.createLead(request);
+
+        Lead saved = captor.getValue();
+        assertEquals(new BigDecimal("5000.79"), saved.getEstimatedBudget());
+    }
+
+    @Test
+    void getLeadById_TrimsLeadId() {
+        Lead lead = Lead.builder().id("lead-1").build();
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+        when(leadMapper.toLeadResponse(lead))
+                .thenReturn(LeadResponse.builder().id("lead-1").build());
+
+        LeadResponse response = leadService.getLeadById("   lead-1   ");
+
+        org.junit.jupiter.api.Assertions.assertNotNull(response);
+        verify(leadRepository).findByIdAndStatusNot("lead-1", LeadStatus.DELETED);
     }
 }

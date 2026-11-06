@@ -45,7 +45,42 @@ public class RateLimitFilterTest {
 
         filter.doFilter(request, response, filterChain);
         assertEquals(429, response.getStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(response.getHeader("Retry-After"));
+        org.junit.jupiter.api.Assertions.assertTrue(response.getContentAsString().contains("Too many login attempts"));
         verify(filterChain, times(5)).doFilter(any(), any());
+
+        // Refresh endpoint from same IP should have its own separate bucket
+        MockHttpServletRequest refreshRequest = new MockHttpServletRequest("POST", "/api/v1/auth/refresh");
+        refreshRequest.setServletPath("/api/v1/auth/refresh");
+        refreshRequest.setRemoteAddr("10.0.0.1");
+        MockHttpServletResponse refreshResponse = new MockHttpServletResponse();
+
+        filter.doFilter(refreshRequest, refreshResponse, filterChain);
+        assertEquals(200, refreshResponse.getStatus());
+        verify(filterChain, times(6)).doFilter(any(), any());
+    }
+
+    @Test
+    void doFilter_RefreshRateLimitExceeded_ReturnsRefreshSpecificMessage() throws ServletException, IOException {
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/refresh");
+            request.setServletPath("/api/v1/auth/refresh");
+            request.setRemoteAddr("10.0.0.5");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            filter.doFilter(request, response, filterChain);
+            assertEquals(200, response.getStatus());
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/refresh");
+        request.setServletPath("/api/v1/auth/refresh");
+        request.setRemoteAddr("10.0.0.5");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, filterChain);
+        assertEquals(429, response.getStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(response.getHeader("Retry-After"));
+        org.junit.jupiter.api.Assertions.assertTrue(response.getContentAsString().contains("Too many refresh attempts"));
     }
 
     @Test
@@ -78,5 +113,48 @@ public class RateLimitFilterTest {
 
         filter.doFilter(request, response, filterChain);
         verify(filterChain, times(1)).doFilter(request, response);
+    }
+
+    @Test
+    void cacheEviction_UnderConcurrentLoad_DoesNotCollapseCache() throws Exception {
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, io.github.bucket4j.Bucket> buckets =
+                (java.util.Map<String, io.github.bucket4j.Bucket>)
+                        org.springframework.test.util.ReflectionTestUtils.getField(filter, "buckets");
+
+        io.github.bucket4j.Bucket dummyBucket = io.github.bucket4j.Bucket.builder()
+                .addLimit(io.github.bucket4j.Bandwidth.classic(1, io.github.bucket4j.Refill.greedy(1, java.time.Duration.ofMinutes(1))))
+                .build();
+
+        for (int i = 0; i < 10000; i++) {
+            buckets.put("/api/v1/auth/login:initial-" + i, dummyBucket);
+        }
+
+        int threadCount = 20;
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            executor.submit(() -> {
+                try {
+                    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+                    request.setServletPath("/api/v1/auth/login");
+                    request.setRemoteAddr("192.168.1." + index);
+                    MockHttpServletResponse response = new MockHttpServletResponse();
+                    filter.doFilter(request, response, filterChain);
+                } catch (Exception ignored) {
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await(5, java.util.concurrent.TimeUnit.SECONDS);
+        executor.shutdown();
+
+        // Eviction should remove only ~500 entries (leaving > 9000 entries), never collapsing the entire cache
+        org.junit.jupiter.api.Assertions.assertTrue(buckets.size() >= 9000,
+                "Expected cache size to remain above 9000, but was: " + buckets.size());
     }
 }

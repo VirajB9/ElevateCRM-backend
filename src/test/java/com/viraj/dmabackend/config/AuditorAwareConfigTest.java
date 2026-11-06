@@ -82,4 +82,37 @@ public class AuditorAwareConfigTest {
         assertTrue(auditor.isPresent());
         assertEquals("auditor@example.com", auditor.get());
     }
+
+    @Test
+    void getCurrentAuditor_WhenPrincipalStringHasWhitespaceAndUppercase_ReturnsTrimmedLowercase() {
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "  USER@Example.COM  ",
+                "credentials",
+                AuthorityUtils.createAuthorityList("ROLE_USER"));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        Optional<String> auditor = auditorAware.getCurrentAuditor();
+        assertTrue(auditor.isPresent());
+        assertEquals("user@example.com", auditor.get());
+    }
+
+    @Test
+    void getCurrentAuditor_WhenUserDetailsHasWhitespaceAndUppercase_ReturnsTrimmedLowercase() {
+        org.springframework.security.core.userdetails.User userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        "  Admin.User@Example.COM  ",
+                        "password",
+                        AuthorityUtils.createAuthorityList("ROLE_ADMIN")
+                );
+
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                "credentials",
+                userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        Optional<String> auditor = auditorAware.getCurrentAuditor();
+        assertTrue(auditor.isPresent());
+        assertEquals("admin.user@example.com", auditor.get());
+    }
 }

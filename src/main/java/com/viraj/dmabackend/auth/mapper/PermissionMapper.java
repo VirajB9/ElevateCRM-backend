@@ -16,6 +16,7 @@ public class PermissionMapper {
         return PermissionResponse.builder()
                 .id(permission.getId())
                 .name(permission.getPermissionType() != null ? permission.getPermissionType().name() : null)
+                .module(permission.getModule())
                 .description(permission.getDescription())
                 .build();
     }

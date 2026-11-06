@@ -90,6 +90,24 @@ class MenuValidatorTest {
     }
 
     @Test
+    void validatePath_withTrailingSlash_throwsException() {
+        assertThatThrownBy(() -> menuValidator.validatePath("/leads/"))
+                .isInstanceOf(InvalidMenuPathException.class);
+    }
+
+    @Test
+    void validatePath_withDuplicateSlashes_throwsException() {
+        assertThatThrownBy(() -> menuValidator.validatePath("//leads"))
+                .isInstanceOf(InvalidMenuPathException.class);
+    }
+
+    @Test
+    void validatePath_rootSlash_succeeds() {
+        assertThatCode(() -> menuValidator.validatePath("/"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void validatePath_whenNull_throwsInvalidMenuPathException() {
         assertThatThrownBy(() -> menuValidator.validatePath(null))
                 .isInstanceOf(InvalidMenuPathException.class);
@@ -129,7 +147,7 @@ class MenuValidatorTest {
     void validateDuplicateTitleForUpdate_trimsAndFindsDuplicate() {
         when(menuRepository.existsByTitleAndIdNot("Settings", "m2")).thenReturn(true);
 
-        assertThatThrownBy(() -> menuValidator.validateDuplicateTitleForUpdate("  Settings  ", "m2"))
+        assertThatThrownBy(() -> menuValidator.validateDuplicateTitleForUpdate("  Settings  ", "  m2  "))
                 .isInstanceOf(DuplicateMenuTitleException.class);
     }
 
@@ -137,7 +155,16 @@ class MenuValidatorTest {
     void validateDuplicatePathForUpdate_trimsAndFindsDuplicate() {
         when(menuRepository.existsByPathAndIdNot("/settings", "m2")).thenReturn(true);
 
-        assertThatThrownBy(() -> menuValidator.validateDuplicatePathForUpdate("  /settings  ", "m2"))
+        assertThatThrownBy(() -> menuValidator.validateDuplicatePathForUpdate("  /settings  ", "  m2  "))
                 .isInstanceOf(DuplicateMenuPathException.class);
+    }
+
+    @Test
+    void validateMenuDeactivation_trimsMenuId() {
+        when(menuRepository.existsByParentIdAndActiveTrue("m2")).thenReturn(true);
+
+        assertThatThrownBy(() -> menuValidator.validateMenuDeactivation("  m2  "))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Cannot deactivate menu with active submenus");
     }
 }

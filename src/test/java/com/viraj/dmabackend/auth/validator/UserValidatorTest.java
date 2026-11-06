@@ -6,6 +6,8 @@ import com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException;
 import com.viraj.dmabackend.auth.exception.DuplicateEmailException;
 import com.viraj.dmabackend.auth.exception.DuplicatePhoneException;
 import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.exception.BadRequestException;
+import com.viraj.dmabackend.lead.repository.LeadRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +22,9 @@ public class UserValidatorTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private LeadRepository leadRepository;
 
     @InjectMocks
     private UserValidator userValidator;
@@ -156,5 +161,23 @@ public class UserValidatorTest {
 
         assertThrows(DuplicatePhoneException.class,
                 () -> userValidator.validatePhoneForUpdate("  9876543210  ", "u-1"));
+    }
+
+    @Test
+    void validateUserDeletable_ThrowsWhenActiveAssignedLeadsExist() {
+        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), anyCollection()))
+                .thenReturn(true);
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> userValidator.validateUserDeletable("  u-1  "));
+        assertTrue(ex.getMessage().contains("active assigned leads"));
+    }
+
+    @Test
+    void validateUserDeletable_PassesWhenNoActiveAssignedLeads() {
+        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), anyCollection()))
+                .thenReturn(false);
+
+        assertDoesNotThrow(() -> userValidator.validateUserDeletable("u-1"));
     }
 }

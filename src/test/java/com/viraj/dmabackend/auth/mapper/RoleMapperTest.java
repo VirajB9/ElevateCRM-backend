@@ -35,6 +35,11 @@ public class RoleMapperTest {
                 .systemRole(false)
                 .permissionIds(null)
                 .build();
+        role.setCreatedBy("creator@agency.com");
+        role.setUpdatedBy("modifier@agency.com");
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        role.setCreatedAt(now);
+        role.setUpdatedAt(now);
 
         RoleResponse response = roleMapper.toRoleResponse(role);
 
@@ -45,6 +50,10 @@ public class RoleMapperTest {
         assertFalse(response.isSystemRole());
         assertNotNull(response.getPermissions());
         assertTrue(response.getPermissions().isEmpty());
+        assertEquals("creator@agency.com", response.getCreatedBy());
+        assertEquals("modifier@agency.com", response.getUpdatedBy());
+        assertEquals(now, response.getCreatedAt());
+        assertEquals(now, response.getUpdatedAt());
     }
 
     @Test

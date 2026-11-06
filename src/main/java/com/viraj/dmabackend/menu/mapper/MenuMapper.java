@@ -23,6 +23,10 @@ public class MenuMapper {
                 .orderIndex(menu.getOrderIndex())
                 .requiredPermission(menu.getRequiredPermission())
                 .active(menu.getActive())
+                .createdAt(menu.getCreatedAt())
+                .updatedAt(menu.getUpdatedAt())
+                .createdBy(menu.getCreatedBy())
+                .updatedBy(menu.getUpdatedBy())
                 .build();
     }
 

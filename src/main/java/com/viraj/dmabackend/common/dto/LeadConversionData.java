@@ -4,9 +4,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 public class LeadConversionData {
     private final String leadId;
+    private final String clientId;
     private final String firstName;
     private final String lastName;
     private final String companyName;

@@ -19,12 +19,23 @@ public class PermissionBootstrap implements CommandLineRunner {
     public void run(String... args) {
 
         for (PermissionType permissionType : PermissionType.values()) {
-            if (permissionRepository.existsByPermissionType(permissionType)) {
+            String module = permissionType.name().contains("_")
+                    ? permissionType.name().substring(0, permissionType.name().indexOf("_"))
+                    : permissionType.name();
+
+            java.util.Optional<Permission> existing = permissionRepository.findByPermissionType(permissionType);
+            if (existing.isPresent()) {
+                Permission p = existing.get();
+                if (p.getModule() == null || !module.equals(p.getModule())) {
+                    p.setModule(module);
+                    permissionRepository.save(p);
+                }
                 continue;
             }
 
             Permission permission = Permission.builder()
                     .permissionType(permissionType)
+                    .module(module)
                     .description(permissionType.name())
                     .build();
 

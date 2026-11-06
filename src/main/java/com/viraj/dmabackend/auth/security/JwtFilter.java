@@ -86,7 +86,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         if (passwordChangeRequired && 
-            !("/api/v1/auth/change-password".equals(path) || "/api/v1/auth/logout".equals(path))) {
+            !("/api/v1/auth/change-password".equals(path) || "/api/v1/auth/logout".equals(path) || "/api/v1/auth/refresh".equals(path))) {
             
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");

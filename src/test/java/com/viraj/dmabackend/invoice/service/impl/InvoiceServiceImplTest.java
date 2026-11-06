@@ -134,6 +134,24 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void calculateInvoiceTotals_NormalizesTaxPercentageAndUnitPriceScale() {
+        Invoice invoice = new Invoice();
+        invoice.setTaxPercentage(new BigDecimal("18.5555"));
+        invoice.setDiscount(BigDecimal.ZERO);
+
+        InvoiceItem item = new InvoiceItem();
+        item.setQuantity(new BigDecimal("2"));
+        item.setUnitPrice(new BigDecimal("100.1234"));
+        invoice.setItems(List.of(item));
+
+        invoiceService.calculateInvoiceTotals(invoice);
+
+        assertEquals(new BigDecimal("18.56"), invoice.getTaxPercentage());
+        assertEquals(new BigDecimal("100.12"), item.getUnitPrice());
+        assertEquals(new BigDecimal("200.24"), item.getLineTotal());
+    }
+
+    @Test
     void deleteInvoice_ThrowsWhenStatusIsPaid() {
         Invoice invoice = new Invoice();
         invoice.setId("inv-123");
@@ -184,7 +202,8 @@ public class InvoiceServiceImplTest {
                 org.mockito.ArgumentCaptor.forClass(com.viraj.dmabackend.invoice.entity.InvoiceHistory.class);
         verify(invoiceHistoryRepository).save(captor.capture());
         assertEquals(InvoiceStatus.PAID, captor.getValue().getStatus());
-        assertNotNull(captor.getValue().getPaidDate());
+        assertEquals(java.time.LocalDate.now(java.time.ZoneOffset.UTC), captor.getValue().getPaidDate());
+        assertNotNull(captor.getValue().getChangedAt());
     }
 
     @Test
@@ -429,7 +448,7 @@ public class InvoiceServiceImplTest {
         when(invoiceMapper.toResponse(invoice)).thenReturn(response);
 
         org.springframework.data.domain.Page<com.viraj.dmabackend.invoice.dto.InvoiceResponse> result =
-                invoiceService.getInvoicesByClientId(clientId, pageable);
+                invoiceService.getInvoicesByClientId("  client-123  ", pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
@@ -450,7 +469,7 @@ public class InvoiceServiceImplTest {
         when(invoiceMapper.toResponse(invoice)).thenReturn(response);
 
         org.springframework.data.domain.Page<com.viraj.dmabackend.invoice.dto.InvoiceResponse> result =
-                invoiceService.getInvoicesByProjectId(projectId, pageable);
+                invoiceService.getInvoicesByProjectId("  proj-123  ", pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
@@ -496,5 +515,32 @@ public class InvoiceServiceImplTest {
         assertDoesNotThrow(() -> invoiceService.updateInvoice("inv-draft", request));
         verify(invoiceValidator).validateUpdateInvoice(invoice, request);
         verify(invoiceRepository).save(invoice);
+    }
+
+    @Test
+    void getInvoiceById_TrimsInvoiceId() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-1");
+        when(invoiceRepository.findByIdAndActiveTrue("inv-1")).thenReturn(Optional.of(invoice));
+        when(invoiceMapper.toResponse(invoice)).thenReturn(new com.viraj.dmabackend.invoice.dto.InvoiceResponse());
+
+        com.viraj.dmabackend.invoice.dto.InvoiceResponse response = invoiceService.getInvoiceById("   inv-1   ");
+
+        assertNotNull(response);
+        verify(invoiceRepository).findByIdAndActiveTrue("inv-1");
+    }
+
+    @Test
+    void getAllInvoices_ClampsOversizedPageable() {
+        org.springframework.data.domain.PageRequest oversized = org.springframework.data.domain.PageRequest.of(0, 1000);
+        when(invoiceRepository.findByActiveTrue(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+
+        invoiceService.getAllInvoices(oversized);
+
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(invoiceRepository).findByActiveTrue(captor.capture());
+        assertEquals(100, captor.getValue().getPageSize());
     }
 }

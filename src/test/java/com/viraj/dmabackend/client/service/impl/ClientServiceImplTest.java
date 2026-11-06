@@ -198,4 +198,55 @@ public class ClientServiceImplTest {
 
         assertEquals("updated.john@acme.com", client.getEmail());
     }
+
+    @Test
+    void createClient_NormalizesNotesWhitespace() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName("Acme");
+        request.setContactPerson("John");
+        request.setEmail("john@acme.com");
+        request.setPhoneNumber("1234567890");
+        request.setNotes("   Important notes   ");
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class))).thenReturn(ClientResponse.builder().build());
+
+        clientService.createClient(request);
+
+        ArgumentCaptor<Client> captor = ArgumentCaptor.forClass(Client.class);
+        verify(clientRepository).save(captor.capture());
+        assertEquals("Important notes", captor.getValue().getNotes());
+    }
+
+    @Test
+    void createClientFromLead_NormalizesNotesWhitespace() {
+        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
+                .companyName("Acme")
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@acme.com")
+                .phoneNumber("1234567890")
+                .notes("   Lead notes   ")
+                .build();
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Client saved = clientService.createClientFromLead(data);
+
+        assertEquals("Lead notes", saved.getNotes());
+    }
+
+    @Test
+    void getClientById_TrimsClientId() {
+        Client client = Client.builder().id("client-1").companyName("Acme").build();
+        when(clientRepository.findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED))
+                .thenReturn(Optional.of(client));
+        when(clientMapper.toClientResponse(client))
+                .thenReturn(ClientResponse.builder().id("client-1").build());
+
+        ClientResponse response = clientService.getClientById("   client-1   ");
+
+        org.junit.jupiter.api.Assertions.assertNotNull(response);
+        verify(clientRepository).findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED);
+    }
 }

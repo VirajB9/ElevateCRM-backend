@@ -6,6 +6,7 @@ import com.viraj.dmabackend.lead.enums.LeadStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,8 +21,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Document(collection = "leads")
 @TypeAlias("Lead")
-public class
-Lead extends BaseEntity {
+@CompoundIndex(name = "idx_assigned_user_status", def = "{'assignedUserId': 1, 'status': 1}")
+@CompoundIndex(name = "idx_source_status", def = "{'source': 1, 'status': 1}")
+public class Lead extends BaseEntity {
 
     @Id
     private String id;

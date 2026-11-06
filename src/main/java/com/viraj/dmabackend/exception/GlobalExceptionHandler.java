@@ -13,6 +13,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -71,6 +72,34 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Object>> handleIllegalArgument(
+            IllegalArgumentException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMissingRequestHeader(
+            MissingRequestHeaderException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "Required request header '" + ex.getHeaderName() + "' is not present",
                 null);
 
         return new ResponseEntity<>(

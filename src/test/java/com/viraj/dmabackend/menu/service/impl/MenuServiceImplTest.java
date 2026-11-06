@@ -288,4 +288,16 @@ class MenuServiceImplTest {
 
         assertThat(existing.getParentId()).isNull();
     }
+
+    @Test
+    void getMenuById_TrimsMenuId() {
+        Menu menu = Menu.builder().id("menu-1").title("Dashboard").build();
+        when(menuRepository.findById("menu-1")).thenReturn(java.util.Optional.of(menu));
+
+        com.viraj.dmabackend.menu.dto.MenuResponse response = menuService.getMenuById("   menu-1   ");
+
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo("menu-1");
+        org.mockito.Mockito.verify(menuRepository).findById("menu-1");
+    }
 }

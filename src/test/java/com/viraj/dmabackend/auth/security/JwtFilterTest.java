@@ -77,6 +77,26 @@ public class JwtFilterTest {
     }
 
     @Test
+    void doFilter_WithPasswordChangeRequired_AllowsRefreshEndpoint() throws ServletException, IOException {
+        String token = "valid-token";
+        when(jwtUtil.validateToken(token)).thenReturn(true);
+        when(jwtUtil.extractEmail(token)).thenReturn("user@example.com");
+        when(jwtUtil.extractRole(token)).thenReturn("EMPLOYEE");
+        when(jwtUtil.extractPermissions(token)).thenReturn(List.of("client:read"));
+        when(jwtUtil.extractPasswordChangeRequired(token)).thenReturn(true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/refresh");
+        request.setServletPath("/api/v1/auth/refresh");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
     void doFilter_WithPasswordChangeRequired_BlocksOtherEndpointsWithStandardApiResponse() throws ServletException, IOException {
         String token = "valid-token";
         when(jwtUtil.validateToken(token)).thenReturn(true);

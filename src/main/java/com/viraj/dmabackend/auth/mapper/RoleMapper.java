@@ -42,6 +42,10 @@ public class RoleMapper {
                 .description(role.getDescription())
                 .systemRole(role.isSystemRole())
                 .permissions(permissionResponses)
+                .createdAt(role.getCreatedAt())
+                .updatedAt(role.getUpdatedAt())
+                .createdBy(role.getCreatedBy())
+                .updatedBy(role.getUpdatedBy())
                 .build();
     }
 }

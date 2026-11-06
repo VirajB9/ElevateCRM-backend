@@ -27,6 +27,7 @@ public class UpdateMenuRequest {
     @jakarta.validation.constraints.Size(max = 100)
     private String icon;
 
+    @jakarta.validation.constraints.Size(max = 50)
     private String parentId;
 
     @NotNull(message = "Order index is required")

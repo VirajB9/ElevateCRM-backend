@@ -79,4 +79,32 @@ class InvoiceMapperTest {
         assertThat(entity.getItems()).hasSize(1);
         assertThat(entity.getItems().get(0).getDescription()).isEqualTo("Consulting Services");
     }
+
+    @Test
+    void toEntity_normalizesClientIdProjectIdAndNotes() {
+        com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest req =
+                com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest.builder()
+                        .clientId("   client-123   ")
+                        .projectId("   proj-456   ")
+                        .notes("   Some invoice notes   ")
+                        .build();
+
+        Invoice entity = invoiceMapper.toEntity(req);
+        assertThat(entity).isNotNull();
+        assertThat(entity.getClientId()).isEqualTo("client-123");
+        assertThat(entity.getProjectId()).isEqualTo("proj-456");
+        assertThat(entity.getNotes()).isEqualTo("Some invoice notes");
+    }
+
+    @Test
+    void updateEntity_normalizesNotes() {
+        Invoice invoice = Invoice.builder().build();
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest req =
+                com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest.builder()
+                        .notes("   Updated notes   ")
+                        .build();
+
+        invoiceMapper.updateEntity(invoice, req);
+        assertThat(invoice.getNotes()).isEqualTo("Updated notes");
+    }
 }

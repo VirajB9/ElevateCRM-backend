@@ -56,8 +56,8 @@ public class MenuValidator {
     }
 
     public void validateMenuDeactivation(String menuId) {
-
-        if (menuId != null && menuRepository.existsByParentIdAndActiveTrue(menuId)) {
+        String trimmedMenuId = menuId != null ? menuId.trim() : null;
+        if (trimmedMenuId != null && menuRepository.existsByParentIdAndActiveTrue(trimmedMenuId)) {
             throw new BadRequestException("Cannot deactivate menu with active submenus. Deactivate child menus first.");
         }
     }
@@ -68,8 +68,9 @@ public class MenuValidator {
             return;
         }
 
+        String trimmedMenuId = menuId.trim();
         String trimmedParentId = parentId.trim();
-        if (menuId.equals(trimmedParentId)) {
+        if (trimmedMenuId.equals(trimmedParentId)) {
             throw new SelfParentMenuException();
         }
 
@@ -78,7 +79,7 @@ public class MenuValidator {
 
         while (currentParent != null) {
 
-            if (currentParent.equals(menuId)) {
+            if (currentParent.equals(trimmedMenuId)) {
                 throw new CircularMenuException();
             }
 
@@ -93,8 +94,11 @@ public class MenuValidator {
     }
 
     public void validatePath(String path) {
-
-        if (path == null || !path.trim().startsWith("/")) {
+        if (path == null) {
+            throw new InvalidMenuPathException(path);
+        }
+        String trimmed = path.trim();
+        if (!trimmed.startsWith("/") || (trimmed.length() > 1 && trimmed.endsWith("/")) || trimmed.contains("//")) {
             throw new InvalidMenuPathException(path);
         }
     }
@@ -104,7 +108,8 @@ public class MenuValidator {
             return;
         }
         String trimmedTitle = title.trim();
-        if (menuRepository.existsByTitleAndIdNot(trimmedTitle, menuId)) {
+        String trimmedMenuId = menuId != null ? menuId.trim() : null;
+        if (menuRepository.existsByTitleAndIdNot(trimmedTitle, trimmedMenuId)) {
             throw new DuplicateMenuTitleException(trimmedTitle);
         }
     }
@@ -114,7 +119,8 @@ public class MenuValidator {
             return;
         }
         String trimmedPath = path.trim();
-        if (menuRepository.existsByPathAndIdNot(trimmedPath, menuId)) {
+        String trimmedMenuId = menuId != null ? menuId.trim() : null;
+        if (menuRepository.existsByPathAndIdNot(trimmedPath, trimmedMenuId)) {
             throw new DuplicateMenuPathException(trimmedPath);
         }
     }

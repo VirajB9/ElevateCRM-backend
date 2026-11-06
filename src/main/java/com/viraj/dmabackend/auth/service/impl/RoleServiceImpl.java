@@ -16,6 +16,7 @@ import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.CustomUserDetails;
 import com.viraj.dmabackend.auth.service.RoleService;
 import com.viraj.dmabackend.auth.validator.RoleValidator;
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -122,13 +123,17 @@ public class RoleServiceImpl implements RoleService {
 
         roleValidator.validatePermissionIds(request.getPermissionIds());
 
+        List<String> normalizedPermissionIds = request.getPermissionIds().stream()
+                .map(String::trim)
+                .toList();
+
         Role role = findRoleById(roleId);
 
         preventOwnerModification(role);
 
-        validatePermissionsExist(request.getPermissionIds());
+        validatePermissionsExist(normalizedPermissionIds);
 
-        assignPermissionsToRole(role, request.getPermissionIds());
+        assignPermissionsToRole(role, normalizedPermissionIds);
 
         Role updatedRole = roleRepository.save(role);
 
@@ -145,11 +150,15 @@ public class RoleServiceImpl implements RoleService {
 
         roleValidator.validatePermissionIds(request.getPermissionIds());
 
+        List<String> normalizedPermissionIds = request.getPermissionIds().stream()
+                .map(String::trim)
+                .toList();
+
         Role role = findRoleById(roleId);
 
         preventOwnerModification(role);
 
-        removePermissionsFromRole(role, request.getPermissionIds());
+        removePermissionsFromRole(role, normalizedPermissionIds);
 
         Role updatedRole = roleRepository.save(role);
 
@@ -161,7 +170,7 @@ public class RoleServiceImpl implements RoleService {
 
         Role role = findRoleById(roleId);
 
-        return userRepository.findByRoleIdAndStatusNot(roleId, com.viraj.dmabackend.auth.enums.UserStatus.DELETED, pageable)
+        return userRepository.findByRoleIdAndStatusNot(role.getId(), com.viraj.dmabackend.auth.enums.UserStatus.DELETED, PaginationUtils.clampPageable(pageable))
                 .map(user -> userMapper.toUserResponse(user, role.getName()));
     }
 
@@ -178,7 +187,8 @@ public class RoleServiceImpl implements RoleService {
 
     private Role findRoleById(String roleId) {
 
-        return roleRepository.findById(roleId)
+        String trimmedRoleId = roleId != null ? roleId.trim() : null;
+        return roleRepository.findById(trimmedRoleId)
                 .orElseThrow(() ->
                         new RoleNotFoundException(roleId));
     }

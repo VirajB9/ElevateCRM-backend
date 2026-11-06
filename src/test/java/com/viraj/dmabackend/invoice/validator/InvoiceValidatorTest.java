@@ -97,6 +97,27 @@ class InvoiceValidatorTest {
     }
 
     @Test
+    void validateCreateInvoice_whenClientIdAndProjectIdHaveWhitespace_trimsBeforeServiceCalls() {
+        ClientResponse activeClient = ClientResponse.builder().id("client-1").status(ClientStatus.ACTIVE).build();
+        ProjectResponse activeProject = ProjectResponse.builder().id("proj-1").clientId("client-1").status(ProjectStatus.ACTIVE).build();
+
+        when(clientService.getClientById("client-1")).thenReturn(activeClient);
+        when(projectService.getProjectById("proj-1")).thenReturn(activeProject);
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("  client-1  ")
+                .projectId("  proj-1  ")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(10))
+                .items(Collections.emptyList())
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        assertThatCode(() -> invoiceValidator.validateCreateInvoice(request))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void validateClientExists_callsClientService() {
         when(clientService.getClientById("client-123")).thenReturn(ClientResponse.builder().id("client-123").build());
         assertThatCode(() -> invoiceValidator.validateClientExists("client-123")).doesNotThrowAnyException();
@@ -153,5 +174,60 @@ class InvoiceValidatorTest {
         assertThatThrownBy(() -> invoiceValidator.validateUpdateInvoice(invoice, request))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Cannot create an invoice for a cancelled project");
+    }
+
+    @Test
+    void validateCreateInvoice_whenDiscountExceedsRoundedSubtotal_throwsBadRequestException() {
+        ClientResponse activeClient = ClientResponse.builder().id("client-1").status(ClientStatus.ACTIVE).build();
+        ProjectResponse activeProject = ProjectResponse.builder().id("proj-1").clientId("client-1").status(ProjectStatus.ACTIVE).build();
+
+        when(clientService.getClientById("client-1")).thenReturn(activeClient);
+        when(projectService.getProjectById("proj-1")).thenReturn(activeProject);
+
+        com.viraj.dmabackend.invoice.dto.InvoiceItemRequest item = com.viraj.dmabackend.invoice.dto.InvoiceItemRequest.builder()
+                .description("Item 1")
+                .quantity(new BigDecimal("1"))
+                .unitPrice(new BigDecimal("10.004")) // rounds to 10.00
+                .build();
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(10))
+                .items(java.util.List.of(item))
+                .discount(new BigDecimal("10.01")) // exceeds rounded 10.00
+                .build();
+
+        assertThatThrownBy(() -> invoiceValidator.validateCreateInvoice(request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Discount cannot be greater than subtotal");
+    }
+
+    @Test
+    void validateCreateInvoice_whenDiscountEqualsRoundedSubtotal_passesValidation() {
+        ClientResponse activeClient = ClientResponse.builder().id("client-1").status(ClientStatus.ACTIVE).build();
+        ProjectResponse activeProject = ProjectResponse.builder().id("proj-1").clientId("client-1").status(ProjectStatus.ACTIVE).build();
+
+        when(clientService.getClientById("client-1")).thenReturn(activeClient);
+        when(projectService.getProjectById("proj-1")).thenReturn(activeProject);
+
+        com.viraj.dmabackend.invoice.dto.InvoiceItemRequest item = com.viraj.dmabackend.invoice.dto.InvoiceItemRequest.builder()
+                .description("Item 1")
+                .quantity(new BigDecimal("1"))
+                .unitPrice(new BigDecimal("10.006")) // rounds to 10.01
+                .build();
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(10))
+                .items(java.util.List.of(item))
+                .discount(new BigDecimal("10.01")) // exactly equals rounded 10.01
+                .build();
+
+        assertThatCode(() -> invoiceValidator.validateCreateInvoice(request))
+                .doesNotThrowAnyException();
     }
 }

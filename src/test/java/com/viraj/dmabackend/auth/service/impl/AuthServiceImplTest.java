@@ -126,13 +126,13 @@ public class AuthServiceImplTest {
 
         assertEquals(5, user.getFailedLoginAttempts());
         assertNotNull(user.getLockoutUntil());
-        assertTrue(user.getLockoutUntil().isAfter(LocalDateTime.now()));
+        assertTrue(user.getLockoutUntil().isAfter(LocalDateTime.now(java.time.ZoneOffset.UTC)));
         verify(userRepository).save(user);
     }
 
     @Test
     void login_BlocksLoginWhenAccountIsLocked() {
-        user.setLockoutUntil(LocalDateTime.now().plusMinutes(10));
+        user.setLockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(10));
 
         LoginRequest request = new LoginRequest();
         request.setEmail("test@agency.com");
@@ -250,7 +250,7 @@ public class AuthServiceImplTest {
     @Test
     void login_ResetsCounterWhenLockoutExpired_IncrementsToOneOnWrongPassword() {
         user.setFailedLoginAttempts(5);
-        user.setLockoutUntil(LocalDateTime.now().minusMinutes(5));
+        user.setLockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(5));
 
         LoginRequest request = new LoginRequest();
         request.setEmail("test@agency.com");
@@ -263,6 +263,35 @@ public class AuthServiceImplTest {
         assertThrows(UnauthorizedException.class, () -> authService.login(request));
 
         assertEquals(1, user.getFailedLoginAttempts());
+        assertNull(user.getLockoutUntil());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void login_ResetsAndPersistsCounterWhenLockoutExpired_OnSuccessfulLogin() {
+        user.setFailedLoginAttempts(5);
+        user.setLockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(5));
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@agency.com");
+        request.setPassword("correctPassword");
+
+        com.viraj.dmabackend.auth.entity.Role role = new com.viraj.dmabackend.auth.entity.Role();
+        role.setId("role-1");
+        role.setName("EMPLOYEE");
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("correctPassword", "hashedpassword")).thenReturn(true);
+        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
+        when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
+        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean())).thenReturn("access-token");
+        when(jwtUtil.generateRefreshToken()).thenReturn("refresh-token");
+        when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        authService.login(request);
+
+        assertEquals(0, user.getFailedLoginAttempts());
         assertNull(user.getLockoutUntil());
         verify(userRepository).save(user);
     }
@@ -283,5 +312,23 @@ public class AuthServiceImplTest {
         com.viraj.dmabackend.exception.BadRequestException ex =
                 assertThrows(com.viraj.dmabackend.exception.BadRequestException.class, () -> authService.changePassword(request));
         assertTrue(ex.getMessage().contains("whitespace"));
+    }
+
+    @Test
+    void changePassword_ThrowsWhenUserIsNotActive() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("test@agency.com", "pass"));
+
+        user.setStatus(UserStatus.INACTIVE);
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+
+        com.viraj.dmabackend.auth.dto.ChangePasswordRequest request = new com.viraj.dmabackend.auth.dto.ChangePasswordRequest();
+        request.setCurrentPassword("currentPass123");
+        request.setNewPassword("newSecretPass123");
+
+        UnauthorizedException ex =
+                assertThrows(UnauthorizedException.class, () -> authService.changePassword(request));
+        assertEquals("User account is not active", ex.getMessage());
     }
 }

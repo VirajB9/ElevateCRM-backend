@@ -30,9 +30,13 @@ public class AuditorAwareConfig {
 
             if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
                 return Optional.ofNullable(userDetails.getUsername())
+                        .map(String::trim)
+                        .map(String::toLowerCase)
                         .filter(username -> !username.isBlank());
             } else if (principal instanceof String email) {
                 return Optional.of(email)
+                        .map(String::trim)
+                        .map(String::toLowerCase)
                         .filter(value -> !value.isBlank());
             }
 

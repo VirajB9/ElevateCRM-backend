@@ -6,7 +6,7 @@ spring:
       pageable:
         max-page-size: 100
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI}&maxPoolSize=50&minPoolSize=5&connectTimeoutMS=10000&socketTimeoutMS=10000
+      uri: ${SPRING_DATA_MONGODB_URI}
       auto-index-creation: true
       
   lifecycle:

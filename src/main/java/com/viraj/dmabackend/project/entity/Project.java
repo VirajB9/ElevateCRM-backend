@@ -25,6 +25,7 @@ import java.time.LocalDate;
         def = "{'clientId': 1, 'projectName': 1}",
         unique = true,
         partialFilter = "{'deleted': false}")
+@CompoundIndex(name = "idx_client_status", def = "{'clientId': 1, 'status': 1}")
 public class Project extends BaseEntity {
 
     @Id

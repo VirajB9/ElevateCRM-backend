@@ -129,6 +129,59 @@ public class RoleServiceImplTest {
     }
 
     @Test
+    void assignPermissions_TrimsSurroundingWhitespaceFromPermissionIds() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-2").name("MANAGER").permissionIds(new java.util.ArrayList<>()).build();
+        com.viraj.dmabackend.auth.entity.Permission permission =
+                com.viraj.dmabackend.auth.entity.Permission.builder().id("p1").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-2")).thenReturn(Optional.of(targetRole));
+        when(permissionRepository.findAllById(List.of("p1"))).thenReturn(List.of(permission));
+        when(roleRepository.save(any(Role.class))).thenReturn(targetRole);
+        when(roleMapper.toRoleResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.AssignPermissionsRequest request = new com.viraj.dmabackend.auth.dto.AssignPermissionsRequest();
+        request.setPermissionIds(List.of("   p1   "));
+
+        roleService.assignPermissions("role-2", request);
+
+        verify(permissionRepository, times(2)).findAllById(List.of("p1"));
+        org.assertj.core.api.Assertions.assertThat(targetRole.getPermissionIds()).containsExactly("p1");
+    }
+
+    @Test
+    void removePermissions_TrimsSurroundingWhitespaceFromPermissionIds() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-2").name("MANAGER").permissionIds(new java.util.ArrayList<>(List.of("p1"))).build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-2")).thenReturn(Optional.of(targetRole));
+        when(roleRepository.save(any(Role.class))).thenReturn(targetRole);
+        when(roleMapper.toRoleResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.RemovePermissionsRequest request = new com.viraj.dmabackend.auth.dto.RemovePermissionsRequest();
+        request.setPermissionIds(List.of("   p1   "));
+
+        roleService.removePermissions("role-2", request);
+
+        verify(roleRepository).save(targetRole);
+        org.assertj.core.api.Assertions.assertThat(targetRole.getPermissionIds()).isEmpty();
+    }
+
+    @Test
     void updateRole_ThrowsWhenCallerIsNotOwner() {
         Role managerRole = Role.builder().id("mgr-role").name("MANAGER").build();
         User currentUser = User.builder().id("mgr-user").email("mgr@test.com").roleId("mgr-role").build();
@@ -215,5 +268,17 @@ public class RoleServiceImplTest {
         assertEquals(2, responses.size());
         verify(permissionRepository, times(1)).findAllById(List.of("p1", "p2", "p3"));
         verify(roleMapper, times(2)).toRoleResponse(any(), any());
+    }
+
+    @Test
+    void getRoleById_TrimsRoleId() {
+        Role role = Role.builder().id("role-1").name("MANAGER").build();
+        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
+        when(roleMapper.toRoleResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.RoleResponse.builder().id("role-1").build());
+
+        com.viraj.dmabackend.auth.dto.RoleResponse response = roleService.getRoleById("   role-1   ");
+
+        assertNotNull(response);
+        verify(roleRepository).findById("role-1");
     }
 }

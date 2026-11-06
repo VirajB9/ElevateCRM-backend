@@ -108,11 +108,19 @@ public class LeadValidator {
 
     public void validateAssignedUser(String assignedUserId) {
         if (assignedUserId != null && !assignedUserId.isBlank()) {
-            User user = userRepository.findByIdAndStatusNot(assignedUserId, UserStatus.DELETED)
+            String normalizedUserId = assignedUserId.trim();
+            User user = userRepository.findByIdAndStatusNot(normalizedUserId, UserStatus.DELETED)
                     .orElseThrow(() -> new UserNotFoundException(assignedUserId));
             if (user.getStatus() != UserStatus.ACTIVE) {
                 throw new BadRequestException("Cannot assign lead to an inactive, suspended, or locked user.");
             }
+        }
+    }
+
+    public void validateUserExists(String userId) {
+        String normalizedUserId = userId != null ? userId.trim() : null;
+        if (normalizedUserId == null || !userRepository.existsByIdAndStatusNot(normalizedUserId, UserStatus.DELETED)) {
+            throw new UserNotFoundException(userId);
         }
     }
 }

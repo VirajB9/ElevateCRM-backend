@@ -180,6 +180,33 @@ public class UserServiceImplTest {
     }
 
     @Test
+    void updateUserStatus_activatesUserAndClearsLockout() {
+        authenticateAs(ownerUser);
+        managerUser.setStatus(UserStatus.LOCKED);
+        managerUser.setFailedLoginAttempts(5);
+        managerUser.setLockoutUntil(java.time.LocalDateTime.now().plusMinutes(15));
+
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(ownerUser));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+        when(userMapper.toUserResponse(any(User.class), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        UpdateUserStatusRequest request = new UpdateUserStatusRequest();
+        request.setStatus(UserStatus.ACTIVE);
+
+        userService.updateUserStatus("user-manager", request);
+
+        org.junit.jupiter.api.Assertions.assertEquals(UserStatus.ACTIVE, managerUser.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals(0, managerUser.getFailedLoginAttempts());
+        org.junit.jupiter.api.Assertions.assertNull(managerUser.getLockoutUntil());
+        verify(userRepository).save(managerUser);
+    }
+
+    @Test
     void softDeleteUser_deletesRefreshTokens() {
         authenticateAs(ownerUser);
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
@@ -347,5 +374,32 @@ public class UserServiceImplTest {
         User savedUser = captor.getValue();
         assertTrue(savedUser.isPasswordChangeRequired(), "Newly created user must have passwordChangeRequired set to true");
         assertEquals("new.employee@agency.com", savedUser.getEmail());
+    }
+
+    @Test
+    void getUserById_TrimsUserId() {
+        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById(managerUser.getRoleId())).thenReturn(Optional.of(managerRole));
+        when(userMapper.toUserResponse(managerUser, managerRole.getName()))
+                .thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().id("user-1").build());
+
+        com.viraj.dmabackend.auth.dto.UserResponse response = userService.getUserById("   user-1   ");
+
+        org.junit.jupiter.api.Assertions.assertNotNull(response);
+        verify(userRepository).findByIdAndStatusNot("user-1", UserStatus.DELETED);
+    }
+
+    @Test
+    void getAllUsers_ClampsOversizedPageable() {
+        org.springframework.data.domain.PageRequest oversized = org.springframework.data.domain.PageRequest.of(0, 500);
+        when(userRepository.findByStatusNot(eq(UserStatus.DELETED), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+
+        userService.getAllUsers(oversized);
+
+        ArgumentCaptor<org.springframework.data.domain.Pageable> captor = ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(userRepository).findByStatusNot(eq(UserStatus.DELETED), captor.capture());
+        assertEquals(100, captor.getValue().getPageSize());
     }
 }

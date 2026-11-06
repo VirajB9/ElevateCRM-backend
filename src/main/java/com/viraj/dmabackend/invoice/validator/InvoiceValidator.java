@@ -50,24 +50,28 @@ public class InvoiceValidator {
     }
 
     public void validateClientExists(String clientId) {
-        clientService.getClientById(clientId);
+        clientService.getClientById(clientId != null ? clientId.trim() : null);
     }
 
     public void validateProjectExists(String projectId) {
-        projectService.getProjectById(projectId);
+        projectService.getProjectById(projectId != null ? projectId.trim() : null);
     }
 
     private void validateClientActiveForInvoice(String clientId) {
-        com.viraj.dmabackend.client.dto.ClientResponse client = clientService.getClientById(clientId);
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        com.viraj.dmabackend.client.dto.ClientResponse client = clientService.getClientById(trimmedClientId);
         if (client.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
             throw new BadRequestException("Cannot create an invoice for an inactive client.");
         }
     }
 
     private void validateProjectBelongsToClient(String projectId, String clientId) {
-        ProjectResponse project = projectService.getProjectById(projectId);
+        String trimmedProjectId = projectId != null ? projectId.trim() : null;
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        ProjectResponse project = projectService.getProjectById(trimmedProjectId);
 
-        if (!clientId.equals(project.getClientId())) {
+        String projectClientId = project.getClientId() != null ? project.getClientId().trim() : null;
+        if (trimmedClientId == null || !trimmedClientId.equals(projectClientId)) {
             throw new BadRequestException("Project does not belong to the selected client");
         }
 
@@ -104,7 +108,8 @@ public class InvoiceValidator {
         BigDecimal subtotal = items.stream()
                 .filter(item -> item != null && item.getQuantity() != null && item.getUnitPrice() != null)
                 .map(item -> item.getQuantity()
-                        .multiply(item.getUnitPrice()))
+                        .multiply(item.getUnitPrice())
+                        .setScale(2, java.math.RoundingMode.HALF_UP))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (discount.compareTo(subtotal) > 0) {

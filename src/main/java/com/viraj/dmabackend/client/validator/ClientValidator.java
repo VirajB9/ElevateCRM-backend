@@ -45,32 +45,36 @@ public class ClientValidator {
 
     public void validateEmailForUpdate(String email, String clientId) {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
-        if (clientRepository.existsByEmailAndIdNotAndStatusNot(normalizedEmail, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        if (clientRepository.existsByEmailAndIdNotAndStatusNot(normalizedEmail, trimmedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientEmailException(email);
         }
     }
 
     public void validatePhoneForUpdate(String phoneNumber, String clientId) {
         String normalizedPhone = phoneNumber != null ? phoneNumber.trim() : null;
-        if (normalizedPhone != null && clientRepository.existsByPhoneNumberAndIdNotAndStatusNot(normalizedPhone, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        if (normalizedPhone != null && clientRepository.existsByPhoneNumberAndIdNotAndStatusNot(normalizedPhone, trimmedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientPhoneException(phoneNumber);
         }
     }
 
     public void validateGstForUpdate(String gstNumber, String clientId) {
         String normalizedGst = gstNumber != null && !gstNumber.isBlank() ? gstNumber.trim().toUpperCase() : null;
-        if (normalizedGst != null && clientRepository.existsByGstNumberAndIdNotAndStatusNot(normalizedGst, clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        if (normalizedGst != null && clientRepository.existsByGstNumberAndIdNotAndStatusNot(normalizedGst, trimmedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new DuplicateClientGstException(gstNumber);
         }
     }
 
     public void validateClientDeletable(String clientId) {
-        if (projectRepository.existsByClientIdAndStatusIn(clientId, 
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        if (projectRepository.existsByClientIdAndStatusIn(trimmedClientId, 
                 List.of(ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))) {
             throw new BadRequestException("Cannot archive client with active or ongoing projects.");
         }
 
-        if (invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(clientId, 
+        if (invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(trimmedClientId, 
                 List.of(InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))) {
             throw new BadRequestException("Cannot archive client with unpaid or active invoices.");
         }
@@ -85,13 +89,14 @@ public class ClientValidator {
             throw new BadRequestException("Clients cannot be archived via update. Please use the delete client endpoint.");
         }
 
-        if (status == com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE && clientId != null) {
-            if (projectRepository.existsByClientIdAndStatusIn(clientId,
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        if (status == com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE && trimmedClientId != null) {
+            if (projectRepository.existsByClientIdAndStatusIn(trimmedClientId,
                     List.of(ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))) {
                 throw new BadRequestException("Cannot deactivate client with active or ongoing projects.");
             }
 
-            if (invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(clientId,
+            if (invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(trimmedClientId,
                     List.of(InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))) {
                 throw new BadRequestException("Cannot deactivate client with unpaid or active invoices.");
             }

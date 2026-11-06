@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.project.service.impl;
 
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.project.dto.CreateProjectRequest;
 import com.viraj.dmabackend.project.dto.ProjectResponse;
@@ -16,6 +17,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -53,30 +57,31 @@ public class ProjectServiceImpl implements ProjectService {
             throw new BadRequestException("Querying archived projects is not permitted");
         }
 
-        return projectRepository.findByStatus(status, pageable)
+        return projectRepository.findByStatus(status, PaginationUtils.clampPageable(pageable))
                 .map(projectMapper::toProjectResponse);
     }
 
     @Override
     public Page<ProjectResponse> getProjectsByClient(String clientId, Pageable pageable) {
 
-        projectValidator.validateClientExists(clientId);
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        projectValidator.validateClientExists(trimmedClientId);
 
-        return projectRepository.findByClientIdAndStatusNot(clientId, ProjectStatus.ARCHIVED, pageable)
+        return projectRepository.findByClientIdAndStatusNot(trimmedClientId, ProjectStatus.ARCHIVED, PaginationUtils.clampPageable(pageable))
                 .map(projectMapper::toProjectResponse);
     }
 
     @Override
     public Page<ProjectResponse> getAllProjects(Pageable pageable) {
 
-        return projectRepository.findByStatusNot(ProjectStatus.ARCHIVED, pageable)
+        return projectRepository.findByStatusNot(ProjectStatus.ARCHIVED, PaginationUtils.clampPageable(pageable))
                 .map(projectMapper::toProjectResponse);
     }
 
     @Override
     public Page<ProjectResponse> searchProjects(String keyword, Pageable pageable) {
 
-        Page<Project> projects = projectRepository.searchProjects(keyword, pageable);
+        Page<Project> projects = projectRepository.searchProjects(keyword, PaginationUtils.clampPageable(pageable));
         return projects.map(projectMapper::toProjectResponse);
     }
 
@@ -118,7 +123,8 @@ public class ProjectServiceImpl implements ProjectService {
     // Helper Methods
     // =========================
     private Project findProjectById(String projectId) {
-        return projectRepository.findByIdAndStatusNot(projectId, ProjectStatus.ARCHIVED)
+        String trimmedProjectId = projectId != null ? projectId.trim() : null;
+        return projectRepository.findByIdAndStatusNot(trimmedProjectId, ProjectStatus.ARCHIVED)
                 .orElseThrow(() ->
                         new ProjectNotFoundException(projectId));
     }
@@ -132,8 +138,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .priority(request.getPriority())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .budget(request.getBudget())
-                .notes(request.getNotes())
+                .budget(normalizeBudget(request.getBudget()))
+                .notes(normalizeTrim(request.getNotes()))
                 .build();
     }
 
@@ -145,8 +151,12 @@ public class ProjectServiceImpl implements ProjectService {
         project.setStatus(request.getStatus());
         project.setStartDate(request.getStartDate());
         project.setEndDate(request.getEndDate());
-        project.setBudget(request.getBudget());
-        project.setNotes(request.getNotes());
+        project.setBudget(normalizeBudget(request.getBudget()));
+        project.setNotes(normalizeTrim(request.getNotes()));
+    }
+
+    private BigDecimal normalizeBudget(BigDecimal budget) {
+        return budget != null ? budget.setScale(2, RoundingMode.HALF_UP) : null;
     }
 
     private String normalizeTrim(String value) {

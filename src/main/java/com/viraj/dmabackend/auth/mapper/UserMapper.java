@@ -22,6 +22,7 @@ public class UserMapper {
                 .roleId(user.getRoleId())
                 .roleName(roleName)
                 .status(user.getStatus())
+                .passwordChangeRequired(user.isPasswordChangeRequired())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .createdBy(user.getCreatedBy())

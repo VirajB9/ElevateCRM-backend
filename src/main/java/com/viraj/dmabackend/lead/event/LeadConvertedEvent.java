@@ -11,4 +11,12 @@ public class LeadConvertedEvent {
     public LeadConvertedEvent(LeadConversionData data) {
         this.data = data;
     }
+
+    public String getClientId() {
+        return data != null ? data.getClientId() : null;
+    }
+
+    public String getLeadId() {
+        return data != null ? data.getLeadId() : null;
+    }
 }

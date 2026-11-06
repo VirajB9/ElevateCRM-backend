@@ -24,13 +24,15 @@ public class ProjectValidator {
     private final InvoiceRepository invoiceRepository;
 
     public void validateClientExists(String clientId) {
-        if (!clientRepository.existsByIdAndStatusNot(clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+        String normalizedClientId = clientId != null ? clientId.trim() : null;
+        if (!clientRepository.existsByIdAndStatusNot(normalizedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
             throw new ClientNotFoundException(clientId);
         }
     }
 
     public void validateClientActiveForProject(String clientId) {
-        com.viraj.dmabackend.client.entity.Client client = clientRepository.findByIdAndStatusNot(clientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)
+        String normalizedClientId = clientId != null ? clientId.trim() : null;
+        com.viraj.dmabackend.client.entity.Client client = clientRepository.findByIdAndStatusNot(normalizedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)
                 .orElseThrow(() -> new ClientNotFoundException(clientId));
         if (client.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
             throw new BadRequestException("Cannot create a project for an inactive client.");
@@ -39,8 +41,9 @@ public class ProjectValidator {
 
     public void validateDuplicateProject(String projectName, String clientId) {
         String normalizedProjectName = projectName != null ? projectName.trim() : null;
-        if (projectRepository.existsByProjectNameAndClientIdAndStatusNot(normalizedProjectName, clientId, ProjectStatus.ARCHIVED)) {
-            throw new DuplicateProjectException(normalizedProjectName, clientId);
+        String normalizedClientId = clientId != null ? clientId.trim() : null;
+        if (projectRepository.existsByProjectNameAndClientIdAndStatusNot(normalizedProjectName, normalizedClientId, ProjectStatus.ARCHIVED)) {
+            throw new DuplicateProjectException(normalizedProjectName, normalizedClientId);
         }
     }
 
@@ -52,13 +55,16 @@ public class ProjectValidator {
 
     public void validateDuplicateProjectForUpdate(String projectName, String clientId, String projectId) {
         String normalizedProjectName = projectName != null ? projectName.trim() : null;
-        if (projectRepository.existsByProjectNameAndClientIdAndIdNotAndStatusNot(normalizedProjectName, clientId, projectId, ProjectStatus.ARCHIVED)) {
-            throw new DuplicateProjectException(normalizedProjectName, clientId);
+        String normalizedClientId = clientId != null ? clientId.trim() : null;
+        String normalizedProjectId = projectId != null ? projectId.trim() : null;
+        if (projectRepository.existsByProjectNameAndClientIdAndIdNotAndStatusNot(normalizedProjectName, normalizedClientId, normalizedProjectId, ProjectStatus.ARCHIVED)) {
+            throw new DuplicateProjectException(normalizedProjectName, normalizedClientId);
         }
     }
 
     public void validateProjectDeletable(String projectId) {
-        if (invoiceRepository.existsByProjectIdAndActiveTrueAndStatusIn(projectId, 
+        String normalizedProjectId = projectId != null ? projectId.trim() : null;
+        if (invoiceRepository.existsByProjectIdAndActiveTrueAndStatusIn(normalizedProjectId, 
                 List.of(InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))) {
             throw new BadRequestException("Cannot archive project with unpaid or active invoices.");
         }

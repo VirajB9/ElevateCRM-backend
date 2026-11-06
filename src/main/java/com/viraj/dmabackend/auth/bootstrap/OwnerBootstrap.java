@@ -37,7 +37,24 @@ public class OwnerBootstrap implements CommandLineRunner {
             throw new IllegalStateException("OWNER_EMAIL must be configured");
         }
 
-        if (userRepository.findByEmail(ownerEmail).isPresent()) {
+        Role ownerRole = roleRepository.findByName("OWNER")
+                .orElseThrow(() -> new RuntimeException("OWNER role not found"));
+
+        java.util.Optional<User> existingOwnerOpt = userRepository.findByEmail(ownerEmail);
+        if (existingOwnerOpt.isPresent()) {
+            User existingOwner = existingOwnerOpt.get();
+            boolean updated = false;
+            if (!ownerRole.getId().equals(existingOwner.getRoleId())) {
+                existingOwner.setRoleId(ownerRole.getId());
+                updated = true;
+            }
+            if (existingOwner.getStatus() != UserStatus.ACTIVE) {
+                existingOwner.setStatus(UserStatus.ACTIVE);
+                updated = true;
+            }
+            if (updated) {
+                userRepository.save(existingOwner);
+            }
             return;
         }
 
@@ -46,9 +63,6 @@ public class OwnerBootstrap implements CommandLineRunner {
                     "OWNER_INITIAL_PASSWORD must be configured"
             );
         }
-
-        Role ownerRole = roleRepository.findByName("OWNER")
-                .orElseThrow(() -> new RuntimeException("OWNER role not found"));
 
         User owner = User.builder()
                 .firstName("Owner")

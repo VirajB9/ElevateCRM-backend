@@ -8,14 +8,20 @@ import com.viraj.dmabackend.auth.exception.DuplicatePhoneException;
 import com.viraj.dmabackend.auth.exception.InvalidUserStatusException;
 import com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException;
 import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.exception.BadRequestException;
+import com.viraj.dmabackend.lead.enums.LeadStatus;
+import com.viraj.dmabackend.lead.repository.LeadRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class UserValidator {
 
     private final UserRepository userRepository;
+    private final LeadRepository leadRepository;
 
     public void validateDuplicateEmail(String email) {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
@@ -93,5 +99,13 @@ public class UserValidator {
         }
 
         throw new UnauthorizedRoleAssignmentException("You are not authorized to manage users");
+    }
+
+    public void validateUserDeletable(String userId) {
+        String normalizedUserId = userId != null ? userId.trim() : null;
+        if (normalizedUserId != null && leadRepository.existsByAssignedUserIdAndStatusIn(normalizedUserId,
+                List.of(LeadStatus.NEW, LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.PROPOSAL_SENT, LeadStatus.NEGOTIATION))) {
+            throw new BadRequestException("Cannot delete user with active assigned leads. Please reassign the leads first.");
+        }
     }
 }

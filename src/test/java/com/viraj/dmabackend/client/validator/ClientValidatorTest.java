@@ -152,6 +152,42 @@ public class ClientValidatorTest {
                 .thenReturn(true);
 
         assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientGstException.class,
-                () -> clientValidator.validateGstForUpdate("  27abcde1234f1z5  ", "c-1"));
+                () -> clientValidator.validateGstForUpdate("  27abcde1234f1z5  ", "  c-1  "));
+    }
+
+    @Test
+    void validateEmailForUpdate_TrimsClientId() {
+        when(clientRepository.existsByEmailAndIdNotAndStatusNot("test@example.com", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientEmailException.class,
+                () -> clientValidator.validateEmailForUpdate("  test@example.com  ", "  c-1  "));
+    }
+
+    @Test
+    void validatePhoneForUpdate_TrimsClientId() {
+        when(clientRepository.existsByPhoneNumberAndIdNotAndStatusNot("9876543210", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientPhoneException.class,
+                () -> clientValidator.validatePhoneForUpdate("9876543210", "  c-1  "));
+    }
+
+    @Test
+    void validateClientStatusForUpdate_TrimsClientId() {
+        when(projectRepository.existsByClientIdAndStatusIn(eq("c-1"), any()))
+                .thenReturn(true);
+
+        assertThrows(BadRequestException.class,
+                () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "  c-1  "));
+    }
+
+    @Test
+    void validateClientDeletable_TrimsClientId() {
+        when(projectRepository.existsByClientIdAndStatusIn(eq("c-1"), any()))
+                .thenReturn(true);
+
+        assertThrows(BadRequestException.class,
+                () -> clientValidator.validateClientDeletable("  c-1  "));
     }
 }

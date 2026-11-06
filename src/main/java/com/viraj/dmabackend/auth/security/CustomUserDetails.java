@@ -38,7 +38,10 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return user.getLockoutUntil() == null || !user.getLockoutUntil().isAfter(java.time.LocalDateTime.now());
+        if (user.getStatus() == com.viraj.dmabackend.auth.enums.UserStatus.LOCKED) {
+            return false;
+        }
+        return user.getLockoutUntil() == null || !user.getLockoutUntil().isAfter(java.time.LocalDateTime.now(java.time.ZoneOffset.UTC));
     }
 
     @Override

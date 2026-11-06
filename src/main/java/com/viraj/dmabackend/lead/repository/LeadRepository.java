@@ -39,4 +39,6 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
 
     Optional<Lead> findByIdAndStatusNot(String id, LeadStatus status);
     Page<Lead> findByStatusNot(LeadStatus status, Pageable pageable);
+
+    boolean existsByAssignedUserIdAndStatusIn(String assignedUserId, java.util.Collection<LeadStatus> statuses);
 }

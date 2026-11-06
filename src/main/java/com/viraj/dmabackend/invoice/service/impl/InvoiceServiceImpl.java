@@ -1,5 +1,6 @@
 package com.viraj.dmabackend.invoice.service.impl;
 
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
 import com.viraj.dmabackend.invoice.dto.InvoiceHistoryResponse;
 import com.viraj.dmabackend.invoice.dto.InvoiceResponse;
@@ -28,6 +29,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -75,11 +77,12 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public java.util.List<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId) {
 
-        invoiceRepository.findById(invoiceId)
+        String trimmedInvoiceId = invoiceId != null ? invoiceId.trim() : null;
+        invoiceRepository.findById(trimmedInvoiceId)
                 .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
 
         List<InvoiceHistory> historyList = invoiceHistoryRepository
-                .findByInvoiceIdOrderByInvoiceVersionAsc(invoiceId);
+                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId);
 
         return historyList.stream()
                 .map(invoiceMapper::toHistoryResponse)
@@ -89,32 +92,34 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public Page<InvoiceResponse> getAllInvoices(Pageable pageable) {
 
-        return invoiceRepository.findByActiveTrue(pageable)
+        return invoiceRepository.findByActiveTrue(PaginationUtils.clampPageable(pageable))
                 .map(invoiceMapper::toResponse);
     }
 
     @Override
     public Page<InvoiceResponse> getInvoicesByStatus(InvoiceStatus status, Pageable pageable) {
 
-        return invoiceRepository.findByActiveTrueAndStatus(status, pageable)
+        return invoiceRepository.findByActiveTrueAndStatus(status, PaginationUtils.clampPageable(pageable))
                 .map(invoiceMapper::toResponse);
     }
 
     @Override
     public Page<InvoiceResponse> getInvoicesByClientId(String clientId, Pageable pageable) {
 
-        invoiceValidator.validateClientExists(clientId);
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        invoiceValidator.validateClientExists(trimmedClientId);
 
-        return invoiceRepository.findByActiveTrueAndClientId(clientId, pageable)
+        return invoiceRepository.findByActiveTrueAndClientId(trimmedClientId, PaginationUtils.clampPageable(pageable))
                 .map(invoiceMapper::toResponse);
     }
 
     @Override
     public Page<InvoiceResponse> getInvoicesByProjectId(String projectId, Pageable pageable) {
 
-        invoiceValidator.validateProjectExists(projectId);
+        String trimmedProjectId = projectId != null ? projectId.trim() : null;
+        invoiceValidator.validateProjectExists(trimmedProjectId);
 
-        return invoiceRepository.findByActiveTrueAndProjectId(projectId, pageable)
+        return invoiceRepository.findByActiveTrueAndProjectId(trimmedProjectId, PaginationUtils.clampPageable(pageable))
                 .map(invoiceMapper::toResponse);
     }
 
@@ -148,7 +153,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setStatus(request.getStatus());
 
         if (request.getStatus() == InvoiceStatus.PAID) {
-            invoice.setPaidDate(LocalDate.now());
+            invoice.setPaidDate(LocalDate.now(ZoneOffset.UTC));
         }
 
         Invoice updatedInvoice = invoiceRepository.save(invoice);
@@ -184,7 +189,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     // =========================
     private Invoice findInvoiceById(String invoiceId) {
 
-        return invoiceRepository.findByIdAndActiveTrue(invoiceId)
+        String trimmedInvoiceId = invoiceId != null ? invoiceId.trim() : null;
+        return invoiceRepository.findByIdAndActiveTrue(trimmedInvoiceId)
                 .orElseThrow(() ->
                         new InvoiceNotFoundException(invoiceId));
     }
@@ -204,7 +210,9 @@ public class InvoiceServiceImpl implements InvoiceService {
                         .orElse(BigDecimal.ZERO);
 
                 BigDecimal unitPrice = Optional.ofNullable(item.getUnitPrice())
-                        .orElse(BigDecimal.ZERO);
+                        .orElse(BigDecimal.ZERO)
+                        .setScale(2, RoundingMode.HALF_UP);
+                item.setUnitPrice(unitPrice);
 
                 BigDecimal lineTotal = quantity
                         .multiply(unitPrice)
@@ -219,7 +227,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal taxPercentage = Optional.ofNullable(invoice.getTaxPercentage())
-                .orElse(BigDecimal.ZERO);
+                .orElse(BigDecimal.ZERO)
+                .setScale(2, RoundingMode.HALF_UP);
+        invoice.setTaxPercentage(taxPercentage);
 
         BigDecimal discount = Optional.ofNullable(invoice.getDiscount())
                 .orElse(BigDecimal.ZERO)
@@ -311,7 +321,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .active(invoice.getActive())
                 .invoiceVersion(invoice.getVersion() != null ? invoice.getVersion() : 0L)
                 .changedBy(getCurrentUserEmail())
-                .changedAt(LocalDateTime.now())
+                .changedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         invoiceHistoryRepository.save(history);

@@ -34,6 +34,24 @@ public class ProjectValidatorTest {
     private ProjectValidator projectValidator;
 
     @Test
+    void validateClientExists_TrimsClientIdBeforeQueryingRepository() {
+        when(clientRepository.existsByIdAndStatusNot("client-123", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        assertDoesNotThrow(() -> projectValidator.validateClientExists("  client-123  "));
+    }
+
+    @Test
+    void validateClientActiveForProject_TrimsClientIdBeforeQueryingRepository() {
+        com.viraj.dmabackend.client.entity.Client client = new com.viraj.dmabackend.client.entity.Client();
+        client.setStatus(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE);
+        when(clientRepository.findByIdAndStatusNot("client-123", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(java.util.Optional.of(client));
+
+        assertDoesNotThrow(() -> projectValidator.validateClientActiveForProject("  client-123  "));
+    }
+
+    @Test
     void validateDuplicateProject_AllowsNameWhenArchived() {
         when(projectRepository.existsByProjectNameAndClientIdAndStatusNot("CRM App", "client-123", ProjectStatus.ARCHIVED))
                 .thenReturn(false);
@@ -171,7 +189,7 @@ public class ProjectValidatorTest {
                 .thenReturn(true);
 
         assertThrows(DuplicateProjectException.class,
-                () -> projectValidator.validateDuplicateProject("  CRM App  ", "client-123"));
+                () -> projectValidator.validateDuplicateProject("  CRM App  ", "  client-123  "));
     }
 
     @Test
@@ -180,6 +198,6 @@ public class ProjectValidatorTest {
                 .thenReturn(true);
 
         assertThrows(DuplicateProjectException.class,
-                () -> projectValidator.validateDuplicateProjectForUpdate("  CRM App  ", "client-123", "proj-9"));
+                () -> projectValidator.validateDuplicateProjectForUpdate("  CRM App  ", "  client-123  ", "  proj-9  "));
     }
 }

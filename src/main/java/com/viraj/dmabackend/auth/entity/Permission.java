@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
@@ -22,6 +23,7 @@ public class Permission extends BaseEntity {
     @Id
     private String id;
 
+    @Indexed(unique = true)
     private PermissionType permissionType;
 
     private String module;

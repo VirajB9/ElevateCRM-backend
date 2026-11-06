@@ -11,5 +11,7 @@ public class PermissionResponse {
 
     private String name;
 
+    private String module;
+
     private String description;
 }

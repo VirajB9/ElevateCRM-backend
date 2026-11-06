@@ -12,6 +12,7 @@ import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.CustomUserDetails;
 import com.viraj.dmabackend.auth.service.UserService;
 import com.viraj.dmabackend.auth.validator.UserValidator;
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -80,14 +81,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<UserResponse> getAllUsers(Pageable pageable) {
 
-        Page<User> users = userRepository.findByStatusNot(UserStatus.DELETED, pageable);
+        Page<User> users = userRepository.findByStatusNot(UserStatus.DELETED, PaginationUtils.clampPageable(pageable));
         return mapToUserResponsePage(users);
     }
 
     @Override
     public Page<UserResponse> searchUsers(String keyword, Pageable pageable) {
 
-        Page<User> users = userRepository.searchUsers(keyword, pageable);
+        Page<User> users = userRepository.searchUsers(keyword, PaginationUtils.clampPageable(pageable));
         return mapToUserResponsePage(users);
     }
 
@@ -98,7 +99,7 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Querying soft-deleted users is not permitted");
         }
 
-        Page<User> users = userRepository.findByStatus(status, pageable);
+        Page<User> users = userRepository.findByStatus(status, PaginationUtils.clampPageable(pageable));
         return mapToUserResponsePage(users);
     }
 
@@ -168,7 +169,10 @@ public class UserServiceImpl implements UserService {
 
         user.setStatus(request.getStatus());
 
-        if (request.getStatus() != UserStatus.ACTIVE) {
+        if (request.getStatus() == UserStatus.ACTIVE) {
+            user.setLockoutUntil(null);
+            user.setFailedLoginAttempts(0);
+        } else {
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 
@@ -194,6 +198,8 @@ public class UserServiceImpl implements UserService {
         Role currentUserRole = findRoleById(currentUser.getRoleId());
         userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
 
+        userValidator.validateUserDeletable(user.getId());
+
         user.setStatus(UserStatus.DELETED);
         user.setDeleted(true);
 
@@ -207,15 +213,15 @@ public class UserServiceImpl implements UserService {
     // Helper Methods
     // =========================
     private User findUserById(String userId) {
-
-        return userRepository.findByIdAndStatusNot(userId, UserStatus.DELETED)
+        String trimmedUserId = userId != null ? userId.trim() : null;
+        return userRepository.findByIdAndStatusNot(trimmedUserId, UserStatus.DELETED)
                 .orElseThrow(() ->
                         new UserNotFoundException(userId));
     }
 
     private Role findRoleById(String roleId) {
-
-        return roleRepository.findById(roleId)
+        String trimmedRoleId = roleId != null ? roleId.trim() : null;
+        return roleRepository.findById(trimmedRoleId)
                 .orElseThrow(() ->
                         new RoleNotFoundException(roleId));
     }

@@ -21,6 +21,7 @@ public class PermissionMapperTest {
         Permission permission = Permission.builder()
                 .id("p-1")
                 .permissionType(PermissionType.CLIENT_CREATE)
+                .module("CLIENT")
                 .description("Create client")
                 .build();
 
@@ -29,6 +30,7 @@ public class PermissionMapperTest {
         assertNotNull(response);
         assertEquals("p-1", response.getId());
         assertEquals("CLIENT_CREATE", response.getName());
+        assertEquals("CLIENT", response.getModule());
         assertEquals("Create client", response.getDescription());
     }
 

@@ -5,6 +5,8 @@ import com.viraj.dmabackend.menu.dto.MenuTreeResponse;
 import com.viraj.dmabackend.menu.entity.Menu;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MenuMapperTest {
@@ -23,6 +25,7 @@ public class MenuMapperTest {
 
     @Test
     void toMenuResponse_MapsAllFieldsCorrectly() {
+        LocalDateTime now = LocalDateTime.now();
         Menu menu = Menu.builder()
                 .id("m-1")
                 .title("Settings")
@@ -33,6 +36,10 @@ public class MenuMapperTest {
                 .requiredPermission("settings:read")
                 .active(true)
                 .build();
+        menu.setCreatedAt(now);
+        menu.setUpdatedAt(now);
+        menu.setCreatedBy("admin");
+        menu.setUpdatedBy("admin");
 
         MenuResponse response = menuMapper.toMenuResponse(menu);
 
@@ -45,6 +52,10 @@ public class MenuMapperTest {
         assertEquals(2, response.getOrderIndex());
         assertEquals("settings:read", response.getRequiredPermission());
         assertTrue(response.getActive());
+        assertEquals(now, response.getCreatedAt());
+        assertEquals(now, response.getUpdatedAt());
+        assertEquals("admin", response.getCreatedBy());
+        assertEquals("admin", response.getUpdatedBy());
     }
 
     @Test

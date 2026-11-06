@@ -105,4 +105,27 @@ public class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().isSuccess());
         assertEquals("Bad credentials", response.getBody().getMessage());
     }
+
+    @Test
+    void handleIllegalArgumentException_ReturnsBadRequest() {
+        IllegalArgumentException ex = new IllegalArgumentException("Page size must not be less than one");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleIllegalArgument(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Page size must not be less than one", response.getBody().getMessage());
+    }
+
+    @Test
+    void handleMissingRequestHeader_ReturnsBadRequest() {
+        org.springframework.web.bind.MissingRequestHeaderException ex =
+                mock(org.springframework.web.bind.MissingRequestHeaderException.class);
+        when(ex.getHeaderName()).thenReturn("X-API-KEY");
+
+        ResponseEntity<ApiResponse<Object>> response = handler.handleMissingRequestHeader(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Required request header 'X-API-KEY' is not present", response.getBody().getMessage());
+    }
 }

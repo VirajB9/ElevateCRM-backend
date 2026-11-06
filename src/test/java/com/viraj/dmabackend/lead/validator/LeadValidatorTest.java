@@ -176,4 +176,29 @@ public class LeadValidatorTest {
         assertThrows(DuplicateLeadException.class,
                 () -> leadValidator.validateDuplicateLeadForUpdate(existing, request));
     }
+
+    @Test
+    void validateUserExists_ExistingUser_ShouldPass() {
+        when(userRepository.existsByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(true);
+        assertDoesNotThrow(() -> leadValidator.validateUserExists("user-1"));
+    }
+
+    @Test
+    void validateUserExists_NonExistingUser_ShouldThrowException() {
+        when(userRepository.existsByIdAndStatusNot("user-missing", UserStatus.DELETED)).thenReturn(false);
+        assertThrows(UserNotFoundException.class, () -> leadValidator.validateUserExists("user-missing"));
+    }
+
+    @Test
+    void validateAssignedUser_NormalizesWhitespace() {
+        com.viraj.dmabackend.auth.entity.User user = com.viraj.dmabackend.auth.entity.User.builder()
+                .id("user-123")
+                .status(UserStatus.ACTIVE)
+                .build();
+        when(userRepository.findByIdAndStatusNot("user-123", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUser("   user-123   "));
+        verify(userRepository).findByIdAndStatusNot("user-123", UserStatus.DELETED);
+    }
 }

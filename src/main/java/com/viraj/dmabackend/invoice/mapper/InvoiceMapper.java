@@ -16,14 +16,14 @@ public class InvoiceMapper {
             return null;
         }
         return Invoice.builder()
-                .clientId(request.getClientId())
-                .projectId(request.getProjectId())
+                .clientId(normalizeTrim(request.getClientId()))
+                .projectId(normalizeTrim(request.getProjectId()))
                 .issueDate(request.getIssueDate())
                 .dueDate(request.getDueDate())
                 .items(toEntityItems(request.getItems()))
                 .taxPercentage(request.getTaxPercentage())
                 .discount(request.getDiscount())
-                .notes(request.getNotes())
+                .notes(normalizeTrim(request.getNotes()))
                 .build();
     }
 
@@ -35,7 +35,7 @@ public class InvoiceMapper {
         invoice.setItems(toEntityItems(request.getItems()));
         invoice.setTaxPercentage(request.getTaxPercentage());
         invoice.setDiscount(request.getDiscount());
-        invoice.setNotes(request.getNotes());
+        invoice.setNotes(normalizeTrim(request.getNotes()));
     }
 
     public InvoiceResponse toResponse(Invoice invoice) {
@@ -129,5 +129,9 @@ public class InvoiceMapper {
                 .changedBy(history.getChangedBy())
                 .changedAt(history.getChangedAt())
                 .build();
+    }
+
+    private String normalizeTrim(String value) {
+        return value != null ? value.trim() : null;
     }
 }

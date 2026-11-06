@@ -116,7 +116,8 @@ public class MenuServiceImpl implements MenuService {
     // =========================
     private Menu findMenuById(String menuId) {
 
-        return menuRepository.findById(menuId)
+        String trimmedMenuId = menuId != null ? menuId.trim() : null;
+        return menuRepository.findById(trimmedMenuId)
                 .orElseThrow(() ->
                         new MenuNotFoundException(menuId));
     }

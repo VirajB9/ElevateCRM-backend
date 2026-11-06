@@ -29,6 +29,7 @@ public class UserMapperTest {
                 .phoneNumber("9876543210")
                 .roleId("role-admin")
                 .status(UserStatus.ACTIVE)
+                .passwordChangeRequired(true)
                 .build();
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
@@ -46,6 +47,7 @@ public class UserMapperTest {
         assertEquals("role-admin", response.getRoleId());
         assertEquals("ADMIN", response.getRoleName());
         assertEquals(UserStatus.ACTIVE, response.getStatus());
+        assertTrue(response.isPasswordChangeRequired());
         assertEquals(now, response.getCreatedAt());
         assertEquals(now, response.getUpdatedAt());
         assertEquals("creator@example.com", response.getCreatedBy());

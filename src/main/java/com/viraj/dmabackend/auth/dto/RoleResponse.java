@@ -18,4 +18,12 @@ public class RoleResponse {
     private boolean systemRole;
 
     private List<PermissionResponse> permissions;
+
+    private java.time.LocalDateTime createdAt;
+
+    private java.time.LocalDateTime updatedAt;
+
+    private String createdBy;
+
+    private String updatedBy;
 }

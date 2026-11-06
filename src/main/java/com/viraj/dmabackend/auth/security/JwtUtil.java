@@ -38,6 +38,7 @@ public class JwtUtil {
             boolean passwordChangeRequired) {
 
         return Jwts.builder()
+                .id(java.util.UUID.randomUUID().toString())
                 .subject(email)
                 .claim("role", role)
                 .claim("permissions", permissions)
@@ -52,6 +53,10 @@ public class JwtUtil {
 
     public String extractEmail(String token) {
         return extractClaims(token).getSubject();
+    }
+
+    public String extractTokenId(String token) {
+        return extractClaims(token).getId();
     }
 
     public String extractRole(String token) {

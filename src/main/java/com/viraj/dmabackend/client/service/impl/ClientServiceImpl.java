@@ -11,6 +11,7 @@ import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.client.validator.ClientValidator;
 import com.viraj.dmabackend.common.dto.LeadConversionData;
+import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -54,7 +55,7 @@ public class ClientServiceImpl implements ClientService {
                 .phoneNumber(normalizeTrim(data.getPhoneNumber()))
                 .website(normalizeTrim(data.getWebsite()))
                 .industry(normalizeTrim(data.getIndustry()))
-                .notes(data.getNotes())
+                .notes(normalizeTrim(data.getNotes()))
                 .build();
 
         return clientRepository.save(client);
@@ -70,14 +71,14 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public Page<ClientResponse> getAllClients(Pageable pageable) {
 
-        Page<Client> clients = clientRepository.findByStatusNot(ClientStatus.ARCHIVED, pageable);
+        Page<Client> clients = clientRepository.findByStatusNot(ClientStatus.ARCHIVED, PaginationUtils.clampPageable(pageable));
         return clients.map(clientMapper::toClientResponse);
     }
 
     @Override
     public Page<ClientResponse> searchClients(String keyword, Pageable pageable) {
         
-        Page<Client> clients = clientRepository.searchClients(keyword, pageable);
+        Page<Client> clients = clientRepository.searchClients(keyword, PaginationUtils.clampPageable(pageable));
         return clients.map(clientMapper::toClientResponse);
     }
 
@@ -88,7 +89,7 @@ public class ClientServiceImpl implements ClientService {
             throw new BadRequestException("Querying archived clients is not permitted");
         }
 
-        Page<Client> clients = clientRepository.findByStatus(status, pageable);
+        Page<Client> clients = clientRepository.findByStatus(status, PaginationUtils.clampPageable(pageable));
         return clients.map(clientMapper::toClientResponse);
     }
 
@@ -128,8 +129,8 @@ public class ClientServiceImpl implements ClientService {
     // Helper Methods
     // =========================
     private Client findClientById(String clientId) {
-
-        return clientRepository.findByIdAndStatusNot(clientId, ClientStatus.ARCHIVED)
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        return clientRepository.findByIdAndStatusNot(trimmedClientId, ClientStatus.ARCHIVED)
                 .orElseThrow(() -> new ClientNotFoundException(clientId));
     }
 
@@ -148,7 +149,7 @@ public class ClientServiceImpl implements ClientService {
                 .state(normalizeTrim(request.getState()))
                 .country(normalizeTrim(request.getCountry()))
                 .postalCode(normalizeTrim(request.getPostalCode()))
-                .notes(request.getNotes())
+                .notes(normalizeTrim(request.getNotes()))
                 .build();
     }
 
@@ -166,7 +167,7 @@ public class ClientServiceImpl implements ClientService {
         client.setState(normalizeTrim(request.getState()));
         client.setCountry(normalizeTrim(request.getCountry()));
         client.setPostalCode(normalizeTrim(request.getPostalCode()));
-        client.setNotes(request.getNotes());
+        client.setNotes(normalizeTrim(request.getNotes()));
         client.setStatus(request.getStatus());
     }
 
