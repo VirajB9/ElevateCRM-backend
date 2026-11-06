@@ -47,7 +47,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchUsers_WithBlankKeyword_DoesNotUseTextQuery() {
-        when(mongoTemplate.count(any(Query.class), eq(User.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(User.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(User.class))).thenReturn(Collections.emptyList());
 
         Page<User> result = userRepositoryCustom.searchUsers("   ", pageable);
@@ -60,7 +60,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchClients_WithBlankKeyword_DoesNotUseTextQuery() {
-        when(mongoTemplate.count(any(Query.class), eq(Client.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(Client.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(Client.class))).thenReturn(Collections.emptyList());
 
         Page<Client> result = clientRepositoryCustom.searchClients("", pageable);
@@ -73,7 +73,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchLeads_WithNullKeyword_DoesNotUseTextQuery() {
-        when(mongoTemplate.count(any(Query.class), eq(Lead.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(Lead.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(Lead.class))).thenReturn(Collections.emptyList());
 
         Page<Lead> result = leadRepositoryCustom.searchLeads(null, pageable);
@@ -86,7 +86,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchProjects_WithBlankKeyword_DoesNotUseTextQuery() {
-        when(mongoTemplate.count(any(Query.class), eq(Project.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(Project.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(Project.class))).thenReturn(Collections.emptyList());
 
         Page<Project> result = projectRepositoryCustom.searchProjects(" \t ", pageable);
@@ -99,7 +99,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchUsers_ClampsExcessivePageSize() {
-        when(mongoTemplate.count(any(Query.class), eq(User.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(User.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(User.class))).thenReturn(Collections.emptyList());
 
         Pageable excessive = PageRequest.of(1, 500);
@@ -112,7 +112,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchClients_ClampsExcessivePageSize() {
-        when(mongoTemplate.count(any(Query.class), eq(Client.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(Client.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(Client.class))).thenReturn(Collections.emptyList());
 
         Pageable excessive = PageRequest.of(0, 1000);
@@ -124,7 +124,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchLeads_ClampsExcessivePageSize() {
-        when(mongoTemplate.count(any(Query.class), eq(Lead.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(Lead.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(Lead.class))).thenReturn(Collections.emptyList());
 
         Pageable excessive = PageRequest.of(2, 250);
@@ -137,7 +137,7 @@ public class SearchRepositoriesTest {
 
     @Test
     void searchProjects_ClampsExcessivePageSize() {
-        when(mongoTemplate.count(any(Query.class), eq(Project.class))).thenReturn(0L);
+        when(mongoTemplate.count(any(Query.class), eq(Project.class))).thenReturn(1L);
         when(mongoTemplate.find(any(Query.class), eq(Project.class))).thenReturn(Collections.emptyList());
 
         Pageable excessive = PageRequest.of(0, 9999);
@@ -145,5 +145,28 @@ public class SearchRepositoriesTest {
 
         assertNotNull(result);
         assertEquals(100, result.getPageable().getPageSize());
+    }
+
+    @Test
+    void searchRepositories_WhenCountIsZero_DoNotExecuteFindQuery() {
+        when(mongoTemplate.count(any(Query.class), any(Class.class))).thenReturn(0L);
+
+        Page<User> users = userRepositoryCustom.searchUsers("user", pageable);
+        assertEquals(0, users.getTotalElements());
+        assertEquals(0, users.getContent().size());
+
+        Page<Client> clients = clientRepositoryCustom.searchClients("client", pageable);
+        assertEquals(0, clients.getTotalElements());
+        assertEquals(0, clients.getContent().size());
+
+        Page<Lead> leads = leadRepositoryCustom.searchLeads("lead", pageable);
+        assertEquals(0, leads.getTotalElements());
+        assertEquals(0, leads.getContent().size());
+
+        Page<Project> projects = projectRepositoryCustom.searchProjects("proj", pageable);
+        assertEquals(0, projects.getTotalElements());
+        assertEquals(0, projects.getContent().size());
+
+        verify(mongoTemplate, never()).find(any(Query.class), any(Class.class));
     }
 }

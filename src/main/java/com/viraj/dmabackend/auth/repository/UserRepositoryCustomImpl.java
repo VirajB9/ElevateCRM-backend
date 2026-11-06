@@ -38,6 +38,10 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
         long total = mongoTemplate.count(query, User.class);
 
         Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        if (total == 0) {
+            return new PageImpl<>(java.util.Collections.emptyList(), effectivePageable, 0);
+        }
+
         query.with(effectivePageable);
 
         List<User> users = mongoTemplate.find(query, User.class);

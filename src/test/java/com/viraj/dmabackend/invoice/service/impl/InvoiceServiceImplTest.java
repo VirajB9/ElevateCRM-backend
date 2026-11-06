@@ -231,6 +231,23 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void updateInvoiceStatus_ThrowsWhenStatusIsSameAsCurrent() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.SENT);
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
     void updateInvoiceStatus_ThrowsWhenRevertingSentToDraft() {
         Invoice invoice = new Invoice();
         invoice.setId("inv-123");
@@ -336,6 +353,28 @@ public class InvoiceServiceImplTest {
 
         // Verify history retains cloned snapshot
         assertEquals("Initial Desc", savedHistory.getItems().get(0).getDescription());
+    }
+
+    @Test
+    void saveInvoiceHistory_DefaultsInvoiceVersionToZeroWhenNull() {
+        Invoice invoice = Invoice.builder()
+                .id("inv-null-ver")
+                .invoiceNumber("INV-2026-999")
+                .status(InvoiceStatus.DRAFT)
+                .active(true)
+                .build();
+        invoice.setVersion(null);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-null-ver")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+
+        invoiceService.deleteInvoice("inv-null-ver");
+
+        org.mockito.ArgumentCaptor<InvoiceHistory> captor = org.mockito.ArgumentCaptor.forClass(InvoiceHistory.class);
+        verify(invoiceHistoryRepository).save(captor.capture());
+        InvoiceHistory savedHistory = captor.getValue();
+
+        assertEquals(0L, savedHistory.getInvoiceVersion());
     }
 
     @Test

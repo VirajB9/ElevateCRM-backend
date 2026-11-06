@@ -107,6 +107,14 @@ public class ProjectValidatorTest {
     }
 
     @Test
+    void validateProjectStatusTransition_ThrowsWhenRevertingToPlanning() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.PLANNING));
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusTransition(ProjectStatus.ON_HOLD, ProjectStatus.PLANNING));
+    }
+
+    @Test
     void validateProjectStatusTransition_ValidTransitionsPass() {
         assertDoesNotThrow(() -> projectValidator.validateProjectStatusTransition(ProjectStatus.PLANNING, ProjectStatus.ACTIVE));
         assertDoesNotThrow(() -> projectValidator.validateProjectStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.COMPLETED));

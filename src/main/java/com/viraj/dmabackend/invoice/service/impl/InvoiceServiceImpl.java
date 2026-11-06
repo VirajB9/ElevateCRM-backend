@@ -255,6 +255,12 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     private void validateStatusTransition(InvoiceStatus currentStatus, InvoiceStatus newStatus) {
 
+        if (currentStatus == newStatus) {
+            throw new InvalidInvoiceStatusException(
+                    String.format("Invoice is already in %s status.", currentStatus)
+            );
+        }
+
         if (currentStatus == InvoiceStatus.PAID) {
             throw new InvalidInvoiceStatusException("Paid invoices cannot change status.");
         }
@@ -303,7 +309,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .notes(invoice.getNotes())
                 .paidDate(invoice.getPaidDate())
                 .active(invoice.getActive())
-                .invoiceVersion(invoice.getVersion())
+                .invoiceVersion(invoice.getVersion() != null ? invoice.getVersion() : 0L)
                 .changedBy(getCurrentUserEmail())
                 .changedAt(LocalDateTime.now())
                 .build();

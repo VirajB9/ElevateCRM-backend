@@ -96,6 +96,10 @@ public class ProjectValidator {
             throw new BadRequestException("Projects cannot be archived via update. Please use the delete project endpoint.");
         }
 
+        if (newStatus == ProjectStatus.PLANNING && currentStatus != ProjectStatus.PLANNING) {
+            throw new BadRequestException("Cannot revert an active or on-hold project back to planning status.");
+        }
+
         switch (currentStatus) {
             case PLANNING -> {
                 if (newStatus == ProjectStatus.COMPLETED) {

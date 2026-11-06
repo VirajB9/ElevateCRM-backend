@@ -72,6 +72,36 @@ public class ClientValidatorTest {
     }
 
     @Test
+    void validateClientStatusForUpdate_ThrowsWhenDeactivatingClientWithActiveProjects() {
+        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
+                .thenReturn(true);
+
+        assertThrows(BadRequestException.class,
+                () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "client-1"));
+    }
+
+    @Test
+    void validateClientStatusForUpdate_ThrowsWhenDeactivatingClientWithUnpaidInvoices() {
+        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
+                .thenReturn(false);
+        when(invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(eq("client-1"), any()))
+                .thenReturn(true);
+
+        assertThrows(BadRequestException.class,
+                () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "client-1"));
+    }
+
+    @Test
+    void validateClientStatusForUpdate_AllowsDeactivatingClientWithNoActiveDependents() {
+        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
+                .thenReturn(false);
+        when(invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(eq("client-1"), any()))
+                .thenReturn(false);
+
+        assertDoesNotThrow(() -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "client-1"));
+    }
+
+    @Test
     void validateDuplicateEmail_NormalizesToLowercaseAndTrim() {
         when(clientRepository.existsByEmailAndStatusNot("client@example.com", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
                 .thenReturn(true);

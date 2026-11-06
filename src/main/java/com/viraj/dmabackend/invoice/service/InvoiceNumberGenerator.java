@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Year;
+import java.time.ZoneOffset;
 
 @Component
 @RequiredArgsConstructor
@@ -17,7 +18,7 @@ public class InvoiceNumberGenerator {
 
     public String generate() {
 
-        int currentYear = Year.now().getValue();
+        int currentYear = Year.now(ZoneOffset.UTC).getValue();
         String counterKey = INVOICE_COUNTER + "_" + currentYear;
 
         long sequence = counterRepository.getNextSequence(counterKey);

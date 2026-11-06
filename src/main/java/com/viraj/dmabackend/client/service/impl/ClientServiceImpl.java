@@ -98,7 +98,7 @@ public class ClientServiceImpl implements ClientService {
 
         Client client = findClientById(clientId);
 
-        clientValidator.validateClientStatusForUpdate(request.getStatus());
+        clientValidator.validateClientStatusForUpdate(request.getStatus(), client.getId());
         clientValidator.validateEmailForUpdate(request.getEmail(), client.getId());
         clientValidator.validatePhoneForUpdate(request.getPhoneNumber(), client.getId());
         clientValidator.validateGstForUpdate(request.getGstNumber(), client.getId());

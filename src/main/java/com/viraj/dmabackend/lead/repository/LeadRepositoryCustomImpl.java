@@ -39,6 +39,10 @@ public class LeadRepositoryCustomImpl
         long total = mongoTemplate.count(query, Lead.class);
 
         Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        if (total == 0) {
+            return new PageImpl<>(java.util.Collections.emptyList(), effectivePageable, 0);
+        }
+
         query.with(effectivePageable);
 
         List<Lead> leads = mongoTemplate.find(query, Lead.class);

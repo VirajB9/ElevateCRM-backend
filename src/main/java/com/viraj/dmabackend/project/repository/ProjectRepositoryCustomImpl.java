@@ -44,6 +44,10 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
         long total = mongoTemplate.count(query, Project.class);
 
         Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        if (total == 0) {
+            return new PageImpl<>(java.util.Collections.emptyList(), effectivePageable, 0);
+        }
+
         query.with(effectivePageable);
 
         List<Project> projects = mongoTemplate.find(query, Project.class);

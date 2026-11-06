@@ -50,6 +50,9 @@ public class UserValidator {
 
         switch (currentRole) {
             case "OWNER":
+                if ("OWNER".equals(targetRoleName)) {
+                    throw new UnauthorizedRoleAssignmentException("Cannot assign the system OWNER role to new users");
+                }
                 return;
 
             case "MANAGER":

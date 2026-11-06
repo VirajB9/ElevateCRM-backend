@@ -77,8 +77,24 @@ public class ClientValidator {
     }
 
     public void validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus status) {
+        validateClientStatusForUpdate(status, null);
+    }
+
+    public void validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus status, String clientId) {
         if (status == com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED) {
             throw new BadRequestException("Clients cannot be archived via update. Please use the delete client endpoint.");
+        }
+
+        if (status == com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE && clientId != null) {
+            if (projectRepository.existsByClientIdAndStatusIn(clientId,
+                    List.of(ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))) {
+                throw new BadRequestException("Cannot deactivate client with active or ongoing projects.");
+            }
+
+            if (invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(clientId,
+                    List.of(InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))) {
+                throw new BadRequestException("Cannot deactivate client with unpaid or active invoices.");
+            }
         }
     }
 }

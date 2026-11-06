@@ -25,7 +25,7 @@ public class UserValidatorTest {
     private UserValidator userValidator;
 
     @Test
-    void validateRoleAssignment_OwnerCanCreateAnyRole() {
+    void validateRoleAssignment_OwnerCanCreateManagerRole() {
         User ownerUser = new User();
         Role ownerRole = new Role();
         ownerRole.setName("OWNER");
@@ -34,6 +34,19 @@ public class UserValidatorTest {
         targetRole.setName("MANAGER");
         
         assertDoesNotThrow(() -> userValidator.validateRoleAssignment(ownerUser, ownerRole, targetRole));
+    }
+
+    @Test
+    void validateRoleAssignment_OwnerCannotAssignOwnerRole() {
+        User ownerUser = new User();
+        Role ownerRole = new Role();
+        ownerRole.setName("OWNER");
+
+        Role targetRole = new Role();
+        targetRole.setName("OWNER");
+
+        assertThrows(UnauthorizedRoleAssignmentException.class,
+                () -> userValidator.validateRoleAssignment(ownerUser, ownerRole, targetRole));
     }
 
     @Test

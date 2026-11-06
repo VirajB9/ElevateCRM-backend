@@ -120,7 +120,7 @@ public class ClientServiceImplTest {
         clientService.updateClient("client-1", request);
 
         assertEquals(ClientStatus.INACTIVE, client.getStatus());
-        verify(clientValidator).validateClientStatusForUpdate(ClientStatus.INACTIVE);
+        verify(clientValidator).validateClientStatusForUpdate(ClientStatus.INACTIVE, "client-1");
         verify(clientRepository).save(client);
     }
 

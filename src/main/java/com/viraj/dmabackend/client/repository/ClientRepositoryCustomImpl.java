@@ -40,6 +40,10 @@ public class ClientRepositoryCustomImpl implements ClientRepositoryCustom {
         long total = mongoTemplate.count(query, Client.class);
 
         Pageable effectivePageable = PaginationUtils.clampPageable(pageable);
+        if (total == 0) {
+            return new PageImpl<>(java.util.Collections.emptyList(), effectivePageable, 0);
+        }
+
         query.with(effectivePageable);
 
         List<Client> clients = mongoTemplate.find(query, Client.class);
