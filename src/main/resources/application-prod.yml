@@ -8,6 +8,8 @@ spring:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}
       auto-index-creation: true
+      transaction:
+        enabled: ${SPRING_DATA_MONGODB_TRANSACTION_ENABLED:true}
       
   lifecycle:
     timeout-per-shutdown-phase: 30s

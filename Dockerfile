@@ -18,7 +18,13 @@ FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-RUN addgroup --system spring && adduser --system --ingroup spring spring
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    addgroup --system spring && \
+    adduser --system --ingroup spring spring && \
+    mkdir -p /app/logs && \
+    chown -R spring:spring /app
 
 COPY --from=build --chown=spring:spring /app/build/libs/*.jar app.jar
 

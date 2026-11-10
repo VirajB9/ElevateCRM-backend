@@ -19,6 +19,11 @@ import com.viraj.dmabackend.auth.security.JwtUtil;
 import com.viraj.dmabackend.auth.service.AuthService;
 import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.exception.UnauthorizedException;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final PermissionRepository permissionRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final MongoTemplate mongoTemplate;
     
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCKOUT_MINUTES = 15;
@@ -57,24 +63,40 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() ->
                         new UnauthorizedException("Invalid email or password"));
 
-        boolean lockoutStateChanged = false;
         if (user.getLockoutUntil() != null) {
             if (user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
                 throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
             } else {
                 user.setFailedLoginAttempts(0);
                 user.setLockoutUntil(null);
-                lockoutStateChanged = true;
+                mongoTemplate.updateFirst(
+                        Query.query(Criteria.where("id").is(user.getId())),
+                        new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
+                        User.class
+                );
             }
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            int attempts = user.getFailedLoginAttempts() + 1;
+            User updatedUser = mongoTemplate.findAndModify(
+                    Query.query(Criteria.where("id").is(user.getId())),
+                    new Update().inc("failedLoginAttempts", 1),
+                    FindAndModifyOptions.options().returnNew(true),
+                    User.class
+            );
+
+            int attempts = (updatedUser != null) ? updatedUser.getFailedLoginAttempts() : (user.getFailedLoginAttempts() + 1);
             user.setFailedLoginAttempts(attempts);
+
             if (attempts >= MAX_FAILED_ATTEMPTS) {
-                user.setLockoutUntil(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES));
+                LocalDateTime lockoutUntil = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES);
+                user.setLockoutUntil(lockoutUntil);
+                mongoTemplate.updateFirst(
+                        Query.query(Criteria.where("id").is(user.getId())),
+                        new Update().set("lockoutUntil", lockoutUntil),
+                        User.class
+                );
             }
-            userRepository.save(user);
             throw new UnauthorizedException("Invalid email or password");
         }
 
@@ -82,10 +104,14 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("User account is not active");
         }
 
-        if (lockoutStateChanged || user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
+        if (user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
             user.setFailedLoginAttempts(0);
             user.setLockoutUntil(null);
-            userRepository.save(user);
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("id").is(user.getId())),
+                    new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
+                    User.class
+            );
         }
 
         refreshTokenRepository.deleteByUserId(user.getId());
@@ -109,33 +135,55 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthenticationResponse refresh(String refreshTokenValue) {
 
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
-                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
-
-        if (refreshToken.isRevoked()) {
-            // Compromised token reuse detected: revoke all active tokens for this user
-            refreshTokenRepository.deleteByUserId(refreshToken.getUserId());
-            throw new UnauthorizedException("Refresh token was already revoked");
+        if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
+            throw new UnauthorizedException("Invalid refresh token");
         }
 
-        if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
+        String trimmedToken = refreshTokenValue.trim();
+
+        // Atomic rotation: claim the active unrevoked token
+        Query atomicQuery = Query.query(Criteria.where("token").is(trimmedToken).and("revoked").is(false));
+        Update atomicUpdate = new Update()
+                .set("revoked", true)
+                .set("revokedAt", LocalDateTime.now(ZoneOffset.UTC));
+
+        RefreshToken activeToken = mongoTemplate.findAndModify(
+                atomicQuery,
+                atomicUpdate,
+                FindAndModifyOptions.options().returnNew(false),
+                RefreshToken.class
+        );
+
+        if (activeToken == null) {
+            RefreshToken existingToken = refreshTokenRepository.findByToken(trimmedToken)
+                    .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
+
+            if (existingToken.isRevoked()) {
+                // Concurrency grace window (15 seconds) protects against multi-request session destruction
+                if (existingToken.getRevokedAt() != null &&
+                        existingToken.getRevokedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusSeconds(15))) {
+                    throw new UnauthorizedException("Refresh token was recently rotated; please use the newly issued token");
+                }
+                // Compromised token reuse detected: revoke all active tokens for this user
+                refreshTokenRepository.deleteByUserId(existingToken.getUserId());
+                throw new UnauthorizedException("Refresh token was already revoked");
+            }
+
+            throw new UnauthorizedException("Invalid refresh token");
+        }
+
+        if (activeToken.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
             throw new UnauthorizedException("Refresh token has expired");
         }
 
         User user = userRepository
-                .findById(refreshToken.getUserId())
+                .findById(activeToken.getUserId())
                 .orElseThrow(() ->
                         new UnauthorizedException("User not found"));
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            refreshToken.setRevoked(true);
-            refreshTokenRepository.save(refreshToken);
             throw new UnauthorizedException("User account is not active");
         }
-
-        // Revoke the old refresh token (single-use rotation)
-        refreshToken.setRevoked(true);
-        refreshTokenRepository.save(refreshToken);
 
         // Generate and persist new rotated refresh token
         String newRefreshTokenValue = jwtUtil.generateRefreshToken();
@@ -147,6 +195,7 @@ public class AuthServiceImpl implements AuthService {
                         LocalDateTime.now(ZoneOffset.UTC)
                                 .plus(java.time.Duration.ofMillis(refreshExpiration))
                 )
+                .revoked(false)
                 .build();
 
         refreshTokenRepository.save(newRefreshToken);
@@ -161,14 +210,12 @@ public class AuthServiceImpl implements AuthService {
             return;
         }
 
-        refreshTokenRepository
-                .findByToken(refreshTokenValue)
-                .ifPresent(token -> {
-                    if (!token.isRevoked()) {
-                        token.setRevoked(true);
-                        refreshTokenRepository.save(token);
-                    }
-                });
+        String trimmedToken = refreshTokenValue.trim();
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("token").is(trimmedToken).and("revoked").is(false)),
+                new Update().set("revoked", true).set("revokedAt", LocalDateTime.now(ZoneOffset.UTC)),
+                RefreshToken.class
+        );
     }
 
     @Override

@@ -4,6 +4,8 @@ spring:
   data:
     mongodb:
       auto-index-creation: true
+      transaction:
+        enabled: ${SPRING_DATA_MONGODB_TRANSACTION_ENABLED:false}
 
 springdoc:
   swagger-ui:

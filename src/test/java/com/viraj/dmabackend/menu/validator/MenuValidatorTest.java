@@ -122,7 +122,23 @@ class MenuValidatorTest {
     @Test
     void validateParentRelationship_whenSelfParent_throwsException() {
         assertThatThrownBy(() -> menuValidator.validateParentRelationship("id1", "id1"))
-                .isInstanceOf(SelfParentMenuException.class);
+                .isInstanceOf(SelfParentMenuException.class)
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void validateParentRelationship_whenCircularReference_throwsCircularMenuException() {
+        // id1 -> parent is id2; id2 -> parent is id3; id3 -> parent is id1 (circular)
+        Menu menu2 = Menu.builder().id("id2").parentId("id3").build();
+        Menu menu3 = Menu.builder().id("id3").parentId("id1").build();
+
+        when(menuRepository.findById("id2")).thenReturn(Optional.of(menu2));
+        when(menuRepository.findById("id3")).thenReturn(Optional.of(menu3));
+
+        assertThatThrownBy(() -> menuValidator.validateParentRelationship("id1", "id2"))
+                .isInstanceOf(CircularMenuException.class)
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Circular parent reference detected. A menu cannot be an ancestor of its own parent.");
     }
 
     @Test

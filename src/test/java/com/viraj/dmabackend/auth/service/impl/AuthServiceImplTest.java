@@ -49,6 +49,9 @@ public class AuthServiceImplTest {
     @Mock
     private com.viraj.dmabackend.auth.mapper.UserMapper userMapper;
 
+    @Mock
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -99,15 +102,20 @@ public class AuthServiceImplTest {
         request.setEmail("test@agency.com");
         request.setPassword("wrong");
 
+        User updatedUser = new User();
+        updatedUser.setFailedLoginAttempts(1);
+
         when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong", "hashedpassword")).thenReturn(false);
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(User.class))).thenReturn(updatedUser);
 
         assertThrows(UnauthorizedException.class, () -> authService.login(request));
 
         assertEquals(1, user.getFailedLoginAttempts());
         assertNull(user.getLockoutUntil());
-        verify(userRepository).save(user);
+        verify(mongoTemplate).findAndModify(any(), any(), any(), eq(User.class));
+        verify(userRepository, never()).save(user);
     }
 
     @Test
@@ -118,16 +126,22 @@ public class AuthServiceImplTest {
         request.setEmail("test@agency.com");
         request.setPassword("wrong");
 
+        User updatedUser = new User();
+        updatedUser.setFailedLoginAttempts(5);
+
         when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong", "hashedpassword")).thenReturn(false);
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(User.class))).thenReturn(updatedUser);
 
         assertThrows(UnauthorizedException.class, () -> authService.login(request));
 
         assertEquals(5, user.getFailedLoginAttempts());
         assertNotNull(user.getLockoutUntil());
         assertTrue(user.getLockoutUntil().isAfter(LocalDateTime.now(java.time.ZoneOffset.UTC)));
-        verify(userRepository).save(user);
+        verify(mongoTemplate).findAndModify(any(), any(), any(), eq(User.class));
+        verify(mongoTemplate).updateFirst(any(), any(), eq(User.class));
+        verify(userRepository, never()).save(user);
     }
 
     @Test
@@ -171,7 +185,8 @@ public class AuthServiceImplTest {
 
         assertEquals(0, user.getFailedLoginAttempts());
         assertNull(user.getLockoutUntil());
-        verify(userRepository).save(user);
+        verify(mongoTemplate).updateFirst(any(), any(), eq(User.class));
+        verify(userRepository, never()).save(user);
     }
 
     @Test
@@ -203,40 +218,9 @@ public class AuthServiceImplTest {
 
     @Test
     void logout_whenValidActiveToken_revokesAndSaves() {
-        com.viraj.dmabackend.auth.entity.RefreshToken token = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
-                .id("token-1")
-                .token("active-token")
-                .revoked(false)
-                .build();
-        when(refreshTokenRepository.findByToken("active-token")).thenReturn(Optional.of(token));
-
         authService.logout("active-token");
 
-        assertTrue(token.isRevoked());
-        verify(refreshTokenRepository).save(token);
-    }
-
-    @Test
-    void logout_whenAlreadyRevokedToken_doesNotReSaveAndCompletesCleanly() {
-        com.viraj.dmabackend.auth.entity.RefreshToken token = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
-                .id("token-1")
-                .token("revoked-token")
-                .revoked(true)
-                .build();
-        when(refreshTokenRepository.findByToken("revoked-token")).thenReturn(Optional.of(token));
-
-        assertDoesNotThrow(() -> authService.logout("revoked-token"));
-
-        verify(refreshTokenRepository, never()).save(any());
-    }
-
-    @Test
-    void logout_whenTokenNotFound_completesCleanlyWithoutException() {
-        when(refreshTokenRepository.findByToken("non-existent")).thenReturn(Optional.empty());
-
-        assertDoesNotThrow(() -> authService.logout("non-existent"));
-
-        verify(refreshTokenRepository, never()).save(any());
+        verify(mongoTemplate).updateFirst(any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class));
     }
 
     @Test
@@ -244,7 +228,7 @@ public class AuthServiceImplTest {
         assertDoesNotThrow(() -> authService.logout(null));
         assertDoesNotThrow(() -> authService.logout("   "));
 
-        verify(refreshTokenRepository, never()).findByToken(any());
+        verify(mongoTemplate, never()).updateFirst(any(), any(), any(Class.class));
     }
 
     @Test
@@ -256,15 +240,21 @@ public class AuthServiceImplTest {
         request.setEmail("test@agency.com");
         request.setPassword("wrong");
 
+        User updatedUser = new User();
+        updatedUser.setFailedLoginAttempts(1);
+
         when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong", "hashedpassword")).thenReturn(false);
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(User.class))).thenReturn(updatedUser);
 
         assertThrows(UnauthorizedException.class, () -> authService.login(request));
 
         assertEquals(1, user.getFailedLoginAttempts());
         assertNull(user.getLockoutUntil());
-        verify(userRepository).save(user);
+        verify(mongoTemplate, atLeastOnce()).updateFirst(any(), any(), eq(User.class));
+        verify(mongoTemplate).findAndModify(any(), any(), any(), eq(User.class));
+        verify(userRepository, never()).save(user);
     }
 
     @Test
@@ -293,7 +283,8 @@ public class AuthServiceImplTest {
 
         assertEquals(0, user.getFailedLoginAttempts());
         assertNull(user.getLockoutUntil());
-        verify(userRepository).save(user);
+        verify(mongoTemplate).updateFirst(any(), any(), eq(User.class));
+        verify(userRepository, never()).save(user);
     }
 
     @Test
@@ -330,5 +321,119 @@ public class AuthServiceImplTest {
         UnauthorizedException ex =
                 assertThrows(UnauthorizedException.class, () -> authService.changePassword(request));
         assertEquals("User account is not active", ex.getMessage());
+    }
+
+    @Test
+    void refresh_withValidToken_rotatesAndReturnsNewAuthenticationResponse() {
+        com.viraj.dmabackend.auth.entity.RefreshToken activeToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("valid-token")
+                .userId("user-1")
+                .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).plusDays(1))
+                .revoked(false)
+                .build();
+
+        com.viraj.dmabackend.auth.entity.Role role = new com.viraj.dmabackend.auth.entity.Role();
+        role.setId("role-1");
+        role.setName("EMPLOYEE");
+
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(activeToken);
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
+        when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
+        when(jwtUtil.generateRefreshToken()).thenReturn("new-rotated-token");
+        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean())).thenReturn("new-access-token");
+        when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.AuthenticationResponse response = authService.refresh("valid-token");
+
+        assertNotNull(response);
+        assertEquals("new-access-token", response.getToken());
+        verify(refreshTokenRepository).save(any(com.viraj.dmabackend.auth.entity.RefreshToken.class));
+    }
+
+    @Test
+    void refresh_withExpiredToken_throwsUnauthorizedException() {
+        com.viraj.dmabackend.auth.entity.RefreshToken expiredToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("expired-token")
+                .userId("user-1")
+                .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(1))
+                .revoked(false)
+                .build();
+
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(expiredToken);
+
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("expired-token"));
+        assertEquals("Refresh token has expired", ex.getMessage());
+    }
+
+    @Test
+    void refresh_withInactiveUser_throwsUnauthorizedException() {
+        com.viraj.dmabackend.auth.entity.RefreshToken activeToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("valid-token")
+                .userId("user-1")
+                .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).plusDays(1))
+                .revoked(false)
+                .build();
+
+        user.setStatus(UserStatus.INACTIVE);
+
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(activeToken);
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("valid-token"));
+        assertEquals("User account is not active", ex.getMessage());
+    }
+
+    @Test
+    void refresh_withCompromisedReusedToken_deletesAllUserTokensAndThrowsUnauthorizedException() {
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(null);
+
+        com.viraj.dmabackend.auth.entity.RefreshToken stolenToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("stolen-token")
+                .userId("user-1")
+                .revoked(true)
+                .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(5))
+                .build();
+
+        when(refreshTokenRepository.findByToken("stolen-token")).thenReturn(Optional.of(stolenToken));
+
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("stolen-token"));
+        assertEquals("Refresh token was already revoked", ex.getMessage());
+        verify(refreshTokenRepository).deleteByUserId("user-1");
+    }
+
+    @Test
+    void refresh_withRecentlyRotatedTokenWithinGraceWindow_doesNotDeleteUserTokens() {
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(null);
+
+        com.viraj.dmabackend.auth.entity.RefreshToken recentlyRotated = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("concurrent-token")
+                .userId("user-1")
+                .revoked(true)
+                .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusSeconds(2))
+                .build();
+
+        when(refreshTokenRepository.findByToken("concurrent-token")).thenReturn(Optional.of(recentlyRotated));
+
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("concurrent-token"));
+        assertTrue(ex.getMessage().contains("recently rotated"));
+        verify(refreshTokenRepository, never()).deleteByUserId(any());
+    }
+
+    @Test
+    void refresh_withNullOrBlankToken_throwsUnauthorizedException() {
+        assertThrows(UnauthorizedException.class, () -> authService.refresh(null));
+        assertThrows(UnauthorizedException.class, () -> authService.refresh("   "));
+        verify(mongoTemplate, never()).findAndModify(any(), any(), any(), any(Class.class));
     }
 }

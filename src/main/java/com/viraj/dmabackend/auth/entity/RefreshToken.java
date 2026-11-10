@@ -31,4 +31,6 @@ public class RefreshToken {
 
     @Builder.Default
     private boolean revoked = false;
+
+    private LocalDateTime revokedAt;
 }
