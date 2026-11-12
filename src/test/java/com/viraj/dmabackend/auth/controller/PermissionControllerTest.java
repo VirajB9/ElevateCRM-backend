@@ -2,38 +2,44 @@ package com.viraj.dmabackend.auth.controller;
 
 import com.viraj.dmabackend.auth.dto.PermissionResponse;
 import com.viraj.dmabackend.auth.service.PermissionService;
+import com.viraj.dmabackend.controller.BaseControllerWebMvcTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 
+import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
-public class PermissionControllerTest {
+@WebMvcTest(PermissionController.class)
+class PermissionControllerTest extends BaseControllerWebMvcTest {
 
-    @Mock
+    @MockBean
     private PermissionService permissionService;
 
-    @InjectMocks
-    private PermissionController permissionController;
+    @Test
+    @WithMockUser(authorities = "role:read")
+    void getAllPermissions_whenAuthorized_returnsOk() throws Exception {
+        when(permissionService.getAllPermissions()).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/v1/permissions"))
+                .andExpect(status().isOk());
+    }
 
     @Test
-    void getAllPermissions_DelegatesToService() {
-        PermissionResponse perm = PermissionResponse.builder().id("p1").name("USER_READ").build();
-        when(permissionService.getAllPermissions()).thenReturn(List.of(perm));
+    @WithMockUser(authorities = "lead:read")
+    void getAllPermissions_whenInsufficientAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/permissions"))
+                .andExpect(status().isForbidden());
+    }
 
-        List<PermissionResponse> result = permissionController.getAllPermissions();
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("p1", result.get(0).getId());
-        verify(permissionService).getAllPermissions();
+    @Test
+    void getAllPermissions_whenUnauthenticated_returnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/permissions"))
+                .andExpect(status().isUnauthorized());
     }
 }

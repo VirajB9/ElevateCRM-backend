@@ -10,6 +10,7 @@ import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.JwtUtil;
 import com.viraj.dmabackend.exception.UnauthorizedException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -68,6 +69,11 @@ public class AuthServiceImplTest {
         user.setStatus(UserStatus.ACTIVE);
         user.setFailedLoginAttempts(0);
         user.setRoleId("role-1");
+    }
+
+    @AfterEach
+    void tearDown() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.viraj.dmabackend.auth.repository.PermissionRepository;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.validator.RoleValidator;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -57,6 +58,11 @@ public class RoleServiceImplTest {
     private RoleServiceImpl roleService;
 
     private final Pageable pageable = PageRequest.of(0, 10);
+
+    @AfterEach
+    void tearDown() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
 
     @Test
     void getUsersByRole_ExcludesDeletedUsers() {

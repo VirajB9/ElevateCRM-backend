@@ -12,6 +12,7 @@ import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.validator.UserValidator;
 import com.viraj.dmabackend.exception.BadRequestException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,6 +81,11 @@ public class UserServiceImplTest {
         managerUser.setEmail("manager@agency.com");
         managerUser.setRoleId("role-manager");
         managerUser.setStatus(UserStatus.ACTIVE);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     private void authenticateAs(User user) {
