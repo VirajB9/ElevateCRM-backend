@@ -153,4 +153,30 @@ public class ProjectServiceImplTest {
         org.junit.jupiter.api.Assertions.assertNotNull(response);
         verify(projectRepository).findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED);
     }
+
+    @Test
+    void deleteProject_ValidatesAndArchivesProject() {
+        Project project = Project.builder().id("proj-1").status(ProjectStatus.COMPLETED).build();
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+
+        projectService.deleteProject("proj-1");
+
+        verify(projectValidator).validateProjectDeletable(project);
+        org.junit.jupiter.api.Assertions.assertEquals(ProjectStatus.ARCHIVED, project.getStatus());
+        org.junit.jupiter.api.Assertions.assertTrue(project.isDeleted());
+        verify(projectRepository).save(project);
+    }
+
+    @Test
+    void deleteProject_ThrowsWhenProjectValidationFails() {
+        Project project = Project.builder().id("proj-1").status(ProjectStatus.ACTIVE).build();
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+        doThrow(new BadRequestException("Only completed or cancelled projects can be archived"))
+                .when(projectValidator).validateProjectDeletable(project);
+
+        assertThrows(BadRequestException.class, () -> projectService.deleteProject("proj-1"));
+        verify(projectRepository, never()).save(any());
+    }
 }

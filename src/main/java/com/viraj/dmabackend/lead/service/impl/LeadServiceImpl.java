@@ -1,6 +1,6 @@
 package com.viraj.dmabackend.lead.service.impl;
 
-import com.viraj.dmabackend.client.entity.Client;
+import com.viraj.dmabackend.client.dto.ClientResponse;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.common.util.PaginationUtils;
 import com.viraj.dmabackend.exception.BadRequestException;
@@ -70,8 +70,9 @@ public class LeadServiceImpl implements LeadService {
                 .notes(lead.getNotes())
                 .build();
 
-        Client client = clientService.createClientFromLead(data);
+        ClientResponse client = clientService.createClientFromLead(data);
 
+        lead.setStatus(LeadStatus.CONVERTED);
         lead.setConvertedClientId(client.getId());
         lead.setConvertedAt(LocalDateTime.now(ZoneOffset.UTC));
 

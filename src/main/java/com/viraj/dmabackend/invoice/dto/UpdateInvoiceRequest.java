@@ -41,4 +41,6 @@ public class UpdateInvoiceRequest {
     
     @jakarta.validation.constraints.Size(max = 2000)
     private String notes;
+
+    private Long version;
 }

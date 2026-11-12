@@ -137,6 +137,19 @@ public class UserServiceImplTest {
     }
 
     @Test
+    void updateUserStatus_ThrowsWhenSelfReactivating() {
+        authenticateAs(managerUser);
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+
+        UpdateUserStatusRequest request = new UpdateUserStatusRequest();
+        request.setStatus(UserStatus.ACTIVE);
+
+        assertThrows(BadRequestException.class, () -> userService.updateUserStatus("user-manager", request));
+    }
+
+    @Test
     void updateUser_ThrowsWhenNonOwnerModifiesOwner() {
         authenticateAs(managerUser);
         when(userRepository.findByIdAndStatusNot("user-owner", UserStatus.DELETED))

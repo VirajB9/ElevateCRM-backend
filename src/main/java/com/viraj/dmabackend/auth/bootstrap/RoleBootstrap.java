@@ -53,39 +53,46 @@ public class RoleBootstrap implements CommandLineRunner {
     }
 
     private void createManagerRole() {
+        List<String> permissionIds = getPermissionIds(
+                PermissionType.USER_READ,
 
-        if (roleRepository.findByName("MANAGER").isPresent()) {
+                PermissionType.ROLE_READ,
+
+                PermissionType.MENU_READ,
+
+                PermissionType.LEAD_CREATE,
+                PermissionType.LEAD_READ,
+                PermissionType.LEAD_UPDATE,
+                PermissionType.LEAD_DELETE,
+                PermissionType.LEAD_CONVERT,
+
+                PermissionType.CLIENT_CREATE,
+                PermissionType.CLIENT_READ,
+                PermissionType.CLIENT_UPDATE,
+
+                PermissionType.PROJECT_CREATE,
+                PermissionType.PROJECT_READ,
+                PermissionType.PROJECT_UPDATE,
+
+                PermissionType.INVOICE_CREATE,
+                PermissionType.INVOICE_READ,
+                PermissionType.INVOICE_UPDATE
+        );
+
+        Role existing = roleRepository.findByName("MANAGER").orElse(null);
+        if (existing != null) {
+            if (existing.getPermissionIds() == null
+                    || !new java.util.HashSet<>(existing.getPermissionIds()).equals(new java.util.HashSet<>(permissionIds))) {
+                existing.setPermissionIds(permissionIds);
+                roleRepository.save(existing);
+            }
             return;
         }
 
         Role role = Role.builder()
                 .name("MANAGER")
                 .description("Agency Manager")
-                .permissionIds(getPermissionIds(
-                        PermissionType.USER_CREATE,
-                        PermissionType.USER_READ,
-                        PermissionType.USER_UPDATE,
-
-                        PermissionType.CLIENT_CREATE,
-                        PermissionType.CLIENT_READ,
-                        PermissionType.CLIENT_UPDATE,
-
-                        PermissionType.LEAD_CREATE,
-                        PermissionType.LEAD_READ,
-                        PermissionType.LEAD_UPDATE,
-
-                        PermissionType.PROJECT_CREATE,
-                        PermissionType.PROJECT_READ,
-                        PermissionType.PROJECT_UPDATE,
-
-                        PermissionType.INVOICE_READ,
-
-                        PermissionType.ROLE_READ,
-
-                        PermissionType.MENU_READ,
-
-                        PermissionType.LEAD_CONVERT
-                ))
+                .permissionIds(permissionIds)
                 .systemRole(true)
                 .build();
 
@@ -93,22 +100,29 @@ public class RoleBootstrap implements CommandLineRunner {
     }
 
     private void createEmployeeRole() {
+        List<String> permissionIds = getPermissionIds(
+                PermissionType.CLIENT_READ,
+                PermissionType.LEAD_CREATE,
+                PermissionType.LEAD_READ,
+                PermissionType.PROJECT_READ,
+                PermissionType.INVOICE_READ,
+                PermissionType.MENU_READ
+        );
 
-        if (roleRepository.findByName("EMPLOYEE").isPresent()) {
+        Role existing = roleRepository.findByName("EMPLOYEE").orElse(null);
+        if (existing != null) {
+            if (existing.getPermissionIds() == null
+                    || !new java.util.HashSet<>(existing.getPermissionIds()).equals(new java.util.HashSet<>(permissionIds))) {
+                existing.setPermissionIds(permissionIds);
+                roleRepository.save(existing);
+            }
             return;
         }
 
         Role role = Role.builder()
                 .name("EMPLOYEE")
                 .description("Agency Employee")
-                .permissionIds(getPermissionIds(
-                        PermissionType.CLIENT_READ,
-                        PermissionType.LEAD_READ,
-                        PermissionType.PROJECT_READ,
-                        PermissionType.PROJECT_UPDATE,
-                        PermissionType.INVOICE_READ,
-                        PermissionType.MENU_READ
-                ))
+                .permissionIds(permissionIds)
                 .systemRole(true)
                 .build();
 
@@ -116,20 +130,27 @@ public class RoleBootstrap implements CommandLineRunner {
     }
 
     private void createInternRole() {
+        List<String> permissionIds = getPermissionIds(
+                PermissionType.CLIENT_READ,
+                PermissionType.LEAD_READ,
+                PermissionType.PROJECT_READ,
+                PermissionType.MENU_READ
+        );
 
-        if (roleRepository.findByName("INTERN").isPresent()) {
+        Role existing = roleRepository.findByName("INTERN").orElse(null);
+        if (existing != null) {
+            if (existing.getPermissionIds() == null
+                    || !new java.util.HashSet<>(existing.getPermissionIds()).equals(new java.util.HashSet<>(permissionIds))) {
+                existing.setPermissionIds(permissionIds);
+                roleRepository.save(existing);
+            }
             return;
         }
 
         Role role = Role.builder()
                 .name("INTERN")
                 .description("Agency Intern")
-                .permissionIds(getPermissionIds(
-                        PermissionType.CLIENT_READ,
-                        PermissionType.LEAD_READ,
-                        PermissionType.PROJECT_READ,
-                        PermissionType.MENU_READ
-                ))
+                .permissionIds(permissionIds)
                 .systemRole(true)
                 .build();
 

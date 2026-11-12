@@ -1,10 +1,10 @@
 package com.viraj.dmabackend.project.validator;
 
-import com.viraj.dmabackend.client.exception.ClientNotFoundException;
-import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.client.dto.ClientResponse;
+import com.viraj.dmabackend.client.enums.ClientStatus;
+import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.exception.BadRequestException;
-import com.viraj.dmabackend.invoice.enums.InvoiceStatus;
-import com.viraj.dmabackend.invoice.repository.InvoiceRepository;
+import com.viraj.dmabackend.project.entity.Project;
 import com.viraj.dmabackend.project.enums.ProjectStatus;
 import com.viraj.dmabackend.project.exception.DuplicateProjectException;
 import com.viraj.dmabackend.project.exception.InvalidProjectDateException;
@@ -20,21 +20,18 @@ import java.util.List;
 public class ProjectValidator {
 
     private final ProjectRepository projectRepository;
-    private final ClientRepository clientRepository;
-    private final InvoiceRepository invoiceRepository;
+    private final ClientService clientService;
+    private final List<ProjectDeletionGuard> projectDeletionGuards;
 
     public void validateClientExists(String clientId) {
         String normalizedClientId = clientId != null ? clientId.trim() : null;
-        if (!clientRepository.existsByIdAndStatusNot(normalizedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
-            throw new ClientNotFoundException(clientId);
-        }
+        clientService.getClientById(normalizedClientId);
     }
 
     public void validateClientActiveForProject(String clientId) {
         String normalizedClientId = clientId != null ? clientId.trim() : null;
-        com.viraj.dmabackend.client.entity.Client client = clientRepository.findByIdAndStatusNot(normalizedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)
-                .orElseThrow(() -> new ClientNotFoundException(clientId));
-        if (client.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
+        ClientResponse client = clientService.getClientById(normalizedClientId);
+        if (client.getStatus() != ClientStatus.ACTIVE) {
             throw new BadRequestException("Cannot create a project for an inactive client.");
         }
     }
@@ -62,11 +59,18 @@ public class ProjectValidator {
         }
     }
 
+    public void validateProjectDeletable(Project project) {
+        if (project.getStatus() != ProjectStatus.COMPLETED && project.getStatus() != ProjectStatus.CANCELLED) {
+            throw new BadRequestException("Only completed or cancelled projects can be archived. Current status is " + project.getStatus());
+        }
+        validateProjectDeletable(project.getId());
+    }
+
     public void validateProjectDeletable(String projectId) {
-        String normalizedProjectId = projectId != null ? projectId.trim() : null;
-        if (invoiceRepository.existsByProjectIdAndActiveTrueAndStatusIn(normalizedProjectId, 
-                List.of(InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))) {
-            throw new BadRequestException("Cannot archive project with unpaid or active invoices.");
+        if (projectDeletionGuards != null) {
+            for (ProjectDeletionGuard guard : projectDeletionGuards) {
+                guard.validateCanArchiveProject(projectId);
+            }
         }
     }
 

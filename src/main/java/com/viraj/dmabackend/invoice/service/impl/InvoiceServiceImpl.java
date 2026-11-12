@@ -19,11 +19,13 @@ import com.viraj.dmabackend.invoice.service.InvoiceNumberGenerator;
 import com.viraj.dmabackend.invoice.service.InvoiceService;
 import com.viraj.dmabackend.invoice.validator.InvoiceValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,7 +37,6 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@org.springframework.transaction.annotation.Transactional
 public class InvoiceServiceImpl implements InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
@@ -45,6 +46,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceHistoryRepository invoiceHistoryRepository;
 
     @Override
+    @Transactional
     public InvoiceResponse createInvoice(CreateInvoiceRequest request) {
 
         invoiceValidator.validateCreateInvoice(request);
@@ -124,9 +126,16 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional
     public InvoiceResponse updateInvoice(String invoiceId, UpdateInvoiceRequest request) {
 
         Invoice invoice = findInvoiceById(invoiceId);
+
+        if (request.getVersion() != null && !request.getVersion().equals(invoice.getVersion())) {
+            throw new OptimisticLockingFailureException(
+                    "Invoice has been modified by another user. Please refresh and try again."
+            );
+        }
 
         validateInvoiceEditable(invoice);
 
@@ -144,6 +153,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional
     public InvoiceResponse updateInvoiceStatus(String invoiceId, UpdateInvoiceStatusRequest request) {
 
         Invoice invoice = findInvoiceById(invoiceId);
@@ -164,6 +174,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional
     public void deleteInvoice(String invoiceId) {
 
         Invoice invoice = findInvoiceById(invoiceId);

@@ -61,4 +61,6 @@ public class User extends BaseEntity {
     private int failedLoginAttempts = 0;
 
     private java.time.LocalDateTime lockoutUntil;
+
+    private java.time.LocalDateTime tokensRevokedAt;
 }

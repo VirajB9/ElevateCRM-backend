@@ -230,8 +230,13 @@ public class ClientServiceImplTest {
                 .build();
 
         when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class)))
+                .thenAnswer(invocation -> {
+                    Client c = invocation.getArgument(0);
+                    return ClientResponse.builder().notes(c.getNotes()).build();
+                });
 
-        Client saved = clientService.createClientFromLead(data);
+        ClientResponse saved = clientService.createClientFromLead(data);
 
         assertEquals("Lead notes", saved.getNotes());
     }

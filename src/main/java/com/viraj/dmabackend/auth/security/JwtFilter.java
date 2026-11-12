@@ -20,6 +20,7 @@ import java.util.List;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -43,30 +44,42 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         String email = jwtUtil.extractEmail(token);
-        String role = jwtUtil.extractRole(token);
-        List<String> permissions =
-                jwtUtil.extractPermissions(token);
+        if (email == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        CustomUserDetails userDetails;
+        try {
+            userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
+        } catch (Exception ex) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (!userDetails.isEnabled() || !userDetails.isAccountNonLocked()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        com.viraj.dmabackend.auth.entity.User user = userDetails.getUser();
+        if (user.getTokensRevokedAt() != null) {
+            java.util.Date issuedAt = jwtUtil.extractIssuedAt(token);
+            if (issuedAt != null && issuedAt.toInstant().isBefore(user.getTokensRevokedAt().toInstant(java.time.ZoneOffset.UTC))) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+        }
 
         if (SecurityContextHolder
                 .getContext()
                 .getAuthentication() == null) {
 
-            List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
-            if (role != null && !role.isBlank()) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.trim()));
-            }
-            if (permissions != null) {
-                permissions.stream()
-                        .filter(java.util.Objects::nonNull)
-                        .map(SimpleGrantedAuthority::new)
-                        .forEach(authorities::add);
-            }
-
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             email,
                             null,
-                            authorities
+                            userDetails.getAuthorities()
                     );
 
             authentication.setDetails(

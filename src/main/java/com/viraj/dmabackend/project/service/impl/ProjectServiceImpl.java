@@ -112,7 +112,7 @@ public class ProjectServiceImpl implements ProjectService {
     public void deleteProject(String projectId) {
 
         Project project = findProjectById(projectId);
-        projectValidator.validateProjectDeletable(projectId);
+        projectValidator.validateProjectDeletable(project);
         project.setStatus(ProjectStatus.ARCHIVED);
         project.setDeleted(true);
         projectRepository.save(project);

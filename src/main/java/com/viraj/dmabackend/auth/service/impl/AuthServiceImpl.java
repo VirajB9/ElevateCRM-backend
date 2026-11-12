@@ -245,6 +245,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setPasswordChangeRequired(false);
+        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
         userRepository.save(user);
 
         refreshTokenRepository.deleteByUserId(user.getId());

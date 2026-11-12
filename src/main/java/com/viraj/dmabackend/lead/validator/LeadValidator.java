@@ -1,9 +1,9 @@
 package com.viraj.dmabackend.lead.validator;
 
-import com.viraj.dmabackend.auth.entity.User;
+import com.viraj.dmabackend.auth.dto.UserResponse;
 import com.viraj.dmabackend.auth.enums.UserStatus;
 import com.viraj.dmabackend.auth.exception.UserNotFoundException;
-import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.auth.service.UserService;
 import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 public class LeadValidator {
 
     private final LeadRepository leadRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     public void validateDuplicateLead(CreateLeadRequest request) {
         String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
@@ -87,18 +87,18 @@ public class LeadValidator {
                     throw new InvalidLeadStatusException(currentStatus, newStatus);
                 }
             }
-            case WON, LOST -> throw new InvalidLeadStatusException(currentStatus, newStatus);
+            case WON, LOST, CONVERTED -> throw new InvalidLeadStatusException(currentStatus, newStatus);
         }
     }
 
     public void validateLeadNotConverted(Lead lead) {
-        if (lead.getConvertedClientId() != null) {
+        if (lead.getConvertedClientId() != null || lead.getStatus() == LeadStatus.CONVERTED) {
             throw new LeadAlreadyConvertedException(lead.getId());
         }
     }
 
     public void validateLeadConversion(Lead lead) {
-        if (lead.getConvertedClientId() != null) {
+        if (lead.getConvertedClientId() != null || lead.getStatus() == LeadStatus.CONVERTED) {
             throw new LeadAlreadyConvertedException(lead.getId());
         }
         if (lead.getStatus() != LeadStatus.WON) {
@@ -109,8 +109,7 @@ public class LeadValidator {
     public void validateAssignedUser(String assignedUserId) {
         if (assignedUserId != null && !assignedUserId.isBlank()) {
             String normalizedUserId = assignedUserId.trim();
-            User user = userRepository.findByIdAndStatusNot(normalizedUserId, UserStatus.DELETED)
-                    .orElseThrow(() -> new UserNotFoundException(assignedUserId));
+            UserResponse user = userService.getUserById(normalizedUserId);
             if (user.getStatus() != UserStatus.ACTIVE) {
                 throw new BadRequestException("Cannot assign lead to an inactive, suspended, or locked user.");
             }
@@ -119,8 +118,9 @@ public class LeadValidator {
 
     public void validateUserExists(String userId) {
         String normalizedUserId = userId != null ? userId.trim() : null;
-        if (normalizedUserId == null || !userRepository.existsByIdAndStatusNot(normalizedUserId, UserStatus.DELETED)) {
+        if (normalizedUserId == null || normalizedUserId.isBlank()) {
             throw new UserNotFoundException(userId);
         }
+        userService.getUserById(normalizedUserId);
     }
 }

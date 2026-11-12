@@ -501,6 +501,7 @@ public class InvoiceServiceImplTest {
         invoice.setId("inv-draft");
         invoice.setStatus(InvoiceStatus.DRAFT);
         invoice.setActive(true);
+        invoice.setVersion(2L);
 
         when(invoiceRepository.findByIdAndActiveTrue("inv-draft")).thenReturn(Optional.of(invoice));
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -511,10 +512,30 @@ public class InvoiceServiceImplTest {
         request.setDueDate(java.time.LocalDate.now().plusDays(10));
         request.setTaxPercentage(BigDecimal.TEN);
         request.setDiscount(BigDecimal.ZERO);
+        request.setVersion(2L);
 
         assertDoesNotThrow(() -> invoiceService.updateInvoice("inv-draft", request));
         verify(invoiceValidator).validateUpdateInvoice(invoice, request);
         verify(invoiceRepository).save(invoice);
+    }
+
+    @Test
+    void updateInvoice_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-draft");
+        invoice.setStatus(InvoiceStatus.DRAFT);
+        invoice.setActive(true);
+        invoice.setVersion(2L);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-draft")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest request =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest();
+        request.setVersion(1L); // Stale version from concurrent editor
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> invoiceService.updateInvoice("inv-draft", request));
+        verify(invoiceRepository, never()).save(any());
     }
 
     @Test

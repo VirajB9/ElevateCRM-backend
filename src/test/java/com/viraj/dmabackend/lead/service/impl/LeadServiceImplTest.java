@@ -1,6 +1,6 @@
 package com.viraj.dmabackend.lead.service.impl;
 
-import com.viraj.dmabackend.client.entity.Client;
+import com.viraj.dmabackend.client.dto.ClientResponse;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 
@@ -171,7 +171,7 @@ public class LeadServiceImplTest {
         when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
                 .thenReturn(java.util.Optional.of(lead));
 
-        Client client = Client.builder().id("client-123").build();
+        ClientResponse client = ClientResponse.builder().id("client-123").build();
         when(clientService.createClientFromLead(any())).thenReturn(client);
 
         org.mockito.ArgumentCaptor<Lead> captor = org.mockito.ArgumentCaptor.forClass(Lead.class);
@@ -182,6 +182,7 @@ public class LeadServiceImplTest {
         leadService.convertLeadToClient("lead-1");
 
         Lead saved = captor.getValue();
+        assertEquals(LeadStatus.CONVERTED, saved.getStatus());
         assertEquals("client-123", saved.getConvertedClientId());
         org.junit.jupiter.api.Assertions.assertNotNull(saved.getConvertedAt());
         org.junit.jupiter.api.Assertions.assertTrue(saved.getConvertedAt().isAfter(java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(1)));

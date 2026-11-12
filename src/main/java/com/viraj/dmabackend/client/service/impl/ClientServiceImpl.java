@@ -43,7 +43,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Transactional
     @Override
-    public Client createClientFromLead(LeadConversionData data) {
+    public ClientResponse createClientFromLead(LeadConversionData data) {
 
         clientValidator.validateDuplicateEmail(data.getEmail());
         clientValidator.validateDuplicatePhone(data.getPhoneNumber());
@@ -58,7 +58,8 @@ public class ClientServiceImpl implements ClientService {
                 .notes(normalizeTrim(data.getNotes()))
                 .build();
 
-        return clientRepository.save(client);
+        Client savedClient = clientRepository.save(client);
+        return clientMapper.toClientResponse(savedClient);
     }
 
     @Override

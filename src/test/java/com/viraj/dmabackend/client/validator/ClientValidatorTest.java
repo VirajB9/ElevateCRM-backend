@@ -2,19 +2,19 @@ package com.viraj.dmabackend.client.validator;
 
 import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.exception.BadRequestException;
-import com.viraj.dmabackend.invoice.repository.InvoiceRepository;
-import com.viraj.dmabackend.project.repository.ProjectRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientValidatorTest {
@@ -23,39 +23,25 @@ public class ClientValidatorTest {
     private ClientRepository clientRepository;
 
     @Mock
-    private ProjectRepository projectRepository;
+    private ClientDeletionGuard clientDeletionGuard;
 
-    @Mock
-    private InvoiceRepository invoiceRepository;
-
-    @InjectMocks
     private ClientValidator clientValidator;
 
-    @Test
-    void validateClientDeletable_ThrowsWhenActiveProjectsExist() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
-                .thenReturn(true);
-
-        assertThrows(BadRequestException.class, () -> clientValidator.validateClientDeletable("client-1"));
+    @BeforeEach
+    void setUp() {
+        clientValidator = new ClientValidator(clientRepository, List.of(clientDeletionGuard));
     }
 
     @Test
-    void validateClientDeletable_ThrowsWhenUnpaidInvoicesExist() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
-                .thenReturn(false);
-        when(invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(eq("client-1"), any()))
-                .thenReturn(true);
+    void validateClientDeletable_ThrowsWhenGuardThrows() {
+        doThrow(new BadRequestException("Cannot archive client with active or ongoing projects."))
+                .when(clientDeletionGuard).validateCanArchiveClient("client-1");
 
         assertThrows(BadRequestException.class, () -> clientValidator.validateClientDeletable("client-1"));
     }
 
     @Test
     void validateClientDeletable_PassesWhenNoActiveDependents() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
-                .thenReturn(false);
-        when(invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(eq("client-1"), any()))
-                .thenReturn(false);
-
         assertDoesNotThrow(() -> clientValidator.validateClientDeletable("client-1"));
     }
 
@@ -72,20 +58,9 @@ public class ClientValidatorTest {
     }
 
     @Test
-    void validateClientStatusForUpdate_ThrowsWhenDeactivatingClientWithActiveProjects() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
-                .thenReturn(true);
-
-        assertThrows(BadRequestException.class,
-                () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "client-1"));
-    }
-
-    @Test
-    void validateClientStatusForUpdate_ThrowsWhenDeactivatingClientWithUnpaidInvoices() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
-                .thenReturn(false);
-        when(invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(eq("client-1"), any()))
-                .thenReturn(true);
+    void validateClientStatusForUpdate_ThrowsWhenGuardThrowsOnDeactivation() {
+        doThrow(new BadRequestException("Cannot deactivate client with active or ongoing projects."))
+                .when(clientDeletionGuard).validateCanDeactivateClient("client-1");
 
         assertThrows(BadRequestException.class,
                 () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "client-1"));
@@ -93,11 +68,6 @@ public class ClientValidatorTest {
 
     @Test
     void validateClientStatusForUpdate_AllowsDeactivatingClientWithNoActiveDependents() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), any()))
-                .thenReturn(false);
-        when(invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(eq("client-1"), any()))
-                .thenReturn(false);
-
         assertDoesNotThrow(() -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "client-1"));
     }
 
@@ -175,19 +145,16 @@ public class ClientValidatorTest {
 
     @Test
     void validateClientStatusForUpdate_TrimsClientId() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("c-1"), any()))
-                .thenReturn(true);
+        doThrow(new BadRequestException("Cannot deactivate client with active or ongoing projects."))
+                .when(clientDeletionGuard).validateCanDeactivateClient("c-1");
 
         assertThrows(BadRequestException.class,
                 () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "  c-1  "));
     }
 
     @Test
-    void validateClientDeletable_TrimsClientId() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("c-1"), any()))
-                .thenReturn(true);
-
-        assertThrows(BadRequestException.class,
-                () -> clientValidator.validateClientDeletable("  c-1  "));
+    void validateClientDeletable_PassesWithTrimmedClientId() {
+        assertDoesNotThrow(() -> clientValidator.validateClientDeletable("  c-1  "));
+        verify(clientDeletionGuard).validateCanArchiveClient("  c-1  ");
     }
 }

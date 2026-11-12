@@ -5,10 +5,6 @@ import com.viraj.dmabackend.client.exception.DuplicateClientGstException;
 import com.viraj.dmabackend.client.exception.DuplicateClientPhoneException;
 import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.exception.BadRequestException;
-import com.viraj.dmabackend.invoice.enums.InvoiceStatus;
-import com.viraj.dmabackend.invoice.repository.InvoiceRepository;
-import com.viraj.dmabackend.project.enums.ProjectStatus;
-import com.viraj.dmabackend.project.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +15,7 @@ import java.util.List;
 public class ClientValidator {
 
     private final ClientRepository clientRepository;
-    private final ProjectRepository projectRepository;
-    private final InvoiceRepository invoiceRepository;
+    private final List<ClientDeletionGuard> clientDeletionGuards;
 
     public void validateDuplicateEmail(String email) {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
@@ -68,15 +63,10 @@ public class ClientValidator {
     }
 
     public void validateClientDeletable(String clientId) {
-        String trimmedClientId = clientId != null ? clientId.trim() : null;
-        if (projectRepository.existsByClientIdAndStatusIn(trimmedClientId, 
-                List.of(ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))) {
-            throw new BadRequestException("Cannot archive client with active or ongoing projects.");
-        }
-
-        if (invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(trimmedClientId, 
-                List.of(InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))) {
-            throw new BadRequestException("Cannot archive client with unpaid or active invoices.");
+        if (clientDeletionGuards != null) {
+            for (ClientDeletionGuard guard : clientDeletionGuards) {
+                guard.validateCanArchiveClient(clientId);
+            }
         }
     }
 
@@ -91,14 +81,10 @@ public class ClientValidator {
 
         String trimmedClientId = clientId != null ? clientId.trim() : null;
         if (status == com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE && trimmedClientId != null) {
-            if (projectRepository.existsByClientIdAndStatusIn(trimmedClientId,
-                    List.of(ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))) {
-                throw new BadRequestException("Cannot deactivate client with active or ongoing projects.");
-            }
-
-            if (invoiceRepository.existsByClientIdAndActiveTrueAndStatusIn(trimmedClientId,
-                    List.of(InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))) {
-                throw new BadRequestException("Cannot deactivate client with unpaid or active invoices.");
+            if (clientDeletionGuards != null) {
+                for (ClientDeletionGuard guard : clientDeletionGuards) {
+                    guard.validateCanDeactivateClient(trimmedClientId);
+                }
             }
         }
     }

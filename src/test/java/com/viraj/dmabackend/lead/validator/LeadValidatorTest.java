@@ -1,8 +1,9 @@
 package com.viraj.dmabackend.lead.validator;
 
+import com.viraj.dmabackend.auth.dto.UserResponse;
 import com.viraj.dmabackend.auth.enums.UserStatus;
 import com.viraj.dmabackend.auth.exception.UserNotFoundException;
-import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.auth.service.UserService;
 import com.viraj.dmabackend.lead.dto.CreateLeadRequest;
 import com.viraj.dmabackend.lead.dto.UpdateLeadRequest;
 import com.viraj.dmabackend.lead.entity.Lead;
@@ -29,7 +30,7 @@ public class LeadValidatorTest {
     private LeadRepository leadRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserService userService;
 
     @InjectMocks
     private LeadValidator leadValidator;
@@ -101,27 +102,27 @@ public class LeadValidatorTest {
 
     @Test
     void validateAssignedUser_ExistingActiveUser_ShouldPass() {
-        com.viraj.dmabackend.auth.entity.User activeUser =
-                com.viraj.dmabackend.auth.entity.User.builder().id("user-1").status(UserStatus.ACTIVE).build();
-        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED))
-                .thenReturn(java.util.Optional.of(activeUser));
+        UserResponse activeUser =
+                UserResponse.builder().id("user-1").status(UserStatus.ACTIVE).build();
+        when(userService.getUserById("user-1"))
+                .thenReturn(activeUser);
         assertDoesNotThrow(() -> leadValidator.validateAssignedUser("user-1"));
     }
 
     @Test
     void validateAssignedUser_NonActiveUser_ShouldThrowBadRequest() {
-        com.viraj.dmabackend.auth.entity.User inactiveUser =
-                com.viraj.dmabackend.auth.entity.User.builder().id("user-2").status(UserStatus.SUSPENDED).build();
-        when(userRepository.findByIdAndStatusNot("user-2", UserStatus.DELETED))
-                .thenReturn(java.util.Optional.of(inactiveUser));
+        UserResponse inactiveUser =
+                UserResponse.builder().id("user-2").status(UserStatus.SUSPENDED).build();
+        when(userService.getUserById("user-2"))
+                .thenReturn(inactiveUser);
         assertThrows(com.viraj.dmabackend.exception.BadRequestException.class,
                 () -> leadValidator.validateAssignedUser("user-2"));
     }
 
     @Test
     void validateAssignedUser_NonExistentUser_ShouldThrow() {
-        when(userRepository.findByIdAndStatusNot("user-missing", UserStatus.DELETED))
-                .thenReturn(java.util.Optional.empty());
+        when(userService.getUserById("user-missing"))
+                .thenThrow(new UserNotFoundException("user-missing"));
         assertThrows(UserNotFoundException.class, () -> leadValidator.validateAssignedUser("user-missing"));
     }
 
@@ -179,26 +180,26 @@ public class LeadValidatorTest {
 
     @Test
     void validateUserExists_ExistingUser_ShouldPass() {
-        when(userRepository.existsByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(true);
+        when(userService.getUserById("user-1")).thenReturn(UserResponse.builder().id("user-1").build());
         assertDoesNotThrow(() -> leadValidator.validateUserExists("user-1"));
     }
 
     @Test
     void validateUserExists_NonExistingUser_ShouldThrowException() {
-        when(userRepository.existsByIdAndStatusNot("user-missing", UserStatus.DELETED)).thenReturn(false);
+        when(userService.getUserById("user-missing")).thenThrow(new UserNotFoundException("user-missing"));
         assertThrows(UserNotFoundException.class, () -> leadValidator.validateUserExists("user-missing"));
     }
 
     @Test
     void validateAssignedUser_NormalizesWhitespace() {
-        com.viraj.dmabackend.auth.entity.User user = com.viraj.dmabackend.auth.entity.User.builder()
+        UserResponse user = UserResponse.builder()
                 .id("user-123")
                 .status(UserStatus.ACTIVE)
                 .build();
-        when(userRepository.findByIdAndStatusNot("user-123", UserStatus.DELETED))
-                .thenReturn(Optional.of(user));
+        when(userService.getUserById("user-123"))
+                .thenReturn(user);
 
         assertDoesNotThrow(() -> leadValidator.validateAssignedUser("   user-123   "));
-        verify(userRepository).findByIdAndStatusNot("user-123", UserStatus.DELETED);
+        verify(userService).getUserById("user-123");
     }
 }

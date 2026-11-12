@@ -1,22 +1,26 @@
 package com.viraj.dmabackend.project.validator;
 
-import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.client.dto.ClientResponse;
+import com.viraj.dmabackend.client.enums.ClientStatus;
+import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.exception.BadRequestException;
-import com.viraj.dmabackend.invoice.repository.InvoiceRepository;
+import com.viraj.dmabackend.project.entity.Project;
 import com.viraj.dmabackend.project.enums.ProjectStatus;
 import com.viraj.dmabackend.project.exception.DuplicateProjectException;
 import com.viraj.dmabackend.project.repository.ProjectRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ProjectValidatorTest {
@@ -25,28 +29,31 @@ public class ProjectValidatorTest {
     private ProjectRepository projectRepository;
 
     @Mock
-    private ClientRepository clientRepository;
+    private ClientService clientService;
 
     @Mock
-    private InvoiceRepository invoiceRepository;
+    private ProjectDeletionGuard projectDeletionGuard;
 
-    @InjectMocks
     private ProjectValidator projectValidator;
+
+    @BeforeEach
+    void setUp() {
+        projectValidator = new ProjectValidator(projectRepository, clientService, List.of(projectDeletionGuard));
+    }
 
     @Test
     void validateClientExists_TrimsClientIdBeforeQueryingRepository() {
-        when(clientRepository.existsByIdAndStatusNot("client-123", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
-                .thenReturn(true);
+        when(clientService.getClientById("client-123"))
+                .thenReturn(ClientResponse.builder().id("client-123").build());
 
         assertDoesNotThrow(() -> projectValidator.validateClientExists("  client-123  "));
     }
 
     @Test
     void validateClientActiveForProject_TrimsClientIdBeforeQueryingRepository() {
-        com.viraj.dmabackend.client.entity.Client client = new com.viraj.dmabackend.client.entity.Client();
-        client.setStatus(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE);
-        when(clientRepository.findByIdAndStatusNot("client-123", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
-                .thenReturn(java.util.Optional.of(client));
+        ClientResponse client = ClientResponse.builder().id("client-123").status(ClientStatus.ACTIVE).build();
+        when(clientService.getClientById("client-123"))
+                .thenReturn(client);
 
         assertDoesNotThrow(() -> projectValidator.validateClientActiveForProject("  client-123  "));
     }
@@ -70,19 +77,37 @@ public class ProjectValidatorTest {
 
     @Test
     void validateProjectDeletable_ThrowsWhenUnpaidInvoicesExist() {
-        when(invoiceRepository.existsByProjectIdAndActiveTrueAndStatusIn(eq("proj-1"), any()))
-                .thenReturn(true);
+        doThrow(new BadRequestException("Cannot archive project with unpaid or active invoices."))
+                .when(projectDeletionGuard).validateCanArchiveProject("proj-1");
 
         assertThrows(BadRequestException.class,
                 () -> projectValidator.validateProjectDeletable("proj-1"));
     }
 
     @Test
-    void validateProjectDeletable_PassesWhenNoUnpaidInvoices() {
-        when(invoiceRepository.existsByProjectIdAndActiveTrueAndStatusIn(eq("proj-1"), any()))
-                .thenReturn(false);
+    void validateProjectDeletable_ThrowsWhenProjectIsActiveOrPlanning() {
+        Project activeProject = Project.builder().id("p1").status(ProjectStatus.ACTIVE).build();
+        Project planningProject = Project.builder().id("p2").status(ProjectStatus.PLANNING).build();
+        Project onHoldProject = Project.builder().id("p3").status(ProjectStatus.ON_HOLD).build();
 
+        assertThrows(BadRequestException.class, () -> projectValidator.validateProjectDeletable(activeProject));
+        assertThrows(BadRequestException.class, () -> projectValidator.validateProjectDeletable(planningProject));
+        assertThrows(BadRequestException.class, () -> projectValidator.validateProjectDeletable(onHoldProject));
+    }
+
+    @Test
+    void validateProjectDeletable_PassesWhenCompletedOrCancelledAndNoUnpaidInvoices() {
+        Project completed = Project.builder().id("p1").status(ProjectStatus.COMPLETED).build();
+        Project cancelled = Project.builder().id("p2").status(ProjectStatus.CANCELLED).build();
+
+        assertDoesNotThrow(() -> projectValidator.validateProjectDeletable(completed));
+        assertDoesNotThrow(() -> projectValidator.validateProjectDeletable(cancelled));
+    }
+
+    @Test
+    void validateProjectDeletable_PassesWhenNoUnpaidInvoices() {
         assertDoesNotThrow(() -> projectValidator.validateProjectDeletable("proj-1"));
+        verify(projectDeletionGuard).validateCanArchiveProject("proj-1");
     }
 
     @Test
@@ -156,28 +181,24 @@ public class ProjectValidatorTest {
 
     @Test
     void validateClientActiveForProject_PassesWhenActive() {
-        com.viraj.dmabackend.client.entity.Client client =
-                com.viraj.dmabackend.client.entity.Client.builder()
-                        .id("client-1")
-                        .status(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE)
-                        .build();
+        ClientResponse client = ClientResponse.builder()
+                .id("client-1")
+                .status(ClientStatus.ACTIVE)
+                .build();
 
-        when(clientRepository.findByIdAndStatusNot("client-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
-                .thenReturn(java.util.Optional.of(client));
+        when(clientService.getClientById("client-1")).thenReturn(client);
 
         assertDoesNotThrow(() -> projectValidator.validateClientActiveForProject("client-1"));
     }
 
     @Test
     void validateClientActiveForProject_ThrowsWhenInactive() {
-        com.viraj.dmabackend.client.entity.Client client =
-                com.viraj.dmabackend.client.entity.Client.builder()
-                        .id("client-2")
-                        .status(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE)
-                        .build();
+        ClientResponse client = ClientResponse.builder()
+                .id("client-2")
+                .status(ClientStatus.INACTIVE)
+                .build();
 
-        when(clientRepository.findByIdAndStatusNot("client-2", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
-                .thenReturn(java.util.Optional.of(client));
+        when(clientService.getClientById("client-2")).thenReturn(client);
 
         assertThrows(BadRequestException.class,
                 () -> projectValidator.validateClientActiveForProject("client-2"));

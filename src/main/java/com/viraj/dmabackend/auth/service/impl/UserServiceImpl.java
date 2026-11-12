@@ -22,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -140,6 +142,7 @@ public class UserServiceImpl implements UserService {
         updateUserFields(user, request, newRole);
 
         if (roleChanged) {
+            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 
@@ -160,8 +163,8 @@ public class UserServiceImpl implements UserService {
         }
 
         User currentUser = findCurrentUser();
-        if (currentUser.getId().equals(user.getId()) && request.getStatus() != UserStatus.ACTIVE) {
-            throw new BadRequestException("Users cannot deactivate their own account");
+        if (currentUser.getId().equals(user.getId())) {
+            throw new BadRequestException("Users cannot modify their own account status");
         }
 
         Role currentUserRole = findRoleById(currentUser.getRoleId());
@@ -173,6 +176,7 @@ public class UserServiceImpl implements UserService {
             user.setLockoutUntil(null);
             user.setFailedLoginAttempts(0);
         } else {
+            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 
@@ -202,6 +206,7 @@ public class UserServiceImpl implements UserService {
 
         user.setStatus(UserStatus.DELETED);
         user.setDeleted(true);
+        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
 
         refreshTokenRepository.deleteByUserId(user.getId());
 

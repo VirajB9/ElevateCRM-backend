@@ -7,12 +7,13 @@ import com.viraj.dmabackend.auth.exception.DuplicateEmailException;
 import com.viraj.dmabackend.auth.exception.DuplicatePhoneException;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.exception.BadRequestException;
-import com.viraj.dmabackend.lead.repository.LeadRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -24,10 +25,14 @@ public class UserValidatorTest {
     private UserRepository userRepository;
 
     @Mock
-    private LeadRepository leadRepository;
+    private UserDeletionGuard userDeletionGuard;
 
-    @InjectMocks
     private UserValidator userValidator;
+
+    @BeforeEach
+    void setUp() {
+        userValidator = new UserValidator(userRepository, List.of(userDeletionGuard));
+    }
 
     @Test
     void validateRoleAssignment_OwnerCanCreateManagerRole() {
@@ -165,8 +170,8 @@ public class UserValidatorTest {
 
     @Test
     void validateUserDeletable_ThrowsWhenActiveAssignedLeadsExist() {
-        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), anyCollection()))
-                .thenReturn(true);
+        doThrow(new BadRequestException("Cannot delete user with active assigned leads. Please reassign the leads first."))
+                .when(userDeletionGuard).validateCanDeleteUser("  u-1  ");
 
         BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> userValidator.validateUserDeletable("  u-1  "));
@@ -175,8 +180,7 @@ public class UserValidatorTest {
 
     @Test
     void validateUserDeletable_PassesWhenNoActiveAssignedLeads() {
-        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), anyCollection()))
-                .thenReturn(false);
+        doNothing().when(userDeletionGuard).validateCanDeleteUser("u-1");
 
         assertDoesNotThrow(() -> userValidator.validateUserDeletable("u-1"));
     }
