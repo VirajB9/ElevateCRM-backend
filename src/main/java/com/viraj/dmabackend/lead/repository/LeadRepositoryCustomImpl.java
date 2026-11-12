@@ -26,10 +26,11 @@ public class LeadRepositoryCustomImpl
     @Override
     public Page<Lead> searchLeads(String keyword, Pageable pageable) {
 
+        String cleanKeyword = PaginationUtils.clampKeyword(keyword);
         Query query;
-        if (keyword != null && !keyword.trim().isEmpty()) {
+        if (cleanKeyword != null && !cleanKeyword.isEmpty()) {
             query = TextQuery
-                    .queryText(TextCriteria.forDefaultLanguage().matching(keyword.trim())).sortByScore();
+                    .queryText(TextCriteria.forDefaultLanguage().matching(cleanKeyword)).sortByScore();
         } else {
             query = new Query();
         }

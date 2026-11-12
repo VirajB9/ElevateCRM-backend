@@ -12,14 +12,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @Tag(name = "8. Dynamic Menu Management", description = "Endpoints for managing dynamic sidebar menus")
+@Validated
 @RestController
 @RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
@@ -53,6 +56,7 @@ public class MenuController {
     })
     public MenuResponse getMenuById(
             @Parameter(description = "Unique ID of the menu item", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String menuId) {
         return menuService.getMenuById(menuId);
     }
@@ -81,6 +85,7 @@ public class MenuController {
     })
     public MenuResponse updateMenu(
             @Parameter(description = "Unique ID of the menu item", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String menuId,
             @Valid @RequestBody UpdateMenuRequest request){
         return menuService.updateMenu(menuId, request);
@@ -97,6 +102,7 @@ public class MenuController {
     })
     public void deactivateMenu(
             @Parameter(description = "Unique ID of the menu item", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String menuId) {
         menuService.deactivateMenu(menuId);
     }

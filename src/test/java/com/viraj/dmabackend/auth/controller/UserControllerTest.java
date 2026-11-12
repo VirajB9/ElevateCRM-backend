@@ -209,4 +209,19 @@ class UserControllerTest extends BaseControllerWebMvcTest {
                         .param("status", "ACTIVE"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @WithMockUser(authorities = "user:read")
+    void getUserById_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/users/invalid!user@id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "user:read")
+    void searchUsers_withOversizedKeyword_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/users/search")
+                        .param("keyword", "a".repeat(101)))
+                .andExpect(status().isBadRequest());
+    }
 }

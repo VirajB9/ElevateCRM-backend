@@ -130,4 +130,18 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(get("/api/v1/menus/tree"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @WithMockUser(authorities = "menu:read")
+    void getMenuById_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/menus/invalid!menu@id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "menu:delete")
+    void deactivateMenu_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(patch("/api/v1/menus/invalid!menu@id/deactivate"))
+                .andExpect(status().isBadRequest());
+    }
 }

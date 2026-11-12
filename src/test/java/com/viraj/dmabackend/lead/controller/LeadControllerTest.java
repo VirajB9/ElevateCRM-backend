@@ -166,4 +166,19 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(delete("/api/v1/leads/lead-1"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(authorities = "lead:read")
+    void getLeadById_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/leads/invalid!lead@id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "lead:read")
+    void searchLeads_withOversizedKeyword_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/leads/search")
+                        .param("keyword", "l".repeat(101)))
+                .andExpect(status().isBadRequest());
+    }
 }

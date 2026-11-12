@@ -25,10 +25,11 @@ public class ClientRepositoryCustomImpl implements ClientRepositoryCustom {
     @Override
     public Page<Client> searchClients(String keyword, Pageable pageable) {
 
+        String cleanKeyword = PaginationUtils.clampKeyword(keyword);
         Query query;
-        if (keyword != null && !keyword.trim().isEmpty()) {
+        if (cleanKeyword != null && !cleanKeyword.isEmpty()) {
             query = TextQuery
-                    .queryText(TextCriteria.forDefaultLanguage().matching(keyword.trim()))
+                    .queryText(TextCriteria.forDefaultLanguage().matching(cleanKeyword))
                     .sortByScore();
         } else {
             query = new Query();

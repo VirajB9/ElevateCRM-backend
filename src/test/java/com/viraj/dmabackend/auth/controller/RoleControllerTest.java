@@ -118,4 +118,18 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(get("/api/v1/roles/r-1/users"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @WithMockUser(authorities = "role:read")
+    void getRoleById_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/roles/invalid!role@id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "role:read")
+    void getUsersByRole_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/roles/invalid!role@id/users"))
+                .andExpect(status().isBadRequest());
+    }
 }

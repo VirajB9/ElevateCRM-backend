@@ -301,6 +301,23 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void updateInvoiceStatus_ThrowsWhenRevertingOverdueToSent() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.OVERDUE);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.SENT);
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
     void deleteInvoice_ThrowsWhenStatusIsSentOrOverdue() {
         Invoice sentInvoice = new Invoice();
         sentInvoice.setId("inv-sent");

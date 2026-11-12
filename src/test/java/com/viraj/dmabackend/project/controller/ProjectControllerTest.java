@@ -153,4 +153,19 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(delete("/api/v1/projects/p-1"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(authorities = "project:read")
+    void getProjectById_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/projects/invalid!proj@id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "project:read")
+    void searchProjects_withOversizedKeyword_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/projects/search")
+                        .param("keyword", "p".repeat(101)))
+                .andExpect(status().isBadRequest());
+    }
 }

@@ -12,14 +12,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "7. Project Management", description = "Endpoints for managing client projects")
+@Validated
 @RestController
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
@@ -52,7 +56,9 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ProjectResponse getProjectById(
-            @Parameter(description = "Unique ID of the project", required = true) @PathVariable String projectId) {
+            @Parameter(description = "Unique ID of the project", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String projectId) {
         return projectService.getProjectById(projectId);
     }
 
@@ -79,7 +85,9 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<ProjectResponse> getProjectsByClientId(
-            @Parameter(description = "Unique ID of the client", required = true) @PathVariable String clientId,
+            @Parameter(description = "Unique ID of the client", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String clientId,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return projectService.getProjectsByClient(clientId, pageable);
     }
@@ -93,7 +101,9 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<ProjectResponse> searchProjects(
-            @Parameter(description = "Keyword to search", required = true) @RequestParam String keyword,
+            @Parameter(description = "Keyword to search", required = true)
+            @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
+            @RequestParam String keyword,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return projectService.searchProjects(keyword, pageable);
     }
@@ -123,7 +133,9 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ProjectResponse updateProject(
-            @Parameter(description = "Unique ID of the project", required = true) @PathVariable String projectId,
+            @Parameter(description = "Unique ID of the project", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String projectId,
             @Valid @RequestBody UpdateProjectRequest request) {
         return projectService.updateProject(projectId, request);
     }
@@ -138,7 +150,9 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public void deleteProject(
-            @Parameter(description = "Unique ID of the project", required = true) @PathVariable String projectId) {
+            @Parameter(description = "Unique ID of the project", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String projectId) {
         projectService.deleteProject(projectId);
     }
 }

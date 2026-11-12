@@ -9,16 +9,19 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @Tag(name = "3. Role Management", description = "Endpoints for managing roles and their associated permissions")
+@Validated
 @RestController
 @RequestMapping("/api/v1/roles")
 @RequiredArgsConstructor
@@ -50,6 +53,7 @@ public class RoleController {
     })
     public RoleResponse getRoleById(
             @Parameter(description = "Unique identifier of the role", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String roleId) {
         return roleService.getRoleById(roleId);
     }
@@ -65,7 +69,9 @@ public class RoleController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public RoleResponse updateRole(
-            @Parameter(description = "Unique identifier of the role", required = true) @PathVariable String roleId,
+            @Parameter(description = "Unique identifier of the role", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String roleId,
             @Valid @RequestBody UpdateRoleRequest request) {
         return roleService.updateRole(roleId, request);
     }
@@ -81,7 +87,9 @@ public class RoleController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public RoleResponse assignPermissions(
-            @Parameter(description = "Unique identifier of the role", required = true) @PathVariable String roleId,
+            @Parameter(description = "Unique identifier of the role", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String roleId,
             @Valid @RequestBody AssignPermissionsRequest request) {
         return roleService.assignPermissions(roleId, request);
     }
@@ -97,7 +105,9 @@ public class RoleController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public RoleResponse removePermissions(
-            @Parameter(description = "Unique identifier of the role", required = true) @PathVariable String roleId,
+            @Parameter(description = "Unique identifier of the role", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String roleId,
             @Valid @RequestBody RemovePermissionsRequest request) {
         return roleService.removePermissions(roleId, request);
     }
@@ -112,7 +122,9 @@ public class RoleController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<UserResponse> getUsersByRole(
-            @Parameter(description = "Unique identifier of the role", required = true) @PathVariable String roleId,
+            @Parameter(description = "Unique identifier of the role", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String roleId,
             @Parameter(description = "Pagination parameters (page, size, sort)") Pageable pageable) {
         return roleService.getUsersByRole(roleId, pageable);
     }

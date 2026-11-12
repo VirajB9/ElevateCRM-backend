@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 public final class PaginationUtils {
 
     public static final int MAX_PAGE_SIZE = 100;
+    public static final int MAX_KEYWORD_LENGTH = 100;
 
     private PaginationUtils() {
     }
@@ -18,5 +19,16 @@ public final class PaginationUtils {
             return PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort());
         }
         return pageable;
+    }
+
+    public static String clampKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+        String trimmed = keyword.trim();
+        if (trimmed.length() > MAX_KEYWORD_LENGTH) {
+            return trimmed.substring(0, MAX_KEYWORD_LENGTH);
+        }
+        return trimmed;
     }
 }

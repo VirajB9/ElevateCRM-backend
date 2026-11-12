@@ -145,4 +145,20 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(delete("/api/v1/clients/c-1"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(authorities = "client:read")
+    void getClientById_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/clients/invalid!id@123"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "client:read")
+    void searchClients_withOversizedKeyword_returnsBadRequest() throws Exception {
+        String longKeyword = "a".repeat(101);
+        mockMvc.perform(get("/api/v1/clients/search")
+                        .param("keyword", longKeyword))
+                .andExpect(status().isBadRequest());
+    }
 }

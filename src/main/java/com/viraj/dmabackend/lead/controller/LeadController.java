@@ -13,14 +13,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "5. Lead Management", description = "Endpoints for managing sales leads")
+@Validated
 @RestController
 @RequestMapping("/api/v1/leads")
 @RequiredArgsConstructor
@@ -53,7 +57,9 @@ public class LeadController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public LeadResponse getLeadById(
-            @Parameter(description = "Unique ID of the lead", required = true) @PathVariable String leadId) {
+            @Parameter(description = "Unique ID of the lead", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String leadId) {
         return leadService.getLeadById(leadId);
     }
 
@@ -79,7 +85,9 @@ public class LeadController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<LeadResponse> searchLeads(
-            @Parameter(description = "Keyword to search", required = true) @RequestParam String keyword,
+            @Parameter(description = "Keyword to search", required = true)
+            @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
+            @RequestParam String keyword,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return leadService.searchLeads(keyword, pageable);
     }
@@ -123,7 +131,9 @@ public class LeadController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<LeadResponse> filterByAssignedUser(
-            @Parameter(description = "Unique ID of the assigned user", required = true) @PathVariable String userId,
+            @Parameter(description = "Unique ID of the assigned user", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String userId,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return leadService.filterByAssignedUser(userId, pageable);
     }
@@ -139,7 +149,9 @@ public class LeadController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public LeadResponse updateLead(
-            @Parameter(description = "Unique ID of the lead", required = true) @PathVariable String leadId,
+            @Parameter(description = "Unique ID of the lead", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String leadId,
             @Valid @RequestBody UpdateLeadRequest request) {
         return leadService.updateLead(leadId, request);
     }
@@ -155,7 +167,9 @@ public class LeadController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public LeadResponse convertLeadToClient(
-            @Parameter(description = "Unique ID of the lead", required = true) @PathVariable String leadId) {
+            @Parameter(description = "Unique ID of the lead", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String leadId) {
         return leadService.convertLeadToClient(leadId);
     }
 
@@ -169,7 +183,9 @@ public class LeadController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public void deleteLead(
-            @Parameter(description = "Unique ID of the lead", required = true) @PathVariable String leadId) {
+            @Parameter(description = "Unique ID of the lead", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String leadId) {
         leadService.deleteLead(leadId);
     }
 }

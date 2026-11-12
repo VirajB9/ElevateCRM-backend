@@ -44,4 +44,22 @@ class PaginationUtilsTest {
         assertEquals(100, result.getPageSize());
         assertEquals(excessive.getSort(), result.getSort());
     }
+
+    @Test
+    void clampKeyword_NullReturnsNull() {
+        org.junit.jupiter.api.Assertions.assertNull(PaginationUtils.clampKeyword(null));
+    }
+
+    @Test
+    void clampKeyword_NormalStringTrimmed() {
+        assertEquals("test keyword", PaginationUtils.clampKeyword("   test keyword   "));
+    }
+
+    @Test
+    void clampKeyword_ExcessiveLengthClampedTo100() {
+        String longInput = "a".repeat(150);
+        String clamped = PaginationUtils.clampKeyword(longInput);
+        assertEquals(100, clamped.length());
+        assertEquals("a".repeat(100), clamped);
+    }
 }

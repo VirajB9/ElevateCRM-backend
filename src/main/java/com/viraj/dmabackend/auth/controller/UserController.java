@@ -10,14 +10,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "2. User Management", description = "Endpoints for managing users, roles, and statuses")
+@Validated
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -64,6 +68,7 @@ public class UserController {
     })
     public UserResponse getUserById(
             @Parameter(description = "Unique identifier of the user", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String userId) {
         return userService.getUserById(userId);
     }
@@ -80,6 +85,7 @@ public class UserController {
     })
     public UserResponse updateUser(
             @Parameter(description = "Unique identifier of the user", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String userId,
             @Valid @RequestBody UpdateUserRequest request) {
         return userService.updateUser(userId, request);
@@ -96,6 +102,7 @@ public class UserController {
     })
     public UserResponse updateUserStatus(
             @Parameter(description = "Unique identifier of the user", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String userId,
             @Valid @RequestBody UpdateUserStatusRequest request) {
         return userService.updateUserStatus(userId, request);
@@ -112,6 +119,7 @@ public class UserController {
     })
     public UserResponse softDeleteUser(
             @Parameter(description = "Unique identifier of the user", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String userId) {
         return userService.softDeleteUser(userId);
     }
@@ -126,6 +134,7 @@ public class UserController {
     })
     public Page<UserResponse> searchUsers(
             @Parameter(description = "Keyword to search for in first name, last name, or email", required = true)
+            @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
             @RequestParam String keyword,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return userService.searchUsers(keyword, pageable);

@@ -92,7 +92,13 @@ public class RoleServiceImpl implements RoleService {
         return mapRoleWithPermissions(role);
     }
 
-    @CacheEvict(value = {"roles", "role"}, allEntries = true)
+    @Cacheable(value = "roleEntity", key = "#roleId")
+    @Override
+    public Role findRoleEntityById(String roleId) {
+        return findRoleById(roleId);
+    }
+
+    @CacheEvict(value = {"roles", "role", "roleEntity"}, allEntries = true)
     @Override
     public RoleResponse updateRole(String roleId, UpdateRoleRequest request) {
 
@@ -113,7 +119,7 @@ public class RoleServiceImpl implements RoleService {
         return mapRoleWithPermissions(updatedRole);
     }
 
-    @CacheEvict(value = {"roles", "role", "menuTree"}, allEntries = true)
+    @CacheEvict(value = {"roles", "role", "roleEntity", "menuTree"}, allEntries = true)
     @Override
     public RoleResponse assignPermissions(String roleId, AssignPermissionsRequest request) {
 
@@ -140,7 +146,7 @@ public class RoleServiceImpl implements RoleService {
         return mapRoleWithPermissions(updatedRole);
     }
 
-    @CacheEvict(value = {"roles", "role", "menuTree"}, allEntries = true)
+    @CacheEvict(value = {"roles", "role", "roleEntity", "menuTree"}, allEntries = true)
     @Override
     public RoleResponse removePermissions(String roleId, RemovePermissionsRequest request) {
 

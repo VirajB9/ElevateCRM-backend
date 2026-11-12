@@ -12,14 +12,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "6. Client Management", description = "Endpoints for managing agency clients")
+@Validated
 @RestController
 @RequestMapping("/api/v1/clients")
 @RequiredArgsConstructor
@@ -66,6 +70,7 @@ public class ClientController {
     })
     public ClientResponse getClientById(
             @Parameter(description = "Unique ID of the client", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String clientId) {
         return clientService.getClientById(clientId);
     }
@@ -79,7 +84,9 @@ public class ClientController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<ClientResponse> searchClients(
-            @Parameter(description = "Keyword to search for in client details", required = true) @RequestParam String keyword,
+            @Parameter(description = "Keyword to search for in client details", required = true)
+            @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
+            @RequestParam String keyword,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return clientService.searchClients(keyword, pageable);
     }
@@ -109,7 +116,9 @@ public class ClientController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ClientResponse updateClient(
-            @Parameter(description = "Unique ID of the client", required = true) @PathVariable String clientId,
+            @Parameter(description = "Unique ID of the client", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String clientId,
             @Valid @RequestBody UpdateClientRequest request) {
         return clientService.updateClient(clientId, request);
     }
@@ -124,7 +133,9 @@ public class ClientController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public void deleteClient(
-            @Parameter(description = "Unique ID of the client", required = true) @PathVariable String clientId) {
+            @Parameter(description = "Unique ID of the client", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String clientId) {
         clientService.deleteClient(clientId);
     }
 }

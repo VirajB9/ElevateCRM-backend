@@ -196,4 +196,18 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(delete("/api/v1/invoices/inv-1"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(authorities = "invoice:read")
+    void getInvoiceById_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/invoices/invalid!invoice@id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "invoice:read")
+    void getInvoicesByClientId_withInvalidIdPattern_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/invoices/client/invalid!client@id"))
+                .andExpect(status().isBadRequest());
+    }
 }

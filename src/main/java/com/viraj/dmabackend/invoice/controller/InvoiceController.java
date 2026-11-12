@@ -14,14 +14,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "9. Invoice Management", description = "Endpoints for managing client invoices and billing")
+@Validated
 @RestController
 @RequestMapping("/api/v1/invoices")
 @RequiredArgsConstructor
@@ -54,7 +57,9 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public InvoiceResponse getInvoiceById(
-            @Parameter(description = "Unique ID of the invoice", required = true) @PathVariable String invoiceId) {
+            @Parameter(description = "Unique ID of the invoice", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String invoiceId) {
         return invoiceService.getInvoiceById(invoiceId);
     }
 
@@ -68,7 +73,9 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public java.util.List<InvoiceHistoryResponse> getInvoiceHistory(
-            @Parameter(description = "Unique ID of the invoice", required = true) @PathVariable String invoiceId) {
+            @Parameter(description = "Unique ID of the invoice", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String invoiceId) {
         return invoiceService.getInvoiceHistory(invoiceId);
     }
 
@@ -109,7 +116,9 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<InvoiceResponse> getInvoicesByClientId(
-            @Parameter(description = "Unique ID of the client", required = true) @PathVariable String clientId,
+            @Parameter(description = "Unique ID of the client", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String clientId,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return invoiceService.getInvoicesByClientId(clientId, pageable);
     }
@@ -124,7 +133,9 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<InvoiceResponse> getInvoicesByProjectId(
-            @Parameter(description = "Unique ID of the project", required = true) @PathVariable String projectId,
+            @Parameter(description = "Unique ID of the project", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String projectId,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
         return invoiceService.getInvoicesByProjectId(projectId, pageable);
     }
@@ -140,7 +151,9 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public InvoiceResponse updateInvoice(
-            @Parameter(description = "Unique ID of the invoice", required = true) @PathVariable String invoiceId,
+            @Parameter(description = "Unique ID of the invoice", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String invoiceId,
             @Valid @RequestBody UpdateInvoiceRequest request) {
         return invoiceService.updateInvoice(invoiceId, request);
     }
@@ -155,7 +168,9 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public InvoiceResponse updateInvoiceStatus(
-            @Parameter(description = "Unique ID of the invoice", required = true) @PathVariable String invoiceId,
+            @Parameter(description = "Unique ID of the invoice", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String invoiceId,
             @Valid @RequestBody UpdateInvoiceStatusRequest request) {
         return invoiceService.updateInvoiceStatus(invoiceId, request);
     }
@@ -170,7 +185,9 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public void deleteInvoice(
-            @Parameter(description = "Unique ID of the invoice", required = true) @PathVariable String invoiceId) {
+            @Parameter(description = "Unique ID of the invoice", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String invoiceId) {
         invoiceService.deleteInvoice(invoiceId);
     }
 }

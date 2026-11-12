@@ -73,4 +73,40 @@ public class ClientRequestValidationTest {
 
         assertTrue(validator.validate(request).isEmpty());
     }
+
+    @Test
+    void createClientRequest_WithInvalidStateCodeInGst_FailsValidation() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@example.com");
+        request.setPhoneNumber("9876543210");
+
+        // 00 is invalid
+        request.setGstNumber("00ABCDE1234F1Z5");
+        assertFalse(validator.validate(request).isEmpty());
+
+        // 45 is invalid
+        request.setGstNumber("45ABCDE1234F1Z5");
+        assertFalse(validator.validate(request).isEmpty());
+
+        // 98 is invalid
+        request.setGstNumber("98ABCDE1234F1Z5");
+        assertFalse(validator.validate(request).isEmpty());
+    }
+
+    @Test
+    void createClientRequest_WithSpecialValidStateCodes_PassesValidation() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@example.com");
+        request.setPhoneNumber("9876543210");
+
+        request.setGstNumber("97ABCDE1234F1Z5");
+        assertTrue(validator.validate(request).isEmpty());
+
+        request.setGstNumber("99ABCDE1234F1Z5");
+        assertTrue(validator.validate(request).isEmpty());
+    }
 }

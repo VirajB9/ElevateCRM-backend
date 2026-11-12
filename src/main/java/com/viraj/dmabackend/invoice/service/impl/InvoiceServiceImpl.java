@@ -294,6 +294,10 @@ public class InvoiceServiceImpl implements InvoiceService {
             throw new InvalidInvoiceStatusException("Cannot revert an issued or overdue invoice back to draft.");
         }
 
+        if (currentStatus == InvoiceStatus.OVERDUE && newStatus == InvoiceStatus.SENT) {
+            throw new InvalidInvoiceStatusException("Overdue invoices cannot be reverted to sent status.");
+        }
+
         if (newStatus == InvoiceStatus.OVERDUE && currentStatus != InvoiceStatus.SENT) {
             throw new InvalidInvoiceStatusException("Only sent invoices can transition to overdue.");
         }

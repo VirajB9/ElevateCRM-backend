@@ -1,5 +1,7 @@
 package com.viraj.dmabackend.config;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
@@ -13,8 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -24,8 +25,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final Duration REFILL_DURATION = Duration.ofMinutes(1);
     private static final int MAX_CACHE_SIZE = 10000;
 
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>(MAX_CACHE_SIZE);
-    private final Object evictionLock = new Object();
+    private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
+            .maximumSize(MAX_CACHE_SIZE)
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .build();
 
     @Override
     protected void doFilterInternal(
@@ -79,24 +82,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private Bucket getBucket(String bucketKey) {
-        if (buckets.size() >= MAX_CACHE_SIZE && !buckets.containsKey(bucketKey)) {
-            synchronized (evictionLock) {
-                if (buckets.size() >= MAX_CACHE_SIZE && !buckets.containsKey(bucketKey)) {
-                    var iterator = buckets.keySet().iterator();
-                    int count = 0;
-                    while (iterator.hasNext() && count < 500) {
-                        iterator.next();
-                        iterator.remove();
-                        count++;
-                    }
-                }
-            }
-        }
-        return buckets.computeIfAbsent(bucketKey, k -> createBucket());
+        return buckets.get(bucketKey, k -> createBucket());
     }
 
     private Bucket createBucket() {
-
         Bandwidth limit = Bandwidth.classic(
                 CAPACITY,
                 Refill.greedy(
@@ -109,7 +98,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        // AUDIT-006 FIX: Trust Spring's ForwardedHeaderFilter rather than naively parsing raw headers to prevent trivial spoofing bypass.
         return request.getRemoteAddr();
     }
 }

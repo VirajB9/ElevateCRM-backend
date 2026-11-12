@@ -10,6 +10,7 @@ import com.viraj.dmabackend.auth.mapper.UserMapper;
 import com.viraj.dmabackend.auth.repository.RefreshTokenRepository;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.auth.service.RoleService;
 import com.viraj.dmabackend.auth.validator.UserValidator;
 import com.viraj.dmabackend.exception.BadRequestException;
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +40,9 @@ public class UserServiceImplTest {
 
     @Mock
     private RoleRepository roleRepository;
+
+    @Mock
+    private RoleService roleService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -81,6 +85,8 @@ public class UserServiceImplTest {
         managerUser.setEmail("manager@agency.com");
         managerUser.setRoleId("role-manager");
         managerUser.setStatus(UserStatus.ACTIVE);
+
+
     }
 
     @AfterEach
@@ -101,7 +107,7 @@ public class UserServiceImplTest {
         authenticateAs(managerUser);
         when(userRepository.findByIdAndStatusNot("user-owner", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
 
         assertThrows(BadRequestException.class, () -> userService.softDeleteUser("user-owner"));
     }
@@ -111,7 +117,7 @@ public class UserServiceImplTest {
         authenticateAs(managerUser);
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
 
         assertThrows(BadRequestException.class, () -> userService.softDeleteUser("user-manager"));
     }
@@ -121,7 +127,7 @@ public class UserServiceImplTest {
         authenticateAs(managerUser);
         when(userRepository.findByIdAndStatusNot("user-owner", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
 
         UpdateUserStatusRequest request = new UpdateUserStatusRequest();
         request.setStatus(UserStatus.SUSPENDED);
@@ -134,7 +140,7 @@ public class UserServiceImplTest {
         authenticateAs(managerUser);
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
 
         UpdateUserStatusRequest request = new UpdateUserStatusRequest();
         request.setStatus(UserStatus.SUSPENDED);
@@ -147,7 +153,7 @@ public class UserServiceImplTest {
         authenticateAs(managerUser);
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
 
         UpdateUserStatusRequest request = new UpdateUserStatusRequest();
         request.setStatus(UserStatus.ACTIVE);
@@ -160,8 +166,8 @@ public class UserServiceImplTest {
         authenticateAs(managerUser);
         when(userRepository.findByIdAndStatusNot("user-owner", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
 
         UpdateUserRequest request = new UpdateUserRequest();
         request.setRoleId("role-manager");
@@ -182,8 +188,8 @@ public class UserServiceImplTest {
         authenticateAs(ownerUser);
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
         when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
         when(userRepository.save(any(User.class))).thenReturn(managerUser);
@@ -207,8 +213,8 @@ public class UserServiceImplTest {
 
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
         when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
@@ -230,8 +236,8 @@ public class UserServiceImplTest {
         authenticateAs(ownerUser);
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
         when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
         when(userRepository.save(any(User.class))).thenReturn(managerUser);
@@ -252,9 +258,9 @@ public class UserServiceImplTest {
 
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
-        when(roleRepository.findById("role-employee")).thenReturn(Optional.of(employeeRole));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
+        when(roleService.findRoleEntityById("role-employee")).thenReturn(employeeRole);
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
         when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
         when(userRepository.save(any(User.class))).thenReturn(managerUser);
@@ -278,8 +284,8 @@ public class UserServiceImplTest {
 
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
         when(userRepository.findByEmailAndStatusNot("owner@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(ownerUser));
         when(userRepository.save(any(User.class))).thenReturn(managerUser);
@@ -323,7 +329,7 @@ public class UserServiceImplTest {
 
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
         when(userRepository.findByEmailAndStatusNot("manager@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
         when(userRepository.save(any(User.class))).thenReturn(managerUser);
@@ -352,8 +358,8 @@ public class UserServiceImplTest {
 
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById("role-manager")).thenReturn(Optional.of(managerRole));
-        when(roleRepository.findById("role-employee")).thenReturn(Optional.of(employeeRole));
+        when(roleService.findRoleEntityById("role-manager")).thenReturn(managerRole);
+        when(roleService.findRoleEntityById("role-employee")).thenReturn(employeeRole);
         when(userRepository.findByEmailAndStatusNot("manager@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
 
@@ -374,8 +380,8 @@ public class UserServiceImplTest {
         employeeRole.setId("role-employee");
         employeeRole.setName("EMPLOYEE");
 
-        when(roleRepository.findById("role-employee")).thenReturn(Optional.of(employeeRole));
-        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+        when(roleService.findRoleEntityById("role-employee")).thenReturn(employeeRole);
+        when(roleService.findRoleEntityById("role-owner")).thenReturn(ownerRole);
         when(passwordEncoder.encode(anyString())).thenReturn("hashed-pwd");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -399,7 +405,7 @@ public class UserServiceImplTest {
     void getUserById_TrimsUserId() {
         when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED))
                 .thenReturn(Optional.of(managerUser));
-        when(roleRepository.findById(managerUser.getRoleId())).thenReturn(Optional.of(managerRole));
+        when(roleService.findRoleEntityById(managerUser.getRoleId())).thenReturn(managerRole);
         when(userMapper.toUserResponse(managerUser, managerRole.getName()))
                 .thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().id("user-1").build());
 

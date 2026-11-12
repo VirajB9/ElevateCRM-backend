@@ -10,6 +10,7 @@ import com.viraj.dmabackend.auth.repository.RefreshTokenRepository;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.security.CustomUserDetails;
+import com.viraj.dmabackend.auth.service.RoleService;
 import com.viraj.dmabackend.auth.service.UserService;
 import com.viraj.dmabackend.auth.validator.UserValidator;
 import com.viraj.dmabackend.common.util.PaginationUtils;
@@ -38,6 +39,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     private final RoleRepository roleRepository;
+
+    private final RoleService roleService;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -226,9 +229,7 @@ public class UserServiceImpl implements UserService {
 
     private Role findRoleById(String roleId) {
         String trimmedRoleId = roleId != null ? roleId.trim() : null;
-        return roleRepository.findById(trimmedRoleId)
-                .orElseThrow(() ->
-                        new RoleNotFoundException(roleId));
+        return roleService.findRoleEntityById(trimmedRoleId);
     }
 
     private User findCurrentUser() {
@@ -295,10 +296,14 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserResponse mapUser(User user) {
-
-        Role role = user.getRoleId() != null
-                ? roleRepository.findById(user.getRoleId()).orElse(null)
-                : null;
+        Role role = null;
+        if (user.getRoleId() != null) {
+            try {
+                role = roleService.findRoleEntityById(user.getRoleId().trim());
+            } catch (RoleNotFoundException ignored) {
+                // Fallback to UNKNOWN if role record was removed
+            }
+        }
         String roleName = role != null && role.getName() != null ? role.getName() : "UNKNOWN";
         return userMapper.toUserResponse(user, roleName);
     }

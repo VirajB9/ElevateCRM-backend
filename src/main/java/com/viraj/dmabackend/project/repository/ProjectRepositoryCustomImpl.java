@@ -25,13 +25,14 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     @Override
     public Page<Project> searchProjects(String keyword, Pageable pageable) {
 
+        String cleanKeyword = PaginationUtils.clampKeyword(keyword);
         Query query;
-        if (keyword != null && !keyword.trim().isEmpty()) {
+        if (cleanKeyword != null && !cleanKeyword.isEmpty()) {
             query = TextQuery
                     .queryText(
                             TextCriteria
                                     .forDefaultLanguage()
-                                    .matching(keyword.trim())
+                                    .matching(cleanKeyword)
                     ).sortByScore();
         } else {
             query = new Query();

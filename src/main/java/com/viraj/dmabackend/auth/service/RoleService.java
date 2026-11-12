@@ -12,6 +12,8 @@ public interface RoleService {
 
     RoleResponse getRoleById(String roleId);
 
+    com.viraj.dmabackend.auth.entity.Role findRoleEntityById(String roleId);
+
     RoleResponse updateRole(String roleId, UpdateRoleRequest request);
 
     RoleResponse assignPermissions(String roleId, AssignPermissionsRequest request);
