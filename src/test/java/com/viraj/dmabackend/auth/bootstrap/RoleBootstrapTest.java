@@ -116,4 +116,26 @@ class RoleBootstrapTest {
         assertThat(employee.getPermissionIds()).contains("p-lc");
         assertThat(employee.getPermissionIds()).doesNotContain("p-pu", "p-ld");
     }
+
+    @Test
+    void run_whenManagerRoleExistsWithCustomPermissions_preservesCustomPermissionsWithoutOverwriting() {
+        Permission pUserRead = Permission.builder().id("p-ur").permissionType(PermissionType.USER_READ).build();
+        when(permissionRepository.findAll()).thenReturn(List.of(pUserRead));
+
+        Role customManager = Role.builder()
+                .name("MANAGER")
+                .permissionIds(List.of("custom-perm-1", "custom-perm-2"))
+                .build();
+
+        when(roleRepository.findByName("OWNER")).thenReturn(Optional.of(Role.builder().name("OWNER").permissionIds(List.of("p-ur")).build()));
+        when(roleRepository.findByName("MANAGER")).thenReturn(Optional.of(customManager));
+        when(roleRepository.findByName("EMPLOYEE")).thenReturn(Optional.of(Role.builder().name("EMPLOYEE").permissionIds(List.of("p-ur")).build()));
+        when(roleRepository.findByName("INTERN")).thenReturn(Optional.of(Role.builder().name("INTERN").permissionIds(List.of("p-ur")).build()));
+
+        roleBootstrap.run();
+
+        // Custom permissions should NOT be clobbered
+        assertThat(customManager.getPermissionIds()).containsExactly("custom-perm-1", "custom-perm-2");
+        verify(roleRepository, never()).save(customManager);
+    }
 }

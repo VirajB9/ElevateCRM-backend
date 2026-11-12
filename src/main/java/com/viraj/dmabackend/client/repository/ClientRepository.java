@@ -5,6 +5,7 @@ import com.viraj.dmabackend.client.entity.Client;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 
 import java.util.Optional;
 
@@ -16,10 +17,13 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
 
     boolean existsByGstNumber(String gstNumber);
 
+    @Query(value = "{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByEmailAndStatusNot(String email, ClientStatus status);
 
+    @Query(value = "{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndStatusNot(String phoneNumber, ClientStatus status);
 
+    @Query(value = "{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
 
     Optional<Client> findByEmail(String email);
@@ -28,10 +32,13 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
 
     Optional<Client> findByGstNumber(String gstNumber);
 
+    @Query("{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Client> findByEmailAndStatusNot(String email, ClientStatus status);
 
+    @Query("{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Client> findByPhoneNumberAndStatusNot(String phoneNumber, ClientStatus status);
 
+    @Query("{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Client> findByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
 
     Page<Client> findByStatus(ClientStatus status, Pageable pageable);
@@ -42,14 +49,21 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
 
     boolean existsByGstNumberAndIdNot(String gstNumber, String clientId);
 
+    @Query(value = "{ 'email': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)
     boolean existsByEmailAndIdNotAndStatusNot(String email, String clientId, ClientStatus status);
 
+    @Query(value = "{ 'phoneNumber': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndIdNotAndStatusNot(String phoneNumber, String clientId, ClientStatus status);
 
+    @Query(value = "{ 'gstNumber': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)
     boolean existsByGstNumberAndIdNotAndStatusNot(String gstNumber, String clientId, ClientStatus status);
 
+    @Query("{ 'status': { $ne: ?0 }, 'deleted': false }")
     Page<Client> findByStatusNot(ClientStatus status, Pageable pageable);
 
+    @Query("{ '_id': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Client> findByIdAndStatusNot(String id, ClientStatus status);
+
+    @Query(value = "{ '_id': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByIdAndStatusNot(String id, ClientStatus status);
 }

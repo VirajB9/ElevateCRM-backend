@@ -65,9 +65,13 @@ public class JwtFilter extends OncePerRequestFilter {
         com.viraj.dmabackend.auth.entity.User user = userDetails.getUser();
         if (user.getTokensRevokedAt() != null) {
             java.util.Date issuedAt = jwtUtil.extractIssuedAt(token);
-            if (issuedAt != null && issuedAt.toInstant().isBefore(user.getTokensRevokedAt().toInstant(java.time.ZoneOffset.UTC))) {
-                filterChain.doFilter(request, response);
-                return;
+            if (issuedAt != null) {
+                long issuedAtSeconds = issuedAt.getTime() / 1000;
+                long revokedAtSeconds = user.getTokensRevokedAt().toEpochSecond(java.time.ZoneOffset.UTC);
+                if (issuedAtSeconds < revokedAtSeconds) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
             }
         }
 

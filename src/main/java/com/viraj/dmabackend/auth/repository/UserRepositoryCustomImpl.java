@@ -34,7 +34,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
             query = new Query();
         }
 
-        query.addCriteria(Criteria.where("status").ne(UserStatus.DELETED));
+        query.addCriteria(Criteria.where("status").ne(UserStatus.DELETED).and("deleted").is(false));
 
         long total = mongoTemplate.count(query, User.class);
 

@@ -228,4 +228,39 @@ public class LeadServiceImplTest {
         org.junit.jupiter.api.Assertions.assertNotNull(response);
         verify(leadRepository).findByIdAndStatusNot("lead-1", LeadStatus.DELETED);
     }
+
+    @Test
+    void convertLeadToClient_whenLeadSaveFails_purgesOrphanedClient() {
+        Lead lead = Lead.builder()
+                .id("lead-1")
+                .status(LeadStatus.WON)
+                .email("test@lead.com")
+                .phoneNumber("+1234567890")
+                .build();
+
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+        when(clientService.createClientFromLead(any()))
+                .thenReturn(ClientResponse.builder().id("orphaned-client-1").build());
+        when(leadRepository.save(any(Lead.class)))
+                .thenThrow(new RuntimeException("Database timeout on lead save"));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                RuntimeException.class,
+                () -> leadService.convertLeadToClient("lead-1")
+        );
+
+        verify(clientService).purgeOrphanedClient("orphaned-client-1");
+    }
+
+    @Test
+    void filterByAssignedUser_callsValidation() {
+        when(leadRepository.findByAssignedUserIdAndStatusNot(eq("user-1"), eq(LeadStatus.DELETED), any()))
+                .thenReturn(Page.empty());
+
+        leadService.filterByAssignedUser("user-1", PageRequest.of(0, 10));
+
+        verify(leadValidator).validateUserExists("user-1");
+        verify(leadValidator).validateAssignedUserAccess("user-1");
+    }
 }

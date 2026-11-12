@@ -40,7 +40,8 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
 
         query.addCriteria(
                 Criteria.where("status")
-                        .ne(ProjectStatus.ARCHIVED));
+                        .ne(ProjectStatus.ARCHIVED)
+                        .and("deleted").is(false));
 
         long total = mongoTemplate.count(query, Project.class);
 

@@ -17,6 +17,7 @@ import com.viraj.dmabackend.auth.security.CustomUserDetails;
 import com.viraj.dmabackend.auth.service.RoleService;
 import com.viraj.dmabackend.auth.validator.RoleValidator;
 import com.viraj.dmabackend.common.util.PaginationUtils;
+import com.viraj.dmabackend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -165,6 +166,10 @@ public class RoleServiceImpl implements RoleService {
         preventOwnerModification(role);
 
         removePermissionsFromRole(role, normalizedPermissionIds);
+
+        if (role.isSystemRole() && (role.getPermissionIds() == null || role.getPermissionIds().isEmpty())) {
+            throw new BadRequestException("Cannot remove all permissions from a system role");
+        }
 
         Role updatedRole = roleRepository.save(role);
 

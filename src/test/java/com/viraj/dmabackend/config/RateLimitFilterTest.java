@@ -196,4 +196,58 @@ public class RateLimitFilterTest {
         filter.doFilter(retryReq, retryRes, filterChain);
         assertEquals(429, retryRes.getStatus());
     }
+
+    @Test
+    void rateLimit_resolvesClientIpFromXForwardedFor() throws ServletException, IOException {
+        String clientIp = "203.0.113.195";
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+            req.setServletPath("/api/v1/auth/login");
+            req.setRemoteAddr("10.0.0.1"); // Proxy IP
+            req.addHeader("X-Forwarded-For", clientIp + ", 198.51.100.1, 10.0.0.1");
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, filterChain);
+            assertEquals(200, res.getStatus());
+        }
+
+        // 6th request with same X-Forwarded-For client IP gets rate limited
+        MockHttpServletRequest blockedReq = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        blockedReq.setServletPath("/api/v1/auth/login");
+        blockedReq.setRemoteAddr("10.0.0.1"); // Same proxy IP
+        blockedReq.addHeader("X-Forwarded-For", clientIp + ", 198.51.100.1, 10.0.0.1");
+        MockHttpServletResponse blockedRes = new MockHttpServletResponse();
+        filter.doFilter(blockedReq, blockedRes, filterChain);
+        assertEquals(429, blockedRes.getStatus());
+
+        // A different client behind the SAME proxy gets through!
+        MockHttpServletRequest otherClientReq = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        otherClientReq.setServletPath("/api/v1/auth/login");
+        otherClientReq.setRemoteAddr("10.0.0.1"); // Same proxy IP
+        otherClientReq.addHeader("X-Forwarded-For", "198.51.100.99, 10.0.0.1");
+        MockHttpServletResponse otherClientRes = new MockHttpServletResponse();
+        filter.doFilter(otherClientReq, otherClientRes, filterChain);
+        assertEquals(200, otherClientRes.getStatus());
+    }
+
+    @Test
+    void rateLimit_resolvesClientIpFromXRealIp() throws ServletException, IOException {
+        String clientIp = "198.51.100.50";
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+            req.setServletPath("/api/v1/auth/login");
+            req.setRemoteAddr("127.0.0.1");
+            req.addHeader("X-Real-IP", clientIp);
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, filterChain);
+            assertEquals(200, res.getStatus());
+        }
+
+        MockHttpServletRequest blockedReq = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        blockedReq.setServletPath("/api/v1/auth/login");
+        blockedReq.setRemoteAddr("127.0.0.1");
+        blockedReq.addHeader("X-Real-IP", clientIp);
+        MockHttpServletResponse blockedRes = new MockHttpServletResponse();
+        filter.doFilter(blockedReq, blockedRes, filterChain);
+        assertEquals(429, blockedRes.getStatus());
+    }
 }

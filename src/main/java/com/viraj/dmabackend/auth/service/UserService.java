@@ -10,6 +10,8 @@ public interface     UserService {
 
     UserResponse getUserById(String userId);
 
+    UserResponse getUserByEmail(String email);
+
     Page<UserResponse> getAllUsers(Pageable pageable);
 
     Page<UserResponse> searchUsers(String keyword, Pageable pageable);

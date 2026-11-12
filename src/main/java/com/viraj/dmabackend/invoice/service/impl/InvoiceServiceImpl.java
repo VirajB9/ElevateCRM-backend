@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.service.impl;
 
 import com.viraj.dmabackend.common.util.PaginationUtils;
+import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
 import com.viraj.dmabackend.invoice.dto.InvoiceHistoryResponse;
 import com.viraj.dmabackend.invoice.dto.InvoiceResponse;
@@ -245,6 +246,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         BigDecimal discount = Optional.ofNullable(invoice.getDiscount())
                 .orElse(BigDecimal.ZERO)
                 .setScale(2, RoundingMode.HALF_UP);
+
+        if (discount.compareTo(subtotal) > 0) {
+            throw new BadRequestException("Discount cannot be greater than subtotal");
+        }
 
         BigDecimal taxableAmount = subtotal
                 .subtract(discount)

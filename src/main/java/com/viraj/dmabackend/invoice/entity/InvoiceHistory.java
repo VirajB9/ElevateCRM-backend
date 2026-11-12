@@ -20,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @Document(collection = "invoice_history")
 @TypeAlias("InvoiceHistory")
-@CompoundIndex(name = "idx_invoice_history_version", def = "{'invoiceId': 1, 'invoiceVersion': 1}")
+@CompoundIndex(name = "uk_invoice_history_version", def = "{'invoiceId': 1, 'invoiceVersion': 1}", unique = true)
 public class InvoiceHistory {
 
     @Id

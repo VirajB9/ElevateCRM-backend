@@ -11,6 +11,7 @@ import com.viraj.dmabackend.auth.repository.PermissionRepository;
 import com.viraj.dmabackend.auth.repository.RoleRepository;
 import com.viraj.dmabackend.auth.repository.UserRepository;
 import com.viraj.dmabackend.auth.validator.RoleValidator;
+import com.viraj.dmabackend.exception.BadRequestException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -286,5 +287,34 @@ public class RoleServiceImplTest {
 
         assertNotNull(response);
         verify(roleRepository).findById("role-1");
+    }
+
+    @Test
+    void removePermissions_ThrowsWhenRemovingAllPermissionsFromSystemRole() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+
+        Role systemRole = Role.builder()
+                .id("manager-role")
+                .name("MANAGER")
+                .systemRole(true)
+                .permissionIds(new java.util.ArrayList<>(List.of("p1")))
+                .build();
+        when(roleRepository.findById("manager-role")).thenReturn(Optional.of(systemRole));
+
+        com.viraj.dmabackend.auth.dto.RemovePermissionsRequest request = new com.viraj.dmabackend.auth.dto.RemovePermissionsRequest();
+        request.setPermissionIds(List.of("p1"));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                BadRequestException.class,
+                () -> roleService.removePermissions("manager-role", request)
+        );
     }
 }

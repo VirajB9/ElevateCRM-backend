@@ -125,6 +125,13 @@ public class ClientServiceImpl implements ClientService {
         clientRepository.save(client);
     }
 
+    @Override
+    public void purgeOrphanedClient(String clientId) {
+        if (clientId != null && !clientId.isBlank()) {
+            clientRepository.deleteById(clientId.trim());
+        }
+    }
+
 
     // =========================
     // Helper Methods

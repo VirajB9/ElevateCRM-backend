@@ -128,4 +128,25 @@ public class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().isSuccess());
         assertEquals("Required request header 'X-API-KEY' is not present", response.getBody().getMessage());
     }
+
+    @Test
+    void handleConflictException_ReturnsConflict() {
+        ConflictException ex = new ConflictException("Resource already exists");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleConflict(ex);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Resource already exists", response.getBody().getMessage());
+    }
+
+    @Test
+    void handleDuplicateEmailException_ReturnsConflict() {
+        com.viraj.dmabackend.auth.exception.DuplicateEmailException ex =
+                new com.viraj.dmabackend.auth.exception.DuplicateEmailException("test@agency.com");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleConflict(ex);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Email already exists: test@agency.com", response.getBody().getMessage());
+    }
 }

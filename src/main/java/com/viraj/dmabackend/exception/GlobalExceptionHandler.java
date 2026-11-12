@@ -162,6 +162,20 @@ public class GlobalExceptionHandler {
                 HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiResponse<Object>> handleConflict(
+            ConflictException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(DuplicateKeyException.class)
     public ResponseEntity<ApiResponse<Object>> handleDuplicateKey(
             DuplicateKeyException ex) {

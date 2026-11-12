@@ -123,4 +123,31 @@ public class LeadValidator {
         }
         userService.getUserById(normalizedUserId);
     }
+
+    public void validateAssignedUserAccess(String userId) {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return;
+        }
+
+        boolean isManagerOrOwner = auth.getAuthorities().stream().anyMatch(a ->
+                "ROLE_OWNER".equals(a.getAuthority()) || "ROLE_MANAGER".equals(a.getAuthority()));
+        if (isManagerOrOwner) {
+            return;
+        }
+
+        String currentUserEmail = auth.getName();
+        if (currentUserEmail != null && !currentUserEmail.isBlank()) {
+            try {
+                UserResponse currentUser = userService.getUserByEmail(currentUserEmail);
+                if (currentUser != null && !currentUser.getId().equals(userId)) {
+                    throw new org.springframework.security.access.AccessDeniedException(
+                            "Access denied: You are not authorized to view leads assigned to another user");
+                }
+            } catch (UserNotFoundException ignored) {
+                // If user not in DB, continue
+            }
+        }
+    }
 }

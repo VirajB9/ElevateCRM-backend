@@ -206,16 +206,32 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String refreshTokenValue) {
 
-        if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
-            return;
+        LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC)
+                .truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+
+        if (refreshTokenValue != null && !refreshTokenValue.isBlank()) {
+            String trimmedToken = refreshTokenValue.trim();
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("token").is(trimmedToken).and("revoked").is(false)),
+                    new Update().set("revoked", true).set("revokedAt", revocationTime),
+                    RefreshToken.class
+            );
+            refreshTokenRepository.findByToken(trimmedToken).ifPresent(token -> {
+                if (token.getUserId() != null) {
+                    userRepository.findById(token.getUserId()).ifPresent(user -> {
+                        user.setTokensRevokedAt(revocationTime);
+                        userRepository.save(user);
+                    });
+                }
+            });
         }
 
-        String trimmedToken = refreshTokenValue.trim();
-        mongoTemplate.updateFirst(
-                Query.query(Criteria.where("token").is(trimmedToken).and("revoked").is(false)),
-                new Update().set("revoked", true).set("revokedAt", LocalDateTime.now(ZoneOffset.UTC)),
-                RefreshToken.class
-        );
+        com.viraj.dmabackend.auth.security.SecurityUtils.getCurrentUserEmail()
+                .flatMap(email -> userRepository.findByEmailAndStatusNot(email, UserStatus.DELETED))
+                .ifPresent(user -> {
+                    user.setTokensRevokedAt(revocationTime);
+                    userRepository.save(user);
+                });
     }
 
     @Override
@@ -245,7 +261,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setPasswordChangeRequired(false);
-        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
         userRepository.save(user);
 
         refreshTokenRepository.deleteByUserId(user.getId());

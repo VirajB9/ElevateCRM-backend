@@ -84,6 +84,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponse getUserByEmail(String email) {
+
+        String trimmedEmail = email != null ? email.trim().toLowerCase() : null;
+        User user = userRepository.findByEmailAndStatusNot(trimmedEmail, UserStatus.DELETED)
+                .orElseThrow(() -> new UserNotFoundException(email));
+        return mapUser(user);
+    }
+
+    @Override
     public Page<UserResponse> getAllUsers(Pageable pageable) {
 
         Page<User> users = userRepository.findByStatusNot(UserStatus.DELETED, PaginationUtils.clampPageable(pageable));

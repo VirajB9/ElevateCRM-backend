@@ -87,6 +87,7 @@ public class SecurityConfig {
                                 "/actuator/health",
                                 "/actuator/health/**"
                         ).permitAll()
+                        .requestMatchers("/actuator/**").hasRole("OWNER")
                         .anyRequest().authenticated()
                 )
 

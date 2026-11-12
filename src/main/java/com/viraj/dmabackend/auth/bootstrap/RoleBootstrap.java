@@ -81,8 +81,7 @@ public class RoleBootstrap implements CommandLineRunner {
 
         Role existing = roleRepository.findByName("MANAGER").orElse(null);
         if (existing != null) {
-            if (existing.getPermissionIds() == null
-                    || !new java.util.HashSet<>(existing.getPermissionIds()).equals(new java.util.HashSet<>(permissionIds))) {
+            if (existing.getPermissionIds() == null || existing.getPermissionIds().isEmpty()) {
                 existing.setPermissionIds(permissionIds);
                 roleRepository.save(existing);
             }
@@ -111,8 +110,7 @@ public class RoleBootstrap implements CommandLineRunner {
 
         Role existing = roleRepository.findByName("EMPLOYEE").orElse(null);
         if (existing != null) {
-            if (existing.getPermissionIds() == null
-                    || !new java.util.HashSet<>(existing.getPermissionIds()).equals(new java.util.HashSet<>(permissionIds))) {
+            if (existing.getPermissionIds() == null || existing.getPermissionIds().isEmpty()) {
                 existing.setPermissionIds(permissionIds);
                 roleRepository.save(existing);
             }
@@ -139,8 +137,7 @@ public class RoleBootstrap implements CommandLineRunner {
 
         Role existing = roleRepository.findByName("INTERN").orElse(null);
         if (existing != null) {
-            if (existing.getPermissionIds() == null
-                    || !new java.util.HashSet<>(existing.getPermissionIds()).equals(new java.util.HashSet<>(permissionIds))) {
+            if (existing.getPermissionIds() == null || existing.getPermissionIds().isEmpty()) {
                 existing.setPermissionIds(permissionIds);
                 roleRepository.save(existing);
             }

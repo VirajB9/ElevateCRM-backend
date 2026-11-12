@@ -35,7 +35,7 @@ public class LeadRepositoryCustomImpl
             query = new Query();
         }
 
-        query.addCriteria(Criteria.where("status").ne(LeadStatus.DELETED));
+        query.addCriteria(Criteria.where("status").ne(LeadStatus.DELETED).and("deleted").is(false));
 
         long total = mongoTemplate.count(query, Lead.class);
 

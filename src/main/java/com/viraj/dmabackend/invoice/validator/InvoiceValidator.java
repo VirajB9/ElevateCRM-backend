@@ -107,9 +107,12 @@ public class InvoiceValidator {
 
         BigDecimal subtotal = items.stream()
                 .filter(item -> item != null && item.getQuantity() != null && item.getUnitPrice() != null)
-                .map(item -> item.getQuantity()
-                        .multiply(item.getUnitPrice())
-                        .setScale(2, java.math.RoundingMode.HALF_UP))
+                .map(item -> {
+                    BigDecimal unitPrice = item.getUnitPrice().setScale(2, java.math.RoundingMode.HALF_UP);
+                    return item.getQuantity()
+                            .multiply(unitPrice)
+                            .setScale(2, java.math.RoundingMode.HALF_UP);
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (discount.compareTo(subtotal) > 0) {

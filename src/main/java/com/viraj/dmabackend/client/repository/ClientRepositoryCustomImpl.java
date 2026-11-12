@@ -36,7 +36,7 @@ public class ClientRepositoryCustomImpl implements ClientRepositoryCustom {
         }
                 
         // ensure we don't return ARCHIVED clients
-        query.addCriteria(Criteria.where("status").ne(ClientStatus.ARCHIVED));
+        query.addCriteria(Criteria.where("status").ne(ClientStatus.ARCHIVED).and("deleted").is(false));
 
         long total = mongoTemplate.count(query, Client.class);
 

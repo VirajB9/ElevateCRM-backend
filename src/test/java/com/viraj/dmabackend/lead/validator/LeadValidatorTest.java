@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -201,5 +202,44 @@ public class LeadValidatorTest {
 
         assertDoesNotThrow(() -> leadValidator.validateAssignedUser("   user-123   "));
         verify(userService).getUserById("user-123");
+    }
+
+    @Test
+    void validateAssignedUserAccess_whenCallerIsOwner_passesEvenForOtherUser() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "owner@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_OWNER"))));
+
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUserAccess("other-user-123"));
+    }
+
+    @Test
+    void validateAssignedUserAccess_whenCallerIsEmployeeViewingOwnLeads_passes() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "emp@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("emp@agency.com"))
+                .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
+
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUserAccess("emp-user-123"));
+    }
+
+    @Test
+    void validateAssignedUserAccess_whenCallerIsEmployeeViewingOtherUserLeads_throwsAccessDeniedException() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "emp@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("emp@agency.com"))
+                .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
+
+        assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadValidator.validateAssignedUserAccess("other-user-456")
+        );
     }
 }

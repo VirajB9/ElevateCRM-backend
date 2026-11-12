@@ -17,6 +17,7 @@ import com.viraj.dmabackend.lead.repository.LeadRepository;
 import com.viraj.dmabackend.lead.service.LeadService;
 import com.viraj.dmabackend.lead.validator.LeadValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LeadServiceImpl implements LeadService {
@@ -70,21 +72,34 @@ public class LeadServiceImpl implements LeadService {
                 .notes(lead.getNotes())
                 .build();
 
-        ClientResponse client = clientService.createClientFromLead(data);
+        ClientResponse client = null;
+        try {
+            client = clientService.createClientFromLead(data);
 
-        lead.setStatus(LeadStatus.CONVERTED);
-        lead.setConvertedClientId(client.getId());
-        lead.setConvertedAt(LocalDateTime.now(ZoneOffset.UTC));
+            lead.setStatus(LeadStatus.CONVERTED);
+            lead.setConvertedClientId(client.getId());
+            lead.setConvertedAt(LocalDateTime.now(ZoneOffset.UTC));
 
-        Lead savedLead = leadRepository.save(lead);
+            Lead savedLead = leadRepository.save(lead);
 
-        com.viraj.dmabackend.common.dto.LeadConversionData eventData = data.toBuilder()
-                .clientId(client.getId())
-                .build();
+            com.viraj.dmabackend.common.dto.LeadConversionData eventData = data.toBuilder()
+                    .clientId(client.getId())
+                    .build();
 
-        eventPublisher.publishEvent(new LeadConvertedEvent(eventData));
+            eventPublisher.publishEvent(new LeadConvertedEvent(eventData));
 
-        return leadMapper.toLeadResponse(savedLead);
+            return leadMapper.toLeadResponse(savedLead);
+        } catch (Exception ex) {
+            if (client != null && client.getId() != null) {
+                try {
+                    log.warn("Compensating rollback: purging orphaned client [{}] after lead conversion error", client.getId());
+                    clientService.purgeOrphanedClient(client.getId());
+                } catch (Exception rollbackEx) {
+                    log.error("Failed to purge orphaned client [{}]: {}", client.getId(), rollbackEx.getMessage());
+                }
+            }
+            throw ex;
+        }
     }
 
     @Override
@@ -131,6 +146,7 @@ public class LeadServiceImpl implements LeadService {
         String normalizedUserId = userId != null ? userId.trim() : null;
 
         leadValidator.validateUserExists(normalizedUserId);
+        leadValidator.validateAssignedUserAccess(normalizedUserId);
 
         return leadRepository.findByAssignedUserIdAndStatusNot(normalizedUserId, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
