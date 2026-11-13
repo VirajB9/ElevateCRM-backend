@@ -122,7 +122,7 @@ class MenuServiceImplTest {
     }
 
     @Test
-    void getMenuTree_promotesOrphanSubmenuToRootWhenParentIsMissingOrRestricted() {
+    void getMenuTree_suppressesOrphanSubmenuWhenParentIsMissingOrRestricted() {
         Menu childMenu = Menu.builder()
                 .id("child-1")
                 .parentId("parent-missing")
@@ -138,17 +138,56 @@ class MenuServiceImplTest {
 
         List<MenuTreeResponse> result = menuService.getMenuTree();
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).isEqualTo("Sub Report");
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getMenuTree_suppressesChildWhenParentIsFilteredByPermission() {
+        Menu parentAdmin = Menu.builder()
+                .id("admin-parent")
+                .parentId(null)
+                .title("Admin")
+                .path("/admin")
+                .orderIndex(1)
+                .requiredPermission("admin:read")
+                .active(true)
+                .build();
+
+        Menu child = Menu.builder()
+                .id("admin-child")
+                .parentId("admin-parent")
+                .title("Admin Settings")
+                .path("/admin/settings")
+                .orderIndex(2)
+                .requiredPermission(null)
+                .active(true)
+                .build();
+
+        // User authentication does not have admin:read
+        when(menuRepository.findByActiveTrueOrderByOrderIndexAsc())
+                .thenReturn(List.of(parentAdmin, child));
+
+        List<MenuTreeResponse> result = menuService.getMenuTree();
+
+        // Since parentAdmin is filtered out, child must NOT be promoted to root
+        assertThat(result).isEmpty();
     }
 
     @Test
     void getMenuTree_whenCyclicRelationshipExists_breaksCycleAndSerializesWithoutStackOverflow() throws Exception {
+        Menu menuRoot = Menu.builder()
+                .id("R")
+                .parentId(null)
+                .title("Root Menu")
+                .orderIndex(1)
+                .active(true)
+                .build();
+
         Menu menuA = Menu.builder()
                 .id("A")
                 .parentId("B")
                 .title("Menu A")
-                .orderIndex(1)
+                .orderIndex(2)
                 .active(true)
                 .build();
 
@@ -156,16 +195,17 @@ class MenuServiceImplTest {
                 .id("B")
                 .parentId("A")
                 .title("Menu B")
-                .orderIndex(2)
+                .orderIndex(3)
                 .active(true)
                 .build();
 
         when(menuRepository.findByActiveTrueOrderByOrderIndexAsc())
-                .thenReturn(List.of(menuA, menuB));
+                .thenReturn(List.of(menuRoot, menuA, menuB));
 
         List<MenuTreeResponse> result = menuService.getMenuTree();
 
-        assertThat(result).isNotEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Root Menu");
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         String json = mapper.writeValueAsString(result);
         assertThat(json).isNotBlank();

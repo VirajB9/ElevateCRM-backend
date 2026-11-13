@@ -241,8 +241,9 @@ public class MenuServiceImpl implements MenuService {
                 if (parentMenu != null && !createsCycle(menu.getId(), menu.getParentId(), menuById)) {
                     parentMenu.getChildren().add(currentMenu);
                 } else {
-                    // Parent is missing/filtered or cyclic; promote to root level to avoid orphaning
-                    rootMenus.add(currentMenu);
+                    // Suppress orphan/filtered/cyclic child menu: DO NOT promote to root!
+                    log.warn("Menu [{}] (id: {}) has parent [{}] which is missing, filtered, or cyclic. Suppressing from navigation tree.",
+                            menu.getTitle(), menu.getId(), menu.getParentId());
                 }
             }
         }
