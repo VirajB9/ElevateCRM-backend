@@ -90,6 +90,10 @@ public class InvoiceValidator {
         if (project.getStatus() == com.viraj.dmabackend.project.enums.ProjectStatus.CANCELLED) {
             throw new BadRequestException("Cannot create an invoice for a cancelled project.");
         }
+
+        if (project.getStatus() == com.viraj.dmabackend.project.enums.ProjectStatus.ARCHIVED) {
+            throw new BadRequestException("Cannot create an invoice for an archived project.");
+        }
     }
 
     private void validateDates(LocalDate issueDate, LocalDate dueDate) {
