@@ -390,7 +390,7 @@ public class AuthServiceImplTest {
 
         when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
                 .thenReturn(activeToken);
-        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(Optional.of(user));
         when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
         when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
         when(jwtUtil.generateRefreshToken()).thenReturn("new-rotated-token");
@@ -435,10 +435,61 @@ public class AuthServiceImplTest {
 
         when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
                 .thenReturn(activeToken);
-        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(Optional.of(user));
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("valid-token"));
         assertEquals("User account is not active", ex.getMessage());
+    }
+
+    @Test
+    void refresh_withSoftDeletedUser_throwsUnauthorizedException() {
+        com.viraj.dmabackend.auth.entity.RefreshToken activeToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("valid-token")
+                .userId("user-deleted")
+                .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).plusDays(1))
+                .revoked(false)
+                .build();
+
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(activeToken);
+        when(userRepository.findByIdAndStatusNot("user-deleted", UserStatus.DELETED)).thenReturn(Optional.empty());
+
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("valid-token"));
+        assertEquals("User not found", ex.getMessage());
+    }
+
+    @Test
+    void refresh_withRecentlyRotatedTokenWithinGraceWindow_withReplacedByToken_returnsSuccessorToken() {
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(null);
+
+        com.viraj.dmabackend.auth.entity.RefreshToken recentlyRotated = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("concurrent-token")
+                .userId("user-1")
+                .revoked(true)
+                .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusSeconds(2))
+                .replacedByToken("successor-token-123")
+                .build();
+
+        com.viraj.dmabackend.auth.entity.Role role = new com.viraj.dmabackend.auth.entity.Role();
+        role.setId("role-1");
+        role.setName("EMPLOYEE");
+
+        when(refreshTokenRepository.findByToken("concurrent-token")).thenReturn(Optional.of(recentlyRotated));
+        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(Optional.of(user));
+        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
+        when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
+        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean())).thenReturn("successor-access-token");
+        when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.AuthenticationResponse response = authService.refresh("concurrent-token");
+
+        assertNotNull(response);
+        assertEquals("successor-access-token", response.getToken());
+        assertEquals("successor-token-123", response.getRefreshToken());
+        verify(refreshTokenRepository, never()).deleteByUserId(any());
     }
 
     @Test

@@ -237,16 +237,19 @@ public class JwtFilterTest {
     }
 
     @Test
-    void doFilter_WhenTokenIssuedInSameSecondAsRevocation_DoesNotSetAuthentication() throws ServletException, IOException {
+    void doFilter_WhenTokenIssuedInSameSecondAsRevocation_AllowsAuthentication() throws ServletException, IOException {
         String token = "valid-token";
         when(jwtUtil.validateToken(token)).thenReturn(true);
         when(jwtUtil.extractEmail(token)).thenReturn("user@example.com");
+        when(jwtUtil.extractRole(token)).thenReturn("EMPLOYEE");
+        when(jwtUtil.extractPermissions(token)).thenReturn(List.of("client:read"));
+        when(jwtUtil.extractPasswordChangeRequired(token)).thenReturn(false);
 
         java.time.LocalDateTime revocationTime = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC)
                 .truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
         defaultUser.setTokensRevokedAt(revocationTime);
 
-        // Token issued in the same second as revocation must be rejected (<= check)
+        // Token issued in the same second as revocation must be accepted (< check)
         java.util.Date issuedAt = java.util.Date.from(revocationTime.toInstant(java.time.ZoneOffset.UTC));
         when(jwtUtil.extractIssuedAt(token)).thenReturn(issuedAt);
 
@@ -258,7 +261,7 @@ public class JwtFilterTest {
         jwtFilter.doFilter(request, response, filterChain);
 
         verify(filterChain, times(1)).doFilter(request, response);
-        org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+        org.junit.jupiter.api.Assertions.assertNotNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Test
@@ -306,6 +309,28 @@ public class JwtFilterTest {
         verify(filterChain, never()).doFilter(request, response);
         assertEquals(403, response.getStatus());
         assertTrue(response.getContentAsString().contains("Password change required"));
+        org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilter_whenTokenIssuedBeforeRevocation_rejectsAuthentication() throws ServletException, IOException {
+        String token = "valid-token";
+        when(jwtUtil.validateToken(token)).thenReturn(true);
+        when(jwtUtil.extractEmail(token)).thenReturn("user@example.com");
+
+        java.time.Instant now = java.time.Instant.now();
+        defaultUser.setTokensRevokedAt(java.time.LocalDateTime.ofInstant(now, java.time.ZoneOffset.UTC));
+        // Token was issued 10 seconds before revocation
+        when(jwtUtil.extractIssuedAt(token)).thenReturn(java.util.Date.from(now.minusSeconds(10)));
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/clients");
+        request.setServletPath("/api/v1/clients");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
         org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 }

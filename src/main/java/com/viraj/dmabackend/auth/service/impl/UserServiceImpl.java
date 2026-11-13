@@ -161,7 +161,7 @@ public class UserServiceImpl implements UserService {
         updateUserFields(user, request, newRole);
 
         if (roleChanged) {
-            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 

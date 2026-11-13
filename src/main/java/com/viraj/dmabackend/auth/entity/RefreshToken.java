@@ -33,4 +33,6 @@ public class RefreshToken {
     private boolean revoked = false;
 
     private LocalDateTime revokedAt;
+
+    private String replacedByToken;
 }
