@@ -43,7 +43,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         if (!("/api/v1/auth/login".equals(path)
-                || "/api/v1/auth/refresh".equals(path))
+                || "/api/v1/auth/refresh".equals(path)
+                || "/api/v1/auth/change-password".equals(path))
                 || !"POST".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
@@ -67,9 +68,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        String errorMessage = "/api/v1/auth/refresh".equals(path)
-                ? "Too many refresh attempts. Please try again later."
-                : "Too many login attempts. Please try again later.";
+        String errorMessage;
+        if ("/api/v1/auth/refresh".equals(path)) {
+            errorMessage = "Too many refresh attempts. Please try again later.";
+        } else if ("/api/v1/auth/change-password".equals(path)) {
+            errorMessage = "Too many password change attempts. Please try again later.";
+        } else {
+            errorMessage = "Too many login attempts. Please try again later.";
+        }
 
         response.getWriter().write(
                 """

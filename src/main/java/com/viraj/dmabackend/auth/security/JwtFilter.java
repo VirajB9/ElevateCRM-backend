@@ -96,7 +96,8 @@ public class JwtFilter extends OncePerRequestFilter {
                     .setAuthentication(authentication);
         }
 
-        boolean passwordChangeRequired = jwtUtil.extractPasswordChangeRequired(token);
+        boolean passwordChangeRequired = (userDetails.getUser() != null && userDetails.getUser().isPasswordChangeRequired())
+                || jwtUtil.extractPasswordChangeRequired(token);
         String path = request.getServletPath();
         if (path != null) {
             path = path.replaceAll("/+", "/").replaceAll("/$", "");
@@ -105,6 +106,7 @@ public class JwtFilter extends OncePerRequestFilter {
         if (passwordChangeRequired && 
             !("/api/v1/auth/change-password".equals(path) || "/api/v1/auth/logout".equals(path) || "/api/v1/auth/refresh".equals(path))) {
             
+            SecurityContextHolder.clearContext();
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");

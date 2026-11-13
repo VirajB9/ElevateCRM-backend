@@ -121,4 +121,30 @@ public class ClientRequestValidationTest {
         request.setGstNumber("99ABCDE1234F1ZP");
         assertTrue(validator.validate(request).isEmpty());
     }
+
+    @Test
+    void updateClientRequest_WithNullVersion_FailsValidation() {
+        UpdateClientRequest request = new UpdateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@example.com");
+        request.setPhoneNumber("9876543210");
+        request.setStatus(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE);
+        request.setVersion(null);
+
+        assertFalse(validator.validate(request).isEmpty());
+    }
+
+    @Test
+    void updateClientRequest_WithValidVersion_PassesValidation() {
+        UpdateClientRequest request = new UpdateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@example.com");
+        request.setPhoneNumber("9876543210");
+        request.setStatus(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE);
+        request.setVersion(1L);
+
+        assertTrue(validator.validate(request).isEmpty());
+    }
 }

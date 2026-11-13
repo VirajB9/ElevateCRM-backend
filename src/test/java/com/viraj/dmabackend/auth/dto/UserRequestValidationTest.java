@@ -39,8 +39,23 @@ class UserRequestValidationTest {
         request.setLastName("Doe");
         request.setPhoneNumber("9876543210");
         request.setRoleId("role-1");
+        request.setVersion(1L);
 
         Set<ConstraintViolation<UpdateUserRequest>> violations = validator.validate(request);
         assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void updateUserRequest_nullVersion_failsValidation() {
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setFirstName("John");
+        request.setLastName("Doe");
+        request.setPhoneNumber("9876543210");
+        request.setRoleId("role-1");
+        request.setVersion(null);
+
+        Set<ConstraintViolation<UpdateUserRequest>> violations = validator.validate(request);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("version")
+                && v.getMessage().contains("Version is required"));
     }
 }

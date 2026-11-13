@@ -97,6 +97,7 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         request.setIcon("new-icon");
         request.setOrderIndex(1);
         request.setActive(true);
+        request.setVersion(1L);
 
         when(menuService.updateMenu(eq("m-1"), any())).thenReturn(MenuResponse.builder().id("m-1").build());
 

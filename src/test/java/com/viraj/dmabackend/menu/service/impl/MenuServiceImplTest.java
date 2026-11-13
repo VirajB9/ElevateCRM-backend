@@ -269,6 +269,7 @@ class MenuServiceImplTest {
                 .orderIndex(1)
                 .requiredPermission(null)
                 .active(true)
+                .version(1L)
                 .build();
         assertThat(validator.validate(updateReq)).isEmpty();
     }

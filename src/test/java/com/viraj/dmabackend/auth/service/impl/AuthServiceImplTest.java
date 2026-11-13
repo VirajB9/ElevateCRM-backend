@@ -358,6 +358,23 @@ public class AuthServiceImplTest {
     }
 
     @Test
+    void changePassword_ThrowsWhenCurrentPasswordIncorrect_AndIncrementsFailedAttempts() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("test@agency.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrongPass", "hashedpassword")).thenReturn(false);
+
+        com.viraj.dmabackend.auth.dto.ChangePasswordRequest request = new com.viraj.dmabackend.auth.dto.ChangePasswordRequest();
+        request.setCurrentPassword("wrongPass");
+        request.setNewPassword("newSecretPass123");
+
+        assertThrows(com.viraj.dmabackend.exception.BadRequestException.class, () -> authService.changePassword(request));
+        verify(mongoTemplate).findAndModify(any(), any(), any(), eq(User.class));
+    }
+
+    @Test
     void refresh_withValidToken_rotatesAndReturnsNewAuthenticationResponse() {
         com.viraj.dmabackend.auth.entity.RefreshToken activeToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")

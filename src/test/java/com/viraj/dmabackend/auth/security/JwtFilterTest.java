@@ -285,4 +285,27 @@ public class JwtFilterTest {
         verify(filterChain, times(1)).doFilter(request, response);
         org.junit.jupiter.api.Assertions.assertNotNull(SecurityContextHolder.getContext().getAuthentication());
     }
+
+    @Test
+    void doFilter_WhenUserEntityHasPasswordChangeRequired_BlocksRestrictedEndpointEvenIfTokenClaimIsFalse() throws ServletException, IOException {
+        String token = "valid-token";
+        when(jwtUtil.validateToken(token)).thenReturn(true);
+        when(jwtUtil.extractEmail(token)).thenReturn("user@example.com");
+        when(jwtUtil.extractRole(token)).thenReturn("EMPLOYEE");
+        when(jwtUtil.extractPermissions(token)).thenReturn(List.of("client:read"));
+        when(jwtUtil.extractPasswordChangeRequired(token)).thenReturn(false);
+        defaultUser.setPasswordChangeRequired(true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/clients");
+        request.setServletPath("/api/v1/clients");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, never()).doFilter(request, response);
+        assertEquals(403, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Password change required"));
+        org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
 }

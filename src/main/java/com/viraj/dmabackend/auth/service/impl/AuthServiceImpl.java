@@ -259,8 +259,53 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("User account is not active");
         }
 
+        if (user.getLockoutUntil() != null) {
+            if (user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
+                throw new UnauthorizedException("Account is temporarily locked. Try again later.");
+            } else {
+                user.setFailedLoginAttempts(0);
+                user.setLockoutUntil(null);
+                mongoTemplate.updateFirst(
+                        Query.query(Criteria.where("id").is(user.getId())),
+                        new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
+                        User.class
+                );
+            }
+        }
+
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            User updatedUser = mongoTemplate.findAndModify(
+                    Query.query(Criteria.where("id").is(user.getId())),
+                    new Update().inc("failedLoginAttempts", 1),
+                    FindAndModifyOptions.options().returnNew(true),
+                    User.class
+            );
+
+            int attempts = (updatedUser != null) ? updatedUser.getFailedLoginAttempts() : (user.getFailedLoginAttempts() + 1);
+            user.setFailedLoginAttempts(attempts);
+
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                LocalDateTime lockoutUntil = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES);
+                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS);
+                user.setLockoutUntil(lockoutUntil);
+                user.setTokensRevokedAt(revocationTime);
+                mongoTemplate.updateFirst(
+                        Query.query(Criteria.where("id").is(user.getId())),
+                        new Update().set("lockoutUntil", lockoutUntil).set("tokensRevokedAt", revocationTime),
+                        User.class
+                );
+            }
             throw new BadRequestException("Current password is incorrect");
+        }
+
+        if (user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
+            user.setFailedLoginAttempts(0);
+            user.setLockoutUntil(null);
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("id").is(user.getId())),
+                    new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
+                    User.class
+            );
         }
 
         if (request.getNewPassword() == null || !request.getNewPassword().equals(request.getNewPassword().trim())) {

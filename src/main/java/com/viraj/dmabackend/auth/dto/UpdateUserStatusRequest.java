@@ -11,4 +11,7 @@ public class UpdateUserStatusRequest {
 
     @NotNull
     private UserStatus status;
+
+    @NotNull(message = "Version is required for optimistic concurrency control")
+    private Long version;
 }

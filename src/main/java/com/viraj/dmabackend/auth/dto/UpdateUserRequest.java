@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -29,5 +30,6 @@ public class UpdateUserRequest {
     @Size(max = 50)
     private String roleId;
 
+    @NotNull(message = "Version is required for optimistic concurrency control")
     private Long version;
 }

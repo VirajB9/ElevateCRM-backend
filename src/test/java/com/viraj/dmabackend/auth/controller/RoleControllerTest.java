@@ -61,6 +61,7 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
     void updateRole_whenAuthorized_returnsOk() throws Exception {
         UpdateRoleRequest request = new UpdateRoleRequest();
         request.setDescription("Senior Manager Role");
+        request.setVersion(1L);
 
         when(roleService.updateRole(eq("r-1"), any())).thenReturn(RoleResponse.builder().id("r-1").name("SENIOR_MANAGER").build());
 
@@ -75,6 +76,7 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
     void updateRole_whenInsufficientAuthority_returnsForbidden() throws Exception {
         UpdateRoleRequest request = new UpdateRoleRequest();
         request.setDescription("Senior Manager Role");
+        request.setVersion(1L);
 
         mockMvc.perform(put("/api/v1/roles/r-1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -87,6 +89,7 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
     void assignPermissions_whenAuthorized_returnsOk() throws Exception {
         AssignPermissionsRequest request = new AssignPermissionsRequest();
         request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
 
         when(roleService.assignPermissions(eq("r-1"), any())).thenReturn(RoleResponse.builder().id("r-1").build());
 
@@ -101,6 +104,7 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
     void removePermissions_whenAuthorized_returnsOk() throws Exception {
         RemovePermissionsRequest request = new RemovePermissionsRequest();
         request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
 
         when(roleService.removePermissions(eq("r-1"), any())).thenReturn(RoleResponse.builder().id("r-1").build());
 

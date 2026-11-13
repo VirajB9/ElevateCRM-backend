@@ -48,6 +48,7 @@ class MenuDtoValidationTest {
                 .orderIndex(1)
                 .active(true)
                 .parentId("a".repeat(50))
+                .version(1L)
                 .build();
         assertThat(validator.validate(valid)).isEmpty();
 
@@ -58,7 +59,22 @@ class MenuDtoValidationTest {
                 .orderIndex(1)
                 .active(true)
                 .parentId("a".repeat(51))
+                .version(1L)
                 .build();
         assertThat(validator.validate(invalid)).isNotEmpty();
+    }
+
+    @Test
+    void updateMenuRequest_nullVersion_failsValidation() {
+        UpdateMenuRequest invalid = UpdateMenuRequest.builder()
+                .title("Test Menu")
+                .path("/test")
+                .icon("icon")
+                .orderIndex(1)
+                .active(true)
+                .version(null)
+                .build();
+        assertThat(validator.validate(invalid)).anyMatch(v -> v.getPropertyPath().toString().equals("version")
+                && v.getMessage().contains("Version is required"));
     }
 }

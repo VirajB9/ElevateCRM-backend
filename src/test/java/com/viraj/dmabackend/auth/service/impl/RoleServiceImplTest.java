@@ -1,5 +1,7 @@
 package com.viraj.dmabackend.auth.service.impl;
 
+import com.viraj.dmabackend.auth.dto.AssignPermissionsRequest;
+import com.viraj.dmabackend.auth.dto.RemovePermissionsRequest;
 import com.viraj.dmabackend.auth.dto.UserResponse;
 import com.viraj.dmabackend.auth.entity.Permission;
 import com.viraj.dmabackend.auth.entity.Role;
@@ -277,6 +279,52 @@ public class RoleServiceImplTest {
 
         assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
                 () -> roleService.updateRole("role-target", request));
+    }
+
+    @Test
+    void assignPermissions_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-target").name("CUSTOM_ROLE").build();
+        targetRole.setVersion(2L);
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-target")).thenReturn(Optional.of(targetRole));
+
+        AssignPermissionsRequest request = new AssignPermissionsRequest();
+        request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> roleService.assignPermissions("role-target", request));
+    }
+
+    @Test
+    void removePermissions_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-target").name("CUSTOM_ROLE").build();
+        targetRole.setVersion(2L);
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-target")).thenReturn(Optional.of(targetRole));
+
+        RemovePermissionsRequest request = new RemovePermissionsRequest();
+        request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> roleService.removePermissions("role-target", request));
     }
 
     @Test

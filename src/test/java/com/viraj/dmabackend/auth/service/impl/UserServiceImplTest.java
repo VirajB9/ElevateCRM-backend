@@ -232,6 +232,22 @@ public class UserServiceImplTest {
     }
 
     @Test
+    void updateUserStatus_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        authenticateAs(ownerUser);
+        managerUser.setVersion(2L);
+
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+
+        UpdateUserStatusRequest request = new UpdateUserStatusRequest();
+        request.setStatus(UserStatus.ACTIVE);
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> userService.updateUserStatus("user-manager", request));
+    }
+
+    @Test
     void softDeleteUser_deletesRefreshTokens() {
         authenticateAs(ownerUser);
         when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
