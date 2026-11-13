@@ -388,4 +388,41 @@ public class RoleServiceImplTest {
                 () -> roleService.removePermissions("manager-role", request)
         );
     }
+
+    @Test
+    void removePermissions_ThrowsWhenRemovingEssentialBaselinePermissionFromSystemRole() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+
+        Role systemRole = Role.builder()
+                .id("emp-role")
+                .name("EMPLOYEE")
+                .systemRole(true)
+                .permissionIds(new java.util.ArrayList<>(List.of("perm-client-read", "perm-extra")))
+                .build();
+        when(roleRepository.findById("emp-role")).thenReturn(Optional.of(systemRole));
+
+        Permission clientReadPerm = Permission.builder()
+                .id("perm-client-read")
+                .permissionType(com.viraj.dmabackend.auth.enums.PermissionType.CLIENT_READ)
+                .build();
+        when(permissionRepository.findAllById(List.of("perm-client-read")))
+                .thenReturn(List.of(clientReadPerm));
+
+        com.viraj.dmabackend.auth.dto.RemovePermissionsRequest request = new com.viraj.dmabackend.auth.dto.RemovePermissionsRequest();
+        request.setPermissionIds(List.of("perm-client-read"));
+
+        BadRequestException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                BadRequestException.class,
+                () -> roleService.removePermissions("emp-role", request)
+        );
+        org.assertj.core.api.Assertions.assertThat(ex.getMessage()).contains("Cannot remove essential baseline permission");
+    }
 }

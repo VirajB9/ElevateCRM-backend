@@ -4,6 +4,7 @@ import com.viraj.dmabackend.auth.dto.*;
 import com.viraj.dmabackend.auth.entity.Permission;
 import com.viraj.dmabackend.auth.entity.Role;
 import com.viraj.dmabackend.auth.entity.User;
+import com.viraj.dmabackend.auth.enums.PermissionType;
 import com.viraj.dmabackend.auth.exception.PermissionNotFoundException;
 import com.viraj.dmabackend.auth.exception.RoleNotFoundException;
 import com.viraj.dmabackend.auth.exception.SystemRoleModificationException;
@@ -183,6 +184,8 @@ public class RoleServiceImpl implements RoleService {
 
         preventOwnerModification(role);
 
+        validateSystemRoleBaselinePermissions(role, normalizedPermissionIds);
+
         removePermissionsFromRole(role, normalizedPermissionIds);
 
         if (role.isSystemRole() && (role.getPermissionIds() == null || role.getPermissionIds().isEmpty())) {
@@ -244,6 +247,41 @@ public class RoleServiceImpl implements RoleService {
 
         if ("OWNER".equals(role.getName())) {
             throw new SystemRoleModificationException(role.getName());
+        }
+    }
+
+    private void validateSystemRoleBaselinePermissions(Role role, List<String> permissionsToRemove) {
+        if (!role.isSystemRole() || role.getName() == null) {
+            return;
+        }
+
+        Set<PermissionType> baselineTypes = switch (role.getName().toUpperCase()) {
+            case "MANAGER", "EMPLOYEE" -> Set.of(
+                    PermissionType.CLIENT_READ,
+                    PermissionType.LEAD_READ,
+                    PermissionType.PROJECT_READ,
+                    PermissionType.INVOICE_READ,
+                    PermissionType.MENU_READ
+            );
+            case "INTERN" -> Set.of(
+                    PermissionType.CLIENT_READ,
+                    PermissionType.LEAD_READ,
+                    PermissionType.PROJECT_READ,
+                    PermissionType.MENU_READ
+            );
+            default -> java.util.Collections.emptySet();
+        };
+
+        if (baselineTypes.isEmpty()) {
+            return;
+        }
+
+        List<Permission> removingPermissions = permissionRepository.findAllById(permissionsToRemove);
+        for (Permission p : removingPermissions) {
+            if (p.getPermissionType() != null && baselineTypes.contains(p.getPermissionType())) {
+                throw new BadRequestException("Cannot remove essential baseline permission '" +
+                        p.getPermissionType() + "' from system role: " + role.getName());
+            }
         }
     }
 
