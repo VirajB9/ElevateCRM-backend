@@ -24,6 +24,12 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
     @Query(value = "{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
 
+    @Query(value = "{ 'email': ?0, 'status': { $nin: ?1 }, 'deleted': false }", exists = true)
+    boolean existsByEmailAndStatusNotIn(String email, java.util.Collection<LeadStatus> statuses);
+
+    @Query(value = "{ 'phoneNumber': ?0, 'status': { $nin: ?1 }, 'deleted': false }", exists = true)
+    boolean existsByPhoneNumberAndStatusNotIn(String phoneNumber, java.util.Collection<LeadStatus> statuses);
+
     @Query("{ 'email': ?0, 'deleted': false }")
     Optional<Lead> findByEmail(String email);
 
@@ -35,6 +41,12 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
 
     @Query("{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Lead> findByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
+
+    @Query("{ 'email': ?0, 'status': { $nin: ?1 }, 'deleted': false }")
+    Optional<Lead> findByEmailAndStatusNotIn(String email, java.util.Collection<LeadStatus> statuses);
+
+    @Query("{ 'phoneNumber': ?0, 'status': { $nin: ?1 }, 'deleted': false }")
+    Optional<Lead> findByPhoneNumberAndStatusNotIn(String phoneNumber, java.util.Collection<LeadStatus> statuses);
 
     @Query("{ 'status': ?0, 'deleted': false }")
     Page<Lead> findByStatus(LeadStatus status, Pageable pageable);

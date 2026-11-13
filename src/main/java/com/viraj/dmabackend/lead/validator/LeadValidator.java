@@ -20,16 +20,22 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LeadValidator {
 
+    public static final java.util.Set<LeadStatus> INACTIVE_LEAD_STATUSES = java.util.Set.of(
+            LeadStatus.DELETED,
+            LeadStatus.LOST,
+            LeadStatus.CONVERTED
+    );
+
     private final LeadRepository leadRepository;
     private final UserService userService;
 
     public void validateDuplicateLead(CreateLeadRequest request) {
         String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
-        if (email != null && leadRepository.existsByEmailAndStatusNot(email, LeadStatus.DELETED)) {
+        if (email != null && leadRepository.existsByEmailAndStatusNotIn(email, INACTIVE_LEAD_STATUSES)) {
             throw new DuplicateLeadException("email", request.getEmail());
         }
         String phone = request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null;
-        if (phone != null && leadRepository.existsByPhoneNumberAndStatusNot(phone, LeadStatus.DELETED)) {
+        if (phone != null && leadRepository.existsByPhoneNumberAndStatusNotIn(phone, INACTIVE_LEAD_STATUSES)) {
             throw new DuplicateLeadException("phone number", request.getPhoneNumber());
         }
     }
@@ -37,7 +43,7 @@ public class LeadValidator {
     public void validateDuplicateLeadForUpdate(Lead existingLead, UpdateLeadRequest request) {
         String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
         if (email != null) {
-            leadRepository.findByEmailAndStatusNot(email, LeadStatus.DELETED)
+            leadRepository.findByEmailAndStatusNotIn(email, INACTIVE_LEAD_STATUSES)
                     .ifPresent(lead -> {
                         if (!lead.getId().equals(existingLead.getId())) {
                             throw new DuplicateLeadException("email", request.getEmail());
@@ -47,7 +53,7 @@ public class LeadValidator {
 
         String phone = request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null;
         if (phone != null) {
-            leadRepository.findByPhoneNumberAndStatusNot(phone, LeadStatus.DELETED)
+            leadRepository.findByPhoneNumberAndStatusNotIn(phone, INACTIVE_LEAD_STATUSES)
                     .ifPresent(lead -> {
                         if (!lead.getId().equals(existingLead.getId())) {
                             throw new DuplicateLeadException("phone number", request.getPhoneNumber());

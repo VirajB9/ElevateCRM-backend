@@ -56,7 +56,7 @@ public class LeadValidatorTest {
         CreateLeadRequest request = new CreateLeadRequest();
         request.setEmail("test@example.com");
         
-        when(leadRepository.existsByEmailAndStatusNot("test@example.com", LeadStatus.DELETED)).thenReturn(true);
+        when(leadRepository.existsByEmailAndStatusNotIn("test@example.com", LeadValidator.INACTIVE_LEAD_STATUSES)).thenReturn(true);
 
         assertThrows(DuplicateLeadException.class, 
             () -> leadValidator.validateDuplicateLead(request));
@@ -68,11 +68,23 @@ public class LeadValidatorTest {
         request.setEmail("new@example.com");
         request.setPhoneNumber("1234567890");
         
-        when(leadRepository.existsByEmailAndStatusNot("new@example.com", LeadStatus.DELETED)).thenReturn(false);
-        when(leadRepository.existsByPhoneNumberAndStatusNot("1234567890", LeadStatus.DELETED)).thenReturn(true);
+        when(leadRepository.existsByEmailAndStatusNotIn("new@example.com", LeadValidator.INACTIVE_LEAD_STATUSES)).thenReturn(false);
+        when(leadRepository.existsByPhoneNumberAndStatusNotIn("1234567890", LeadValidator.INACTIVE_LEAD_STATUSES)).thenReturn(true);
 
         assertThrows(DuplicateLeadException.class, 
             () -> leadValidator.validateDuplicateLead(request));
+    }
+
+    @Test
+    void validateDuplicateLead_WhenPriorLeadIsLostOrConverted_AllowsNewLeadCreation() {
+        CreateLeadRequest request = new CreateLeadRequest();
+        request.setEmail("returning.customer@example.com");
+        request.setPhoneNumber("1234567890");
+
+        when(leadRepository.existsByEmailAndStatusNotIn("returning.customer@example.com", LeadValidator.INACTIVE_LEAD_STATUSES)).thenReturn(false);
+        when(leadRepository.existsByPhoneNumberAndStatusNotIn("1234567890", LeadValidator.INACTIVE_LEAD_STATUSES)).thenReturn(false);
+
+        assertDoesNotThrow(() -> leadValidator.validateDuplicateLead(request));
     }
 
     @Test
@@ -132,7 +144,7 @@ public class LeadValidatorTest {
         CreateLeadRequest request = new CreateLeadRequest();
         request.setEmail("  Lead.Test@EXAMPLE.COM  ");
 
-        when(leadRepository.existsByEmailAndStatusNot("lead.test@example.com", LeadStatus.DELETED))
+        when(leadRepository.existsByEmailAndStatusNotIn("lead.test@example.com", LeadValidator.INACTIVE_LEAD_STATUSES))
                 .thenReturn(true);
 
         assertThrows(DuplicateLeadException.class, () -> leadValidator.validateDuplicateLead(request));
@@ -146,7 +158,7 @@ public class LeadValidatorTest {
         UpdateLeadRequest request = new UpdateLeadRequest();
         request.setEmail("  Other.Lead@EXAMPLE.COM  ");
 
-        when(leadRepository.findByEmailAndStatusNot("other.lead@example.com", LeadStatus.DELETED))
+        when(leadRepository.findByEmailAndStatusNotIn("other.lead@example.com", LeadValidator.INACTIVE_LEAD_STATUSES))
                 .thenReturn(Optional.of(conflict));
 
         assertThrows(DuplicateLeadException.class,
@@ -158,7 +170,7 @@ public class LeadValidatorTest {
         CreateLeadRequest request = new CreateLeadRequest();
         request.setPhoneNumber("  9876543210  ");
 
-        when(leadRepository.existsByPhoneNumberAndStatusNot("9876543210", LeadStatus.DELETED))
+        when(leadRepository.existsByPhoneNumberAndStatusNotIn("9876543210", LeadValidator.INACTIVE_LEAD_STATUSES))
                 .thenReturn(true);
 
         assertThrows(DuplicateLeadException.class, () -> leadValidator.validateDuplicateLead(request));
@@ -172,7 +184,7 @@ public class LeadValidatorTest {
         UpdateLeadRequest request = new UpdateLeadRequest();
         request.setPhoneNumber("  9876543210  ");
 
-        when(leadRepository.findByPhoneNumberAndStatusNot("9876543210", LeadStatus.DELETED))
+        when(leadRepository.findByPhoneNumberAndStatusNotIn("9876543210", LeadValidator.INACTIVE_LEAD_STATUSES))
                 .thenReturn(Optional.of(conflict));
 
         assertThrows(DuplicateLeadException.class,
