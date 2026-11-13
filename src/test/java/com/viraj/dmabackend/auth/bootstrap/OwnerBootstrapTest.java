@@ -62,6 +62,24 @@ class OwnerBootstrapTest {
         assertThat(savedOwner.getEmail()).isEqualTo("owner@agency.com");
         assertThat(savedOwner.getRoleId()).isEqualTo("role-owner-id");
         assertThat(savedOwner.getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(savedOwner.getPhoneNumber()).isEqualTo("9999999999");
+    }
+
+    @Test
+    void run_whenCustomPhoneNumberProvided_createsOwnerWithConfiguredPhone() throws Exception {
+        when(ownerProperties.getInitialPassword()).thenReturn("Secret123!");
+        when(ownerProperties.getPhoneNumber()).thenReturn("9876543210");
+        when(roleRepository.findByName("OWNER")).thenReturn(Optional.of(ownerRole));
+        when(userRepository.findByEmail("owner@agency.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("Secret123!")).thenReturn("encodedPassword");
+
+        ownerBootstrap.run();
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+
+        User savedOwner = captor.getValue();
+        assertThat(savedOwner.getPhoneNumber()).isEqualTo("9876543210");
     }
 
     @Test

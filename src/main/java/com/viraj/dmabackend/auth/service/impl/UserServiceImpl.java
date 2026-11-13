@@ -161,7 +161,7 @@ public class UserServiceImpl implements UserService {
         updateUserFields(user, request, newRole);
 
         if (roleChanged) {
-            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 
@@ -176,6 +176,13 @@ public class UserServiceImpl implements UserService {
         userValidator.validateStatusUpdate(request.getStatus());
 
         User user = findUserById(userId);
+
+        if (request.getVersion() != null && !request.getVersion().equals(user.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "User has been modified by another operation. Please refresh and try again."
+            );
+        }
+
         Role targetRole = findRoleById(user.getRoleId());
         if ("OWNER".equals(targetRole.getName())) {
             throw new BadRequestException("The system Owner account status cannot be modified");

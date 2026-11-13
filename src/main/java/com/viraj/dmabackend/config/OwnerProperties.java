@@ -12,4 +12,6 @@ public class OwnerProperties {
     private String email;
 
     private String initialPassword;
+
+    private String phoneNumber = "9999999999";
 }

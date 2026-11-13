@@ -17,10 +17,6 @@ public class MenuBootstrap implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        if (menuRepository.count() > 0) {
-            return;
-        }
-
         // ==========================================
         // 1. Root: Dashboard
         // ==========================================
@@ -164,16 +160,42 @@ public class MenuBootstrap implements CommandLineRunner {
     }
 
     private Menu createMenu(String title, String path, String icon, String parentId, Integer orderIndex, String requiredPermission) {
-        Menu menu = Menu.builder()
-                .title(title)
-                .path(path)
-                .icon(icon)
-                .parentId(parentId)
-                .orderIndex(orderIndex)
-                .requiredPermission(requiredPermission)
-                .active(true)
-                .build();
+        Menu existing = menuRepository.findByPath(path).orElse(null);
+        if (existing == null) {
+            existing = menuRepository.findByTitle(title).orElse(null);
+        }
 
-        return menuRepository.save(menu);
+        if (existing == null) {
+            Menu menu = Menu.builder()
+                    .title(title)
+                    .path(path)
+                    .icon(icon)
+                    .parentId(parentId)
+                    .orderIndex(orderIndex)
+                    .requiredPermission(requiredPermission)
+                    .active(true)
+                    .build();
+            return menuRepository.save(menu);
+        }
+
+        boolean updated = false;
+        if (parentId != null && !parentId.equals(existing.getParentId())) {
+            existing.setParentId(parentId);
+            updated = true;
+        }
+        if (requiredPermission != null && !requiredPermission.equals(existing.getRequiredPermission())) {
+            existing.setRequiredPermission(requiredPermission);
+            updated = true;
+        }
+        if (icon != null && !icon.equals(existing.getIcon())) {
+            existing.setIcon(icon);
+            updated = true;
+        }
+        if (orderIndex != null && !orderIndex.equals(existing.getOrderIndex())) {
+            existing.setOrderIndex(orderIndex);
+            updated = true;
+        }
+
+        return updated ? menuRepository.save(existing) : existing;
     }
 }

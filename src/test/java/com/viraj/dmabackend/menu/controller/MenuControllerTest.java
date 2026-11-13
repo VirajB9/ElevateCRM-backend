@@ -97,6 +97,7 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         request.setIcon("new-icon");
         request.setOrderIndex(1);
         request.setActive(true);
+        request.setVersion(1L);
 
         when(menuService.updateMenu(eq("m-1"), any())).thenReturn(MenuResponse.builder().id("m-1").build());
 
@@ -112,6 +113,15 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         doNothing().when(menuService).deactivateMenu("m-1");
 
         mockMvc.perform(patch("/api/v1/menus/m-1/deactivate"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = "menu:delete")
+    void deactivateMenu_withDeleteMethod_returnsOk() throws Exception {
+        doNothing().when(menuService).deactivateMenu("m-1");
+
+        mockMvc.perform(delete("/api/v1/menus/m-1"))
                 .andExpect(status().isOk());
     }
 

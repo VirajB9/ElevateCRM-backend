@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,5 +14,6 @@ public class UpdateRoleRequest {
     @Size(max = 255, message = "Description cannot exceed 255 characters")
     private String description;
 
+    @NotNull(message = "Version is required for optimistic concurrency control")
     private Long version;
 }

@@ -39,5 +39,6 @@ public class UpdateMenuRequest {
     @NotNull(message = "Active status is required")
     private Boolean active;
 
+    @NotNull(message = "Version is required for optimistic concurrency control")
     private Long version;
 }

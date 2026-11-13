@@ -72,11 +72,12 @@ public class InvoiceController {
             @ApiResponse(responseCode = "404", description = "Invoice not found"),
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
-    public java.util.List<InvoiceHistoryResponse> getInvoiceHistory(
+    public Page<InvoiceHistoryResponse> getInvoiceHistory(
             @Parameter(description = "Unique ID of the invoice", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
-            @PathVariable String invoiceId) {
-        return invoiceService.getInvoiceHistory(invoiceId);
+            @PathVariable String invoiceId,
+            Pageable pageable) {
+        return invoiceService.getInvoiceHistory(invoiceId, pageable);
     }
 
     @PreAuthorize("hasAuthority('invoice:read')")

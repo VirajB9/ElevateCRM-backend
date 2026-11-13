@@ -11,6 +11,7 @@ import com.viraj.dmabackend.lead.entity.Lead;
 import com.viraj.dmabackend.lead.enums.LeadSource;
 import com.viraj.dmabackend.lead.enums.LeadStatus;
 import com.viraj.dmabackend.lead.event.LeadConvertedEvent;
+import com.viraj.dmabackend.lead.exception.LeadAlreadyConvertedException;
 import com.viraj.dmabackend.lead.exception.LeadNotFoundException;
 import com.viraj.dmabackend.lead.mapper.LeadMapper;
 import com.viraj.dmabackend.lead.repository.LeadRepository;
@@ -73,6 +74,7 @@ public class LeadServiceImpl implements LeadService {
                 .build();
 
         LeadStatus originalStatus = lead.getStatus();
+        Boolean originalActivePipeline = lead.getActivePipeline();
         String originalConvertedClientId = lead.getConvertedClientId();
         LocalDateTime originalConvertedAt = lead.getConvertedAt();
 
@@ -82,6 +84,7 @@ public class LeadServiceImpl implements LeadService {
             client = clientService.createClientFromLead(data);
 
             lead.setStatus(LeadStatus.CONVERTED);
+            lead.setActivePipeline(false);
             lead.setConvertedClientId(client.getId());
             lead.setConvertedAt(LocalDateTime.now(ZoneOffset.UTC));
 
@@ -96,8 +99,15 @@ public class LeadServiceImpl implements LeadService {
                 }
             }
             lead.setStatus(originalStatus);
+            lead.setActivePipeline(originalActivePipeline);
             lead.setConvertedClientId(originalConvertedClientId);
             lead.setConvertedAt(originalConvertedAt);
+            if (ex instanceof org.springframework.dao.OptimisticLockingFailureException) {
+                Lead currentInDb = leadRepository.findById(leadId).orElse(null);
+                if (currentInDb != null && (currentInDb.getStatus() == LeadStatus.CONVERTED || currentInDb.getConvertedClientId() != null)) {
+                    throw new LeadAlreadyConvertedException(leadId);
+                }
+            }
             throw ex;
         }
 
@@ -214,6 +224,7 @@ public class LeadServiceImpl implements LeadService {
         leadValidator.validateLeadNotConverted(lead);
         lead.setStatus(LeadStatus.DELETED);
         lead.setDeleted(true);
+        lead.setActivePipeline(false);
         leadRepository.save(lead);
     }
 
@@ -256,10 +267,15 @@ public class LeadServiceImpl implements LeadService {
         lead.setIndustry(normalizeTrim(request.getIndustry()));
         lead.setSource(request.getSource());
         lead.setStatus(request.getStatus());
+        lead.setActivePipeline(isActivePipelineStatus(request.getStatus()));
         lead.setAssignedUserId(normalizeAssignedUserId(request.getAssignedUserId()));
         lead.setEstimatedBudget(normalizeBudget(request.getEstimatedBudget()));
         lead.setRequirements(normalizeTrim(request.getRequirements()));
         lead.setNotes(normalizeTrim(request.getNotes()));
+    }
+
+    private boolean isActivePipelineStatus(LeadStatus status) {
+        return status != null && status != LeadStatus.LOST && status != LeadStatus.CONVERTED && status != LeadStatus.DELETED;
     }
 
     private BigDecimal normalizeBudget(BigDecimal budget) {

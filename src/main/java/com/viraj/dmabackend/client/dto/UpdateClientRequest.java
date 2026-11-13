@@ -61,5 +61,6 @@ public class UpdateClientRequest {
     @NotNull
     private ClientStatus status;
 
+    @NotNull(message = "Version is required for optimistic concurrency control")
     private Long version;
 }

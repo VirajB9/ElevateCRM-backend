@@ -17,7 +17,7 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query(value = "{ 'phoneNumber': ?0, 'deleted': false }", exists = true)
     boolean existsByPhoneNumber(String phoneNumber);
 
-    @Query(value = "{ 'gstNumber': ?0, 'deleted': false }", exists = true)
+    @Query(value = "{ 'gstNumber': ?0, 'deleted': false, 'gstNumber': { $type: 'string' } }", exists = true)
     boolean existsByGstNumber(String gstNumber);
 
     @Query(value = "{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
@@ -26,7 +26,7 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query(value = "{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndStatusNot(String phoneNumber, ClientStatus status);
 
-    @Query(value = "{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
+    @Query(value = "{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false, 'gstNumber': { $type: 'string' } }", exists = true)
     boolean existsByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
 
     @Query("{ 'email': ?0, 'deleted': false }")
@@ -35,7 +35,7 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query("{ 'phoneNumber': ?0, 'deleted': false }")
     Optional<Client> findByPhoneNumber(String phoneNumber);
 
-    @Query("{ 'gstNumber': ?0, 'deleted': false }")
+    @Query("{ 'gstNumber': ?0, 'deleted': false, 'gstNumber': { $type: 'string' } }")
     Optional<Client> findByGstNumber(String gstNumber);
 
     @Query("{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
@@ -44,7 +44,7 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query("{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Client> findByPhoneNumberAndStatusNot(String phoneNumber, ClientStatus status);
 
-    @Query("{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
+    @Query("{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false, 'gstNumber': { $type: 'string' } }")
     Optional<Client> findByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
 
     @Query("{ 'status': ?0, 'deleted': false }")
@@ -56,7 +56,7 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query(value = "{ 'phoneNumber': ?0, '_id': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, String clientId);
 
-    @Query(value = "{ 'gstNumber': ?0, '_id': { $ne: ?1 }, 'deleted': false }", exists = true)
+    @Query(value = "{ 'gstNumber': ?0, '_id': { $ne: ?1 }, 'deleted': false, 'gstNumber': { $type: 'string' } }", exists = true)
     boolean existsByGstNumberAndIdNot(String gstNumber, String clientId);
 
     @Query(value = "{ 'email': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)
@@ -65,7 +65,7 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query(value = "{ 'phoneNumber': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndIdNotAndStatusNot(String phoneNumber, String clientId, ClientStatus status);
 
-    @Query(value = "{ 'gstNumber': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)
+    @Query(value = "{ 'gstNumber': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false, 'gstNumber': { $type: 'string' } }", exists = true)
     boolean existsByGstNumberAndIdNotAndStatusNot(String gstNumber, String clientId, ClientStatus status);
 
     @Query("{ 'status': { $ne: ?0 }, 'deleted': false }")

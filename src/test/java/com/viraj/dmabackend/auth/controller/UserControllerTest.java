@@ -124,6 +124,7 @@ class UserControllerTest extends BaseControllerWebMvcTest {
         request.setLastName("Smith");
         request.setPhoneNumber("9876543210");
         request.setRoleId("role-2");
+        request.setVersion(1L);
 
         when(userService.updateUser(eq("u-1"), any())).thenReturn(UserResponse.builder().id("u-1").build());
 
@@ -141,6 +142,7 @@ class UserControllerTest extends BaseControllerWebMvcTest {
         request.setLastName("Smith");
         request.setPhoneNumber("9876543210");
         request.setRoleId("role-2");
+        request.setVersion(1L);
 
         mockMvc.perform(put("/api/v1/users/u-1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -153,6 +155,7 @@ class UserControllerTest extends BaseControllerWebMvcTest {
     void updateUserStatus_whenAuthorized_returnsOk() throws Exception {
         UpdateUserStatusRequest request = new UpdateUserStatusRequest();
         request.setStatus(UserStatus.SUSPENDED);
+        request.setVersion(1L);
 
         when(userService.updateUserStatus(eq("u-1"), any())).thenReturn(UserResponse.builder().id("u-1").build());
 
@@ -167,6 +170,7 @@ class UserControllerTest extends BaseControllerWebMvcTest {
     void updateUserStatus_whenInsufficientAuthority_returnsForbidden() throws Exception {
         UpdateUserStatusRequest request = new UpdateUserStatusRequest();
         request.setStatus(UserStatus.SUSPENDED);
+        request.setVersion(1L);
 
         mockMvc.perform(patch("/api/v1/users/u-1/status")
                         .contentType(MediaType.APPLICATION_JSON)

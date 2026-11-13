@@ -87,6 +87,28 @@ class InvoiceValidatorTest {
     }
 
     @Test
+    void validateCreateInvoice_whenProjectIsArchived_throwsBadRequestException() {
+        ClientResponse activeClient = ClientResponse.builder().id("client-1").status(ClientStatus.ACTIVE).build();
+        ProjectResponse archivedProject = ProjectResponse.builder().id("proj-1").clientId("client-1").status(ProjectStatus.ARCHIVED).build();
+
+        when(clientService.getClientById("client-1")).thenReturn(activeClient);
+        when(projectService.getProjectById("proj-1")).thenReturn(archivedProject);
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(10))
+                .items(Collections.emptyList())
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        assertThatThrownBy(() -> invoiceValidator.validateCreateInvoice(request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Cannot create an invoice for an archived project");
+    }
+
+    @Test
     void validateCreateInvoice_whenClientAndProjectAreValid_passesValidation() {
         ClientResponse activeClient = ClientResponse.builder().id("client-1").status(ClientStatus.ACTIVE).build();
         ProjectResponse activeProject = ProjectResponse.builder().id("proj-1").clientId("client-1").status(ProjectStatus.ACTIVE).build();

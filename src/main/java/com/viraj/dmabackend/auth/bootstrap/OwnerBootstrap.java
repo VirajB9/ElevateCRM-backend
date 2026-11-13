@@ -72,11 +72,15 @@ public class OwnerBootstrap implements CommandLineRunner {
             );
         }
 
+        String phoneNumber = ownerProperties.getPhoneNumber() != null && !ownerProperties.getPhoneNumber().isBlank()
+                ? ownerProperties.getPhoneNumber().trim()
+                : "9999999999";
+
         User owner = User.builder()
                 .firstName("Owner")
                 .lastName("Admin")
                 .email(ownerEmail)
-                .phoneNumber("9999999999")
+                .phoneNumber(phoneNumber)
                 .password(passwordEncoder.encode(initialPassword))
                 .passwordChangeRequired(true)
                 .roleId(ownerRole.getId())

@@ -92,9 +92,9 @@ public class MenuController {
     }
 
     @PreAuthorize("hasAuthority('menu:delete')")
-    @PatchMapping("/{menuId}/deactivate")
+    @RequestMapping(value = {"/{menuId}", "/{menuId}/deactivate"}, method = {RequestMethod.DELETE, RequestMethod.PATCH})
     @ResponseStatus(HttpStatus.OK)
-    @Operation(summary = "Deactivate Menu", description = "Soft deletes a menu item by setting it to inactive. Requires 'menu:delete' authority.")
+    @Operation(summary = "Deactivate / Delete Menu", description = "Soft deletes a menu item by setting it to inactive. Requires 'menu:delete' authority.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Menu item deactivated successfully"),
             @ApiResponse(responseCode = "404", description = "Menu item not found"),

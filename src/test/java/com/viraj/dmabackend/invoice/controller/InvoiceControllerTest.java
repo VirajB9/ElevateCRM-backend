@@ -102,7 +102,7 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "invoice:read")
     void getInvoiceHistory_whenAuthorized_returnsOk() throws Exception {
-        when(invoiceService.getInvoiceHistory("inv-1")).thenReturn(Collections.emptyList());
+        when(invoiceService.getInvoiceHistory(eq("inv-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/invoices/inv-1/history"))
                 .andExpect(status().isOk());

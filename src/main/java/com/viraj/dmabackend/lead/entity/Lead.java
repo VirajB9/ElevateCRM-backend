@@ -36,11 +36,15 @@ public class Lead extends BaseEntity {
 
     private String companyName;
 
-    @Indexed(unique = true, partialFilter = "{'deleted': false}")
+    @Builder.Default
+    @Indexed
+    private Boolean activePipeline = true;
+
+    @Indexed(unique = true, partialFilter = "{'activePipeline': true}")
     @TextIndexed
     private String email;
 
-    @Indexed(unique = true, partialFilter = "{'deleted': false}")
+    @Indexed(unique = true, partialFilter = "{'activePipeline': true}")
     private String phoneNumber;
 
     private String website;

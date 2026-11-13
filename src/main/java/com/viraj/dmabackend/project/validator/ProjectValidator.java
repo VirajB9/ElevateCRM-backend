@@ -22,6 +22,7 @@ public class ProjectValidator {
     private final ProjectRepository projectRepository;
     private final ClientService clientService;
     private final List<ProjectDeletionGuard> projectDeletionGuards;
+    private final List<ProjectCompletionGuard> projectCompletionGuards;
 
     public void validateClientExists(String clientId) {
         String normalizedClientId = clientId != null ? clientId.trim() : null;
@@ -56,6 +57,26 @@ public class ProjectValidator {
         }
         if (endDate.isAfter(LocalDate.now(java.time.ZoneOffset.UTC))) {
             throw new BadRequestException("Completion date cannot be in the future.");
+        }
+    }
+
+    public void validateProjectCompletionGuards(String projectId) {
+        if (projectCompletionGuards != null) {
+            for (ProjectCompletionGuard guard : projectCompletionGuards) {
+                guard.validateCanCompleteProject(projectId);
+            }
+        }
+    }
+
+    public void validateActiveProjectDates(ProjectStatus status, LocalDate startDate, LocalDate endDate) {
+        if (status == ProjectStatus.ACTIVE) {
+            LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
+            if (startDate != null && startDate.isAfter(today)) {
+                throw new BadRequestException("Active projects cannot have a start date in the future.");
+            }
+            if (endDate != null && endDate.isBefore(today)) {
+                throw new BadRequestException("Active projects cannot have an end date in the past.");
+            }
         }
     }
 
@@ -123,6 +144,9 @@ public class ProjectValidator {
             case PLANNING -> {
                 if (newStatus == ProjectStatus.COMPLETED) {
                     throw new BadRequestException("Planning projects cannot be marked completed directly without being active.");
+                }
+                if (newStatus == ProjectStatus.ON_HOLD) {
+                    throw new BadRequestException("Planning projects cannot be placed on hold directly. Start the project first.");
                 }
             }
             case ON_HOLD -> {

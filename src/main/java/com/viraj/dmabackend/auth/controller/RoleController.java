@@ -77,7 +77,7 @@ public class RoleController {
     }
 
     @PreAuthorize("hasAuthority('role:update')")
-    @PatchMapping("/{roleId}/permissions")
+    @RequestMapping(value = "/{roleId}/permissions", method = {RequestMethod.POST, RequestMethod.PATCH})
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Assign Permissions To Role", description = "Grants additional permissions to a specific role. Requires 'role:update' authority.")
     @ApiResponses({

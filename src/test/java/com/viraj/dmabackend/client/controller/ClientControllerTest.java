@@ -121,6 +121,7 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
         request.setEmail("bob@example.com");
         request.setPhoneNumber("+1234567890");
         request.setStatus(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE);
+        request.setVersion(1L);
 
         when(clientService.updateClient(eq("c-1"), any())).thenReturn(ClientResponse.builder().id("c-1").build());
 

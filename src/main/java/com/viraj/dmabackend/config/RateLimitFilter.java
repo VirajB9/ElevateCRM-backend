@@ -42,9 +42,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
             path = path.replaceAll("/+", "/").replaceAll("/$", "");
         }
 
-        if (!("/api/v1/auth/login".equals(path)
-                || "/api/v1/auth/refresh".equals(path))
-                || !"POST".equalsIgnoreCase(request.getMethod())) {
+        boolean isChangePassword = "/api/v1/auth/change-password".equals(path);
+        boolean isRateLimitedPath = "/api/v1/auth/login".equals(path)
+                || "/api/v1/auth/refresh".equals(path)
+                || isChangePassword;
+
+        String method = request.getMethod();
+        boolean isAllowedMethod = "POST".equalsIgnoreCase(method)
+                || (isChangePassword && "PATCH".equalsIgnoreCase(method));
+
+        if (!isRateLimitedPath || !isAllowedMethod) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -67,9 +74,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        String errorMessage = "/api/v1/auth/refresh".equals(path)
-                ? "Too many refresh attempts. Please try again later."
-                : "Too many login attempts. Please try again later.";
+        String errorMessage;
+        if ("/api/v1/auth/refresh".equals(path)) {
+            errorMessage = "Too many refresh attempts. Please try again later.";
+        } else if ("/api/v1/auth/change-password".equals(path)) {
+            errorMessage = "Too many password change attempts. Please try again later.";
+        } else {
+            errorMessage = "Too many login attempts. Please try again later.";
+        }
 
         response.getWriter().write(
                 """

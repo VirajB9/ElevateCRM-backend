@@ -35,11 +35,14 @@ public class ProjectValidatorTest {
     @Mock
     private ProjectDeletionGuard projectDeletionGuard;
 
+    @Mock
+    private ProjectCompletionGuard projectCompletionGuard;
+
     private ProjectValidator projectValidator;
 
     @BeforeEach
     void setUp() {
-        projectValidator = new ProjectValidator(projectRepository, clientService, List.of(projectDeletionGuard));
+        projectValidator = new ProjectValidator(projectRepository, clientService, List.of(projectDeletionGuard), List.of(projectCompletionGuard));
     }
 
     @Test
@@ -142,6 +145,33 @@ public class ProjectValidatorTest {
     void validateProjectStatusTransition_ThrowsWhenPlanningDirectToCompleted() {
         assertThrows(BadRequestException.class,
                 () -> projectValidator.validateProjectStatusTransition(ProjectStatus.PLANNING, ProjectStatus.COMPLETED));
+    }
+
+    @Test
+    void validateProjectStatusTransition_ThrowsWhenPlanningDirectToOnHold() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectStatusTransition(ProjectStatus.PLANNING, ProjectStatus.ON_HOLD));
+    }
+
+    @Test
+    void validateActiveProjectDates_ThrowsWhenStartDateInFuture() {
+        LocalDate futureDate = LocalDate.now(java.time.ZoneOffset.UTC).plusDays(5);
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateActiveProjectDates(ProjectStatus.ACTIVE, futureDate, null));
+    }
+
+    @Test
+    void validateActiveProjectDates_ThrowsWhenEndDateInPast() {
+        LocalDate pastDate = LocalDate.now(java.time.ZoneOffset.UTC).minusDays(2);
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateActiveProjectDates(ProjectStatus.ACTIVE, LocalDate.now(java.time.ZoneOffset.UTC), pastDate));
+    }
+
+    @Test
+    void validateProjectCompletionGuards_DelegatesToGuards() {
+        doNothing().when(projectCompletionGuard).validateCanCompleteProject("proj-1");
+        assertDoesNotThrow(() -> projectValidator.validateProjectCompletionGuards("proj-1"));
+        verify(projectCompletionGuard).validateCanCompleteProject("proj-1");
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.viraj.dmabackend.auth.service.impl;
 
+import com.viraj.dmabackend.auth.dto.AssignPermissionsRequest;
+import com.viraj.dmabackend.auth.dto.RemovePermissionsRequest;
 import com.viraj.dmabackend.auth.dto.UserResponse;
 import com.viraj.dmabackend.auth.entity.Permission;
 import com.viraj.dmabackend.auth.entity.Role;
@@ -280,6 +282,52 @@ public class RoleServiceImplTest {
     }
 
     @Test
+    void assignPermissions_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-target").name("CUSTOM_ROLE").build();
+        targetRole.setVersion(2L);
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-target")).thenReturn(Optional.of(targetRole));
+
+        AssignPermissionsRequest request = new AssignPermissionsRequest();
+        request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> roleService.assignPermissions("role-target", request));
+    }
+
+    @Test
+    void removePermissions_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-target").name("CUSTOM_ROLE").build();
+        targetRole.setVersion(2L);
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-target")).thenReturn(Optional.of(targetRole));
+
+        RemovePermissionsRequest request = new RemovePermissionsRequest();
+        request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> roleService.removePermissions("role-target", request));
+    }
+
+    @Test
     void getAllRoles_FetchesPermissionsInBulkSingleQuery() {
         Role role1 = Role.builder().id("r1").name("MGR").permissionIds(List.of("p1", "p2")).build();
         Role role2 = Role.builder().id("r2").name("EMP").permissionIds(List.of("p2", "p3")).build();
@@ -339,5 +387,42 @@ public class RoleServiceImplTest {
                 BadRequestException.class,
                 () -> roleService.removePermissions("manager-role", request)
         );
+    }
+
+    @Test
+    void removePermissions_ThrowsWhenRemovingEssentialBaselinePermissionFromSystemRole() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+
+        Role systemRole = Role.builder()
+                .id("emp-role")
+                .name("EMPLOYEE")
+                .systemRole(true)
+                .permissionIds(new java.util.ArrayList<>(List.of("perm-client-read", "perm-extra")))
+                .build();
+        when(roleRepository.findById("emp-role")).thenReturn(Optional.of(systemRole));
+
+        Permission clientReadPerm = Permission.builder()
+                .id("perm-client-read")
+                .permissionType(com.viraj.dmabackend.auth.enums.PermissionType.CLIENT_READ)
+                .build();
+        when(permissionRepository.findAllById(List.of("perm-client-read")))
+                .thenReturn(List.of(clientReadPerm));
+
+        com.viraj.dmabackend.auth.dto.RemovePermissionsRequest request = new com.viraj.dmabackend.auth.dto.RemovePermissionsRequest();
+        request.setPermissionIds(List.of("perm-client-read"));
+
+        BadRequestException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                BadRequestException.class,
+                () -> roleService.removePermissions("emp-role", request)
+        );
+        org.assertj.core.api.Assertions.assertThat(ex.getMessage()).contains("Cannot remove essential baseline permission");
     }
 }

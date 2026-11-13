@@ -8,7 +8,7 @@ The objective is to enable any software engineer, system architect, or technical
 
 ### System Health & Operational Benchmarks
 - **Automated Test Suite:** **100% test pass rate** across all unit and integration test suites (0 failures, 0 errors, 100% clean build under `./gradlew test --rerun-tasks`).
-- **Database Architecture:** **10 dedicated MongoDB collections** (`users`, `roles`, `permissions`, `refresh_tokens`, `menus`, `leads`, `clients`, `projects`, `invoices`, `invoice_history`), governed by declarative compound indexes, unique constraints, and Spring Data auditing.
+- **Database Architecture:** **11 dedicated MongoDB collections** (`users`, `roles`, `permissions`, `refresh_tokens`, `menus`, `leads`, `clients`, `projects`, `invoices`, `invoice_history`, `counters`), governed by declarative compound indexes, unique constraints, and Spring Data auditing.
 - **Security & RBAC Enforcement:** Fine-grained Permission-Based Access Control (`module:action`) backed by Spring Security, stateless JWT authentication with unique UUID token IDs (`jti`), rate-limiting buckets with RFC 6585 compliance, brute-force lockout defense with UTC synchronization, and self-healing bootstrap routines.
 - **Financial & Accounting Precision:** Strictly normalized 2-decimal-place monetary arithmetic (`RoundingMode.HALF_UP`) across all line items, tax computations, discounts, budgets, and immutable versioned invoice histories.
 - **Memory & Query Safety:** Global page size clamping (`MAX_PAGE_SIZE = 100`) via `PaginationUtils` protecting all standard and custom repository queries against heap exhaustion and memory attacks.
@@ -117,21 +117,22 @@ sequenceDiagram
 
 ---
 
-### 2. The 10 MongoDB Collections & Index Topologies
-The database state is governed across 10 collections with declarative compound and unique indexes:
+### 2. The 11 MongoDB Collections & Index Topologies
+The database state is governed across 11 collections with declarative compound and unique indexes:
 
 | Collection Name | Primary Key | Key Indexes & Compound Indexes | Purpose |
 | :--- | :--- | :--- | :--- |
 | **`users`** | `String _id` | `email` (Unique)<br>`phoneNumber` (Sparse Unique)<br>`(roleId, status)` (Compound) | Internal agency staff credentials, lockout states, and role assignments. |
 | **`roles`** | `String _id` | `name` (Unique) | Predefined and custom RBAC roles (`ROLE_OWNER`, `ROLE_MANAGER`, `ROLE_EMPLOYEE`). |
 | **`permissions`** | `String _id` | `permissionType` (Unique) | System capabilities mapped by `module:action`. |
-| **`refresh_tokens`** | `String _id` | `token` (Unique)<br>`userId` (Indexed)<br>`expiryDate` (Indexed) | Persisted refresh token vault with UTC expirations. |
+| **`refresh_tokens`** | `String _id` | `token` (Unique)<br>`userId` (Indexed)<br>`expiresAt` (TTL Index 0s) | Persisted refresh token vault with UTC expirations and atomic rotation. |
 | **`menus`** | `String _id` | `title` (Unique)<br>`path` (Unique)<br>`parentId` (Indexed) | Navigation tree nodes with parent-child hierarchical references. |
-| **`leads`** | `String _id` | `email` (Unique)<br>`phoneNumber` (Unique)<br>`(assignedUserId, status)` (Compound)<br>`(source, status)` (Compound) | Sales prospects undergoing qualification before conversion. |
+| **`leads`** | `String _id` | `email` (Unique Partial)<br>`phoneNumber` (Unique Partial)<br>`(assignedUserId, status)` (Compound)<br>`(source, status)` (Compound) | Sales prospects undergoing qualification before conversion. |
 | **`clients`** | `String _id` | `email` (Unique)<br>`phoneNumber` (Unique)<br>`gstNumber` (Sparse Unique)<br>`status` (Indexed) | Paying customer accounts and corporate profiles. |
-| **`projects`** | `String _id` | `(name, clientId)` (Unique)<br>`(clientId, status)` (Compound)<br>`status` (Indexed) | Active agency deliverables, deadlines, and campaign budgets. |
+| **`projects`** | `String _id` | `(projectName, clientId)` (Unique)<br>`(clientId, status)` (Compound)<br>`status` (Indexed) | Active agency deliverables, deadlines, and campaign budgets. |
 | **`invoices`** | `String _id` | `invoiceNumber` (Unique)<br>`clientId` (Indexed)<br>`projectId` (Indexed)<br>`status` (Indexed) | Financial bills, line items, taxes, discounts, and payment tracking. |
-| **`invoice_history`** | `String _id` | `(invoiceId, invoiceVersion)` (Compound Ascending) | Immutable append-only audit snapshots of every invoice modification. |
+| **`invoice_history`** | `String _id` | `(invoiceId, invoiceVersion)` (Unique Compound Ascending) | Immutable append-only audit snapshots of every invoice modification. |
+| **`counters`** | `String _id` | `_id` (Primary Key: e.g., `invoice_2026`) | Atomic sequence counters for sequential year-based invoice numbering (`INV-YYYY-XXXXX`) via `findAndModify` with `upsert`. |
 
 ---
 
@@ -346,9 +347,18 @@ stateDiagram-v2
     [*] --> NEW: Ingestion / Webhook / Manual Intake
     NEW --> CONTACTED: Sales Rep Reaches Out
     CONTACTED --> QUALIFIED: Client Fit & Budget Verified
-    CONTACTED --> UNQUALIFIED: Not a Fit / Bad Info
-    QUALIFIED --> CONVERTED: convertLeadToClient() (Creates Client + Fires Event)
-    QUALIFIED --> LOST: Lost to Competitor / Dropped
+    QUALIFIED --> PROPOSAL_SENT: Proposal Delivered
+    PROPOSAL_SENT --> NEGOTIATION: Terms & Pricing Discussed
+    NEGOTIATION --> WON: Deal Closed & Agreed
+    WON --> CONVERTED: convertLeadToClient() (Requires WON Status)
+    NEW --> LOST: Disqualified / Dropped
+    CONTACTED --> LOST: Dropped / Competitor
+    QUALIFIED --> LOST: Dropped / Competitor
+    PROPOSAL_SENT --> LOST: Proposal Rejected
+    NEGOTIATION --> LOST: Negotiation Broken
+    WON --> LOST: Customer Backed Out
+    LOST --> NEW: Re-engagement (Resets Pipeline)
+    LOST --> CONTACTED: Sales Outreach Resumed
     NEW --> DELETED: Soft-Delete (Audit preserved)
     CONTACTED --> DELETED: Soft-Delete
     QUALIFIED --> DELETED: Soft-Delete
@@ -517,7 +527,7 @@ stateDiagram-v2
     SENT --> CANCELLED: Invoice Revoked
     OVERDUE --> CANCELLED: Invoice Cancelled
     DRAFT --> DELETED: Soft-Deleted (Active=false)
-    CANCELLED --> DELETED: Soft-Deleted (Active=false)
+    CANCELLED --> [*]: Cancelled Invoices Retained For Audit
     PAID --> [*]: Paid Invoices Protected Against Deletion
 ```
 
@@ -610,7 +620,7 @@ void calculateInvoiceTotals(Invoice invoice) {
 Whenever an invoice is created, updated, status-transitioned, or cancelled, the service persists an immutable audit snapshot in the `invoice_history` collection:
 - **Snapshotted Fields:** `invoiceId`, `invoiceVersion`, `invoiceNumber`, items snapshot, `subtotal`, `discount`, `taxPercentage`, `taxAmount`, `totalAmount`, `status`, `notes`, `changedAt` (UTC), `changedBy`.
 - **Audit Ordering Index:** `{"invoiceId": 1, "invoiceVersion": 1}` ensures sequential version retrieval.
-- **Deletion Protection:** Invoices in `SENT`, `PAID`, or `OVERDUE` status cannot be deleted. Soft deletion is restricted to `DRAFT` or `CANCELLED` invoices only.
+- **Deletion Protection:** Invoices in `SENT`, `PAID`, `OVERDUE`, or `CANCELLED` status cannot be deleted. Soft deletion is restricted exclusively to `DRAFT` invoices; issued, settled, or cancelled invoices must be permanently retained for tax and financial audit compliance.
 
 ---
 
@@ -622,12 +632,12 @@ flowchart LR
     RateLimit --> GlobalGuard["Global Pagination Bounding\n(PaginationUtils.clampPageable)"]
     GlobalGuard --> ServiceExec["Service Execution\n(UTC Timestamps & Trimming)"]
     ServiceExec --> AuditLogging["AuditorAwareConfig\n(Normalized Principal)"]
-    ServiceExec --> ExceptionInterception["GlobalExceptionHandler\n(RFC 7807 Standard Responses)"]
+    ServiceExec --> ExceptionInterception["GlobalExceptionHandler\n(Unified ApiResponse Envelope)"]
     ServiceExec --> MongoPool["MongoConfig Customizer\n(Max 50 / Min 5 / 10s Timeouts)"]
 ```
 
 ### 1. Identity & Mission
-The **Cross-Cutting Infrastructure Subsystem** enforces global invariants across all business modules: bounding pagination to prevent denial-of-service memory exhaustion, rate limiting abusive clients with standard RFC 6585 headers, sanitizing audit log principals, and standardizing all error responses under RFC 7807 specifications.
+The **Cross-Cutting Infrastructure Subsystem** enforces global invariants across all business modules: bounding pagination to prevent denial-of-service memory exhaustion, rate limiting abusive clients with standard RFC 6585 headers, sanitizing audit log principals, and standardizing all error responses under a consistent unified `ApiResponse<T>` JSON envelope (`{ success, message, data }`).
 
 ---
 
@@ -748,14 +758,15 @@ ElevateCRM enforces granular permissions defined in the `PermissionType` enum. C
 | **USER** | `USER_UPDATE` | `PUT /api/v1/users/{id}`, `PATCH /api/v1/users/{id}/status` | `ROLE_OWNER` |
 | **USER** | `USER_DELETE` | `DELETE /api/v1/users/{id}` | `ROLE_OWNER` |
 | **ROLE** | `ROLE_READ` | `GET /api/v1/roles/**` | `ROLE_MANAGER` |
-| **ROLE** | `ROLE_UPDATE` | `PUT /api/v1/roles/{id}`, `POST /api/v1/roles/{id}/permissions` | `ROLE_OWNER` |
+| **ROLE** | `ROLE_UPDATE` | `PUT /api/v1/roles/{id}`, `POST /api/v1/roles/{id}/permissions`, `PATCH /api/v1/roles/{id}/permissions`, `DELETE /api/v1/roles/{id}/permissions` | `ROLE_OWNER` |
 | **MENU** | `MENU_CREATE` | `POST /api/v1/menus` | `ROLE_OWNER` |
 | **MENU** | `MENU_READ` | `GET /api/v1/menus/**` | `ROLE_EMPLOYEE` |
 | **MENU** | `MENU_UPDATE` | `PUT /api/v1/menus/{id}` | `ROLE_OWNER` |
-| **MENU** | `MENU_DELETE` | `DELETE /api/v1/menus/{id}` | `ROLE_OWNER` |
+| **MENU** | `MENU_DELETE` | `DELETE /api/v1/menus/{id}`, `PATCH /api/v1/menus/{id}/deactivate` | `ROLE_OWNER` |
 | **LEAD** | `LEAD_CREATE` | `POST /api/v1/leads` | `ROLE_EMPLOYEE` |
 | **LEAD** | `LEAD_READ` | `GET /api/v1/leads/**` | `ROLE_EMPLOYEE` |
-| **LEAD** | `LEAD_UPDATE` | `PUT /api/v1/leads/{id}`, `POST /api/v1/leads/{id}/convert` | `ROLE_MANAGER` |
+| **LEAD** | `LEAD_UPDATE` | `PUT /api/v1/leads/{id}` | `ROLE_MANAGER` |
+| **LEAD** | `LEAD_CONVERT` | `POST /api/v1/leads/{id}/convert` | `ROLE_MANAGER` |
 | **LEAD** | `LEAD_DELETE` | `DELETE /api/v1/leads/{id}` | `ROLE_MANAGER` |
 | **CLIENT** | `CLIENT_CREATE`| `POST /api/v1/clients` | `ROLE_MANAGER` |
 | **CLIENT** | `CLIENT_READ` | `GET /api/v1/clients/**` | `ROLE_EMPLOYEE` |

@@ -260,6 +260,38 @@ public class LeadServiceImplTest {
     }
 
     @Test
+    void convertLeadToClient_whenOptimisticLockingFailsAndLeadAlreadyConverted_throwsLeadAlreadyConvertedException() {
+        Lead lead = Lead.builder()
+                .id("lead-1")
+                .status(LeadStatus.WON)
+                .email("test@lead.com")
+                .phoneNumber("+1234567890")
+                .build();
+
+        Lead concurrentConvertedLead = Lead.builder()
+                .id("lead-1")
+                .status(LeadStatus.CONVERTED)
+                .convertedClientId("client-concurrent-1")
+                .build();
+
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+        when(clientService.createClientFromLead(any()))
+                .thenReturn(ClientResponse.builder().id("orphaned-client-2").build());
+        when(leadRepository.save(any(Lead.class)))
+                .thenThrow(new org.springframework.dao.OptimisticLockingFailureException("Version conflict"));
+        when(leadRepository.findById("lead-1"))
+                .thenReturn(java.util.Optional.of(concurrentConvertedLead));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.viraj.dmabackend.lead.exception.LeadAlreadyConvertedException.class,
+                () -> leadService.convertLeadToClient("lead-1")
+        );
+
+        verify(clientService).purgeOrphanedClient("orphaned-client-2");
+    }
+
+    @Test
     void convertLeadToClient_whenEventPublishThrowsException_doesNotCorruptLeadOrPurgeClient() {
         Lead lead = Lead.builder()
                 .id("lead-1")
