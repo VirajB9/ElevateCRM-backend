@@ -100,6 +100,12 @@ public class ClientServiceImpl implements ClientService {
 
         Client client = findClientById(clientId);
 
+        if (request.getVersion() != null && !request.getVersion().equals(client.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Client has been modified by another operation. Please refresh and try again."
+            );
+        }
+
         clientValidator.validateClientStatusForUpdate(request.getStatus(), client.getId());
         clientValidator.validateEmailForUpdate(request.getEmail(), client.getId());
         clientValidator.validatePhoneForUpdate(request.getPhoneNumber(), client.getId());

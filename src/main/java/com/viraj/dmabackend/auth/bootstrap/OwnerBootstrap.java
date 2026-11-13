@@ -41,6 +41,10 @@ public class OwnerBootstrap implements CommandLineRunner {
                 .orElseThrow(() -> new RuntimeException("OWNER role not found"));
 
         java.util.Optional<User> existingOwnerOpt = userRepository.findByEmail(ownerEmail);
+        if (existingOwnerOpt.isEmpty()) {
+            existingOwnerOpt = userRepository.findDeletedByEmail(ownerEmail);
+        }
+
         if (existingOwnerOpt.isPresent()) {
             User existingOwner = existingOwnerOpt.get();
             boolean updated = false;
@@ -50,6 +54,10 @@ public class OwnerBootstrap implements CommandLineRunner {
             }
             if (existingOwner.getStatus() != UserStatus.ACTIVE) {
                 existingOwner.setStatus(UserStatus.ACTIVE);
+                updated = true;
+            }
+            if (existingOwner.isDeleted()) {
+                existingOwner.setDeleted(false);
                 updated = true;
             }
             if (updated) {

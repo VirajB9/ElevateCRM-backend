@@ -223,10 +223,38 @@ public class AuthServiceImplTest {
     }
 
     @Test
-    void logout_whenValidActiveToken_revokesAndSaves() {
+    void logout_whenValidActiveToken_purgesAllUserRefreshTokensAndRevokesAccessTokens() {
+        com.viraj.dmabackend.auth.entity.RefreshToken token = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("active-token")
+                .userId("user-1")
+                .revoked(false)
+                .build();
+
+        when(refreshTokenRepository.findByToken("active-token")).thenReturn(Optional.of(token));
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
+
         authService.logout("active-token");
 
         verify(mongoTemplate).updateFirst(any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class));
+        verify(refreshTokenRepository).deleteByUserId("user-1");
+        verify(userRepository).save(user);
+        assertNotNull(user.getTokensRevokedAt());
+    }
+
+    @Test
+    void logout_whenUserAuthenticatedInSecurityContext_purgesAllUserRefreshTokensAndRevokesAccessTokens() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("test@agency.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+
+        authService.logout(null);
+
+        verify(refreshTokenRepository).deleteByUserId("user-1");
+        verify(userRepository).save(user);
+        assertNotNull(user.getTokensRevokedAt());
     }
 
     @Test
@@ -410,10 +438,46 @@ public class AuthServiceImplTest {
                 .build();
 
         when(refreshTokenRepository.findByToken("stolen-token")).thenReturn(Optional.of(stolenToken));
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("stolen-token"));
         assertEquals("Refresh token was already revoked", ex.getMessage());
         verify(refreshTokenRepository).deleteByUserId("user-1");
+        verify(userRepository).save(user);
+        assertNotNull(user.getTokensRevokedAt());
+    }
+
+    @Test
+    void changePassword_RevokesPreviousTokensAndMintsNewTokenWithAdjustedIssuedAt() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("test@agency.com", "pass"));
+
+        Role role = new Role();
+        role.setId("role-1");
+        role.setName("EMPLOYEE");
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("currentPass123", "hashedpassword")).thenReturn(true);
+        when(passwordEncoder.matches("newSecretPass123", "hashedpassword")).thenReturn(false);
+        when(passwordEncoder.encode("newSecretPass123")).thenReturn("newHashedPassword");
+        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
+        when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
+        when(jwtUtil.generateRefreshToken()).thenReturn("new-refresh-token");
+        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean(), any(java.util.Date.class))).thenReturn("replacement-jwt-token");
+        when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
+
+        com.viraj.dmabackend.auth.dto.ChangePasswordRequest request = new com.viraj.dmabackend.auth.dto.ChangePasswordRequest();
+        request.setCurrentPassword("currentPass123");
+        request.setNewPassword("newSecretPass123");
+
+        com.viraj.dmabackend.auth.dto.AuthenticationResponse response = authService.changePassword(request);
+
+        assertNotNull(response);
+        assertEquals("replacement-jwt-token", response.getToken());
+        verify(refreshTokenRepository).deleteByUserId("user-1");
+        verify(userRepository).save(user);
+        assertNotNull(user.getTokensRevokedAt());
     }
 
     @Test

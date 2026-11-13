@@ -11,12 +11,12 @@ services:
     volumes:
       - mongodb_data:/data/db
     ports:
-      - "27018:27017"
+      - "127.0.0.1:27018:27017"
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "mongosh --quiet -u ${MONGO_ROOT_USERNAME} -p ${MONGO_ROOT_PASSWORD} --eval \"db.adminCommand('ping').ok\""
+          "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
         ]
       interval: 10s
       timeout: 5s
@@ -32,8 +32,16 @@ services:
         condition: service_healthy
     networks:
       - dma-network
+    environment:
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     command: >
-      mongosh --host mongodb:27017 -u ${MONGO_ROOT_USERNAME} -p ${MONGO_ROOT_PASSWORD} --eval '
+      mongosh --host mongodb:27017 --eval '
+      if (process.env.MONGO_ROOT_USERNAME && process.env.MONGO_ROOT_PASSWORD) {
+        try {
+          db.getSiblingDB("admin").auth(process.env.MONGO_ROOT_USERNAME, process.env.MONGO_ROOT_PASSWORD);
+        } catch (e) {}
+      }
       try {
         rs.status();
         print("Replica set already initialized");

@@ -36,9 +36,7 @@ public class UpdateClientRequest {
     @Size(max = 100)
     private String industry;
 
-    @jakarta.validation.constraints.Pattern(
-            regexp = "^$|^\\s*$|(?i)^\\s*(0[1-9]|[1-2][0-9]|3[0-8]|97|99)[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}\\s*$",
-            message = "GST number must be a valid 15-character GSTIN format")
+    @com.viraj.dmabackend.client.validator.ValidGstin
     @Size(max = 50)
     private String gstNumber;
 
@@ -62,4 +60,6 @@ public class UpdateClientRequest {
 
     @NotNull
     private ClientStatus status;
+
+    private Long version;
 }

@@ -28,4 +28,6 @@ public class UpdateUserRequest {
     @NotBlank
     @Size(max = 50)
     private String roleId;
+
+    private Long version;
 }

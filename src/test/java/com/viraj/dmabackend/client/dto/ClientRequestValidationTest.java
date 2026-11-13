@@ -69,9 +69,21 @@ public class ClientRequestValidationTest {
         request.setContactPerson("John Doe");
         request.setEmail("john@example.com");
         request.setPhoneNumber("9876543210");
-        request.setGstNumber("27ABCDE1234F1Z5");
+        request.setGstNumber("27AAPFU0939F1ZV");
 
         assertTrue(validator.validate(request).isEmpty());
+    }
+
+    @Test
+    void createClientRequest_WithInvalidGstChecksum_FailsValidation() {
+        CreateClientRequest request = new CreateClientRequest();
+        request.setCompanyName("Acme Corp");
+        request.setContactPerson("John Doe");
+        request.setEmail("john@example.com");
+        request.setPhoneNumber("9876543210");
+        request.setGstNumber("27AAPFU0939F1ZX"); // 'X' is invalid check digit; valid is 'V'
+
+        assertFalse(validator.validate(request).isEmpty());
     }
 
     @Test
@@ -103,10 +115,10 @@ public class ClientRequestValidationTest {
         request.setEmail("john@example.com");
         request.setPhoneNumber("9876543210");
 
-        request.setGstNumber("97ABCDE1234F1Z5");
+        request.setGstNumber("97ABCDE1234F1ZT");
         assertTrue(validator.validate(request).isEmpty());
 
-        request.setGstNumber("99ABCDE1234F1Z5");
+        request.setGstNumber("99ABCDE1234F1ZP");
         assertTrue(validator.validate(request).isEmpty());
     }
 }

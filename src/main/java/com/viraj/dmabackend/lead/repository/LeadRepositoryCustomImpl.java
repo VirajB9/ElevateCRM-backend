@@ -25,6 +25,11 @@ public class LeadRepositoryCustomImpl
 
     @Override
     public Page<Lead> searchLeads(String keyword, Pageable pageable) {
+        return searchLeads(keyword, null, pageable);
+    }
+
+    @Override
+    public Page<Lead> searchLeads(String keyword, String assignedUserId, Pageable pageable) {
 
         String cleanKeyword = PaginationUtils.clampKeyword(keyword);
         Query query;
@@ -36,6 +41,9 @@ public class LeadRepositoryCustomImpl
         }
 
         query.addCriteria(Criteria.where("status").ne(LeadStatus.DELETED).and("deleted").is(false));
+        if (assignedUserId != null && !assignedUserId.isBlank()) {
+            query.addCriteria(Criteria.where("assignedUserId").is(assignedUserId.trim()));
+        }
 
         long total = mongoTemplate.count(query, Lead.class);
 

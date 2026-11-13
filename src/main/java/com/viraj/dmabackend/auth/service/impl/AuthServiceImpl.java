@@ -166,6 +166,10 @@ public class AuthServiceImpl implements AuthService {
                 }
                 // Compromised token reuse detected: revoke all active tokens for this user
                 refreshTokenRepository.deleteByUserId(existingToken.getUserId());
+                userRepository.findById(existingToken.getUserId()).ifPresent(user -> {
+                    user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+                    userRepository.save(user);
+                });
                 throw new UnauthorizedException("Refresh token was already revoked");
             }
 
@@ -218,6 +222,7 @@ public class AuthServiceImpl implements AuthService {
             );
             refreshTokenRepository.findByToken(trimmedToken).ifPresent(token -> {
                 if (token.getUserId() != null) {
+                    refreshTokenRepository.deleteByUserId(token.getUserId());
                     userRepository.findById(token.getUserId()).ifPresent(user -> {
                         user.setTokensRevokedAt(revocationTime);
                         userRepository.save(user);
@@ -229,6 +234,7 @@ public class AuthServiceImpl implements AuthService {
         com.viraj.dmabackend.auth.security.SecurityUtils.getCurrentUserEmail()
                 .flatMap(email -> userRepository.findByEmailAndStatusNot(email, UserStatus.DELETED))
                 .ifPresent(user -> {
+                    refreshTokenRepository.deleteByUserId(user.getId());
                     user.setTokensRevokedAt(revocationTime);
                     userRepository.save(user);
                 });
@@ -299,12 +305,35 @@ public class AuthServiceImpl implements AuthService {
                 .map(permission -> permission.getPermissionType().name().toLowerCase().replace("_", ":"))
                 .toList();
 
-        String token = jwtUtil.generateToken(
-                user.getEmail(), 
-                role.getName(), 
-                permissionNames,
-                user.isPasswordChangeRequired()
-        );
+        String token;
+        if (user.getTokensRevokedAt() != null) {
+            long revokedEpochSecond = user.getTokensRevokedAt().toEpochSecond(ZoneOffset.UTC);
+            long nowEpochSecond = System.currentTimeMillis() / 1000;
+            if (nowEpochSecond <= revokedEpochSecond) {
+                java.util.Date issuedAt = new java.util.Date((revokedEpochSecond + 1) * 1000L);
+                token = jwtUtil.generateToken(
+                        user.getEmail(),
+                        role.getName(),
+                        permissionNames,
+                        user.isPasswordChangeRequired(),
+                        issuedAt
+                );
+            } else {
+                token = jwtUtil.generateToken(
+                        user.getEmail(),
+                        role.getName(),
+                        permissionNames,
+                        user.isPasswordChangeRequired()
+                );
+            }
+        } else {
+            token = jwtUtil.generateToken(
+                    user.getEmail(),
+                    role.getName(),
+                    permissionNames,
+                    user.isPasswordChangeRequired()
+            );
+        }
 
         UserResponse userResponse = userMapper.toUserResponse(user, role.getName());
 

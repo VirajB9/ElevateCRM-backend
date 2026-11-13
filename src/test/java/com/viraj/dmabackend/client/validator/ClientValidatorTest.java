@@ -100,11 +100,17 @@ public class ClientValidatorTest {
 
     @Test
     void validateDuplicateGst_NormalizesWhitespaceAndUppercase() {
-        when(clientRepository.existsByGstNumberAndStatusNot("27ABCDE1234F1Z5", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+        when(clientRepository.existsByGstNumberAndStatusNot("27AAPFU0939F1ZV", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
                 .thenReturn(true);
 
         assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientGstException.class,
-                () -> clientValidator.validateDuplicateGst("  27abcde1234f1z5  "));
+                () -> clientValidator.validateDuplicateGst("  27aapfu0939f1zv  "));
+    }
+
+    @Test
+    void validateDuplicateGst_ThrowsWhenChecksumInvalid() {
+        assertThrows(BadRequestException.class,
+                () -> clientValidator.validateDuplicateGst("27AAPFU0939F1ZX"));
     }
 
     @Test
@@ -118,11 +124,17 @@ public class ClientValidatorTest {
 
     @Test
     void validateGstForUpdate_NormalizesWhitespaceAndUppercase() {
-        when(clientRepository.existsByGstNumberAndIdNotAndStatusNot("27ABCDE1234F1Z5", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+        when(clientRepository.existsByGstNumberAndIdNotAndStatusNot("27AAPFU0939F1ZV", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
                 .thenReturn(true);
 
         assertThrows(com.viraj.dmabackend.client.exception.DuplicateClientGstException.class,
-                () -> clientValidator.validateGstForUpdate("  27abcde1234f1z5  ", "  c-1  "));
+                () -> clientValidator.validateGstForUpdate("  27aapfu0939f1zv  ", "  c-1  "));
+    }
+
+    @Test
+    void validateGstForUpdate_ThrowsWhenChecksumInvalid() {
+        assertThrows(BadRequestException.class,
+                () -> clientValidator.validateGstForUpdate("27AAPFU0939F1ZX", "c-1"));
     }
 
     @Test

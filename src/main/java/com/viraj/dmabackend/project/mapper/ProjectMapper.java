@@ -26,6 +26,7 @@ public class ProjectMapper {
                 .updatedAt(project.getUpdatedAt())
                 .createdBy(project.getCreatedBy())
                 .updatedBy(project.getUpdatedBy())
+                .version(project.getVersion())
                 .build();
     }
 }

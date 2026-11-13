@@ -11,10 +11,13 @@ import java.util.Optional;
 
 public interface ClientRepository extends MongoRepository<Client, String>, ClientRepositoryCustom {
 
+    @Query(value = "{ 'email': ?0, 'deleted': false }", exists = true)
     boolean existsByEmail(String email);
 
+    @Query(value = "{ 'phoneNumber': ?0, 'deleted': false }", exists = true)
     boolean existsByPhoneNumber(String phoneNumber);
 
+    @Query(value = "{ 'gstNumber': ?0, 'deleted': false }", exists = true)
     boolean existsByGstNumber(String gstNumber);
 
     @Query(value = "{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
@@ -26,10 +29,13 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query(value = "{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
 
+    @Query("{ 'email': ?0, 'deleted': false }")
     Optional<Client> findByEmail(String email);
 
+    @Query("{ 'phoneNumber': ?0, 'deleted': false }")
     Optional<Client> findByPhoneNumber(String phoneNumber);
 
+    @Query("{ 'gstNumber': ?0, 'deleted': false }")
     Optional<Client> findByGstNumber(String gstNumber);
 
     @Query("{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
@@ -41,12 +47,16 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query("{ 'gstNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Client> findByGstNumberAndStatusNot(String gstNumber, ClientStatus status);
 
+    @Query("{ 'status': ?0, 'deleted': false }")
     Page<Client> findByStatus(ClientStatus status, Pageable pageable);
 
+    @Query(value = "{ 'email': ?0, '_id': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByEmailAndIdNot(String email, String clientId);
 
+    @Query(value = "{ 'phoneNumber': ?0, '_id': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, String clientId);
 
+    @Query(value = "{ 'gstNumber': ?0, '_id': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByGstNumberAndIdNot(String gstNumber, String clientId);
 
     @Query(value = "{ 'email': ?0, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)

@@ -97,21 +97,63 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .build();
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            String[] ips = xForwardedFor.split(",");
-            for (String ip : ips) {
-                String trimmedIp = ip.trim();
-                if (!trimmedIp.isEmpty() && !"unknown".equalsIgnoreCase(trimmedIp)) {
-                    return trimmedIp;
+    private static final java.util.Set<String> LOCAL_PROXIES = java.util.Set.of("127.0.0.1", "0:0:0:0:0:0:0:1", "::1", "localhost");
+
+    private boolean isTrustedProxy(String ip) {
+        if (ip == null || ip.isBlank()) {
+            return false;
+        }
+        String clean = ip.trim();
+        if (LOCAL_PROXIES.contains(clean)) {
+            return true;
+        }
+        // IPv4 private address spaces (RFC 1918): 10.0.0.0/8, 192.168.0.0/16
+        if (clean.startsWith("10.") || clean.startsWith("192.168.")) {
+            return true;
+        }
+        // IPv4 private address space: 172.16.0.0/12
+        if (clean.startsWith("172.")) {
+            String[] parts = clean.split("\\.");
+            if (parts.length >= 2) {
+                try {
+                    int secondOctet = Integer.parseInt(parts[1]);
+                    if (secondOctet >= 16 && secondOctet <= 31) {
+                        return true;
+                    }
+                } catch (NumberFormatException ignored) {
                 }
             }
         }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isBlank() && !"unknown".equalsIgnoreCase(xRealIp.trim())) {
-            return xRealIp.trim();
+        return false;
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+        if (remoteAddr == null || remoteAddr.isBlank()) {
+            remoteAddr = "unknown";
+        } else {
+            remoteAddr = remoteAddr.trim();
         }
-        return request.getRemoteAddr();
+
+        // Only trust proxy forwarding headers when request arrives from a trusted proxy or loopback
+        if (isTrustedProxy(remoteAddr)) {
+            String xRealIp = request.getHeader("X-Real-IP");
+            if (xRealIp != null && !xRealIp.isBlank() && !"unknown".equalsIgnoreCase(xRealIp.trim())) {
+                return xRealIp.trim();
+            }
+
+            String xForwardedFor = request.getHeader("X-Forwarded-For");
+            if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+                String[] ips = xForwardedFor.split(",");
+                for (String ip : ips) {
+                    String trimmedIp = ip.trim();
+                    if (!trimmedIp.isEmpty() && !"unknown".equalsIgnoreCase(trimmedIp)) {
+                        return trimmedIp;
+                    }
+                }
+            }
+        }
+
+        return remoteAddr;
     }
 }

@@ -427,4 +427,18 @@ public class UserServiceImplTest {
         verify(userRepository).findByStatusNot(eq(UserStatus.DELETED), captor.capture());
         assertEquals(100, captor.getValue().getPageSize());
     }
+
+    @Test
+    void updateUser_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        authenticateAs(ownerUser);
+        managerUser.setVersion(2L);
+        when(userRepository.findByIdAndStatusNot("user-manager", UserStatus.DELETED))
+                .thenReturn(Optional.of(managerUser));
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> userService.updateUser("user-manager", request));
+    }
 }

@@ -26,10 +26,12 @@ class LeadUserDeletionGuardTest {
     @InjectMocks
     private LeadUserDeletionGuard guard;
 
+    private static final List<LeadStatus> ACTIVE_STATUSES = List.of(
+            LeadStatus.NEW, LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.PROPOSAL_SENT, LeadStatus.NEGOTIATION, LeadStatus.WON);
+
     @Test
     void validateCanDeleteUser_whenUserHasActiveLeads_throwsBadRequestException() {
-        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(List.of(
-                LeadStatus.NEW, LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.PROPOSAL_SENT, LeadStatus.NEGOTIATION))))
+        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(ACTIVE_STATUSES)))
                 .thenReturn(true);
 
         assertThrows(BadRequestException.class, () -> guard.validateCanDeleteUser("  u-1  "));
@@ -37,13 +39,11 @@ class LeadUserDeletionGuardTest {
 
     @Test
     void validateCanDeleteUser_whenUserHasNoActiveLeads_passes() {
-        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(List.of(
-                LeadStatus.NEW, LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.PROPOSAL_SENT, LeadStatus.NEGOTIATION))))
+        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(ACTIVE_STATUSES)))
                 .thenReturn(false);
 
         assertDoesNotThrow(() -> guard.validateCanDeleteUser("u-1"));
-        verify(leadRepository).existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(List.of(
-                LeadStatus.NEW, LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.PROPOSAL_SENT, LeadStatus.NEGOTIATION)));
+        verify(leadRepository).existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(ACTIVE_STATUSES));
     }
 
     @Test

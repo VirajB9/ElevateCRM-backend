@@ -32,6 +32,7 @@ public class LeadMapper {
                 .updatedAt(lead.getUpdatedAt())
                 .createdBy(lead.getCreatedBy())
                 .updatedBy(lead.getUpdatedBy())
+                .version(lead.getVersion())
                 .build();
     }
 }

@@ -10,4 +10,10 @@ public interface LeadRepositoryCustom {
             String keyword,
             Pageable pageable
     );
+
+    Page<Lead> searchLeads(
+            String keyword,
+            String assignedUserId,
+            Pageable pageable
+    );
 }

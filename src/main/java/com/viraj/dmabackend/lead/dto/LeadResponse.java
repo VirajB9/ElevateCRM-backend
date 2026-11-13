@@ -53,4 +53,6 @@ public class LeadResponse {
     private String createdBy;
 
     private String updatedBy;
+
+    private Long version;
 }

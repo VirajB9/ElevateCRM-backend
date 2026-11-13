@@ -300,4 +300,19 @@ class MenuServiceImplTest {
         assertThat(response.getId()).isEqualTo("menu-1");
         org.mockito.Mockito.verify(menuRepository).findById("menu-1");
     }
+
+    @Test
+    void updateMenu_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Menu menu = Menu.builder().id("menu-1").title("Dashboard").build();
+        menu.setVersion(2L);
+        when(menuRepository.findById("menu-1")).thenReturn(java.util.Optional.of(menu));
+
+        com.viraj.dmabackend.menu.dto.UpdateMenuRequest request = new com.viraj.dmabackend.menu.dto.UpdateMenuRequest();
+        request.setVersion(1L);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> menuService.updateMenu("menu-1", request)
+        );
+    }
 }

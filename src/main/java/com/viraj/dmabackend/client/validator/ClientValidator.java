@@ -33,8 +33,13 @@ public class ClientValidator {
 
     public void validateDuplicateGst(String gstNumber) {
         String normalizedGst = gstNumber != null && !gstNumber.isBlank() ? gstNumber.trim().toUpperCase() : null;
-        if (normalizedGst != null && clientRepository.existsByGstNumberAndStatusNot(normalizedGst, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
-            throw new DuplicateClientGstException(gstNumber);
+        if (normalizedGst != null) {
+            if (!GstinValidator.isValidGstin(normalizedGst)) {
+                throw new BadRequestException("GST number must be a valid 15-character statutory GSTIN format with valid Modulo-36 checksum");
+            }
+            if (clientRepository.existsByGstNumberAndStatusNot(normalizedGst, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+                throw new DuplicateClientGstException(gstNumber);
+            }
         }
     }
 
@@ -57,8 +62,13 @@ public class ClientValidator {
     public void validateGstForUpdate(String gstNumber, String clientId) {
         String normalizedGst = gstNumber != null && !gstNumber.isBlank() ? gstNumber.trim().toUpperCase() : null;
         String trimmedClientId = clientId != null ? clientId.trim() : null;
-        if (normalizedGst != null && clientRepository.existsByGstNumberAndIdNotAndStatusNot(normalizedGst, trimmedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
-            throw new DuplicateClientGstException(gstNumber);
+        if (normalizedGst != null) {
+            if (!GstinValidator.isValidGstin(normalizedGst)) {
+                throw new BadRequestException("GST number must be a valid 15-character statutory GSTIN format with valid Modulo-36 checksum");
+            }
+            if (clientRepository.existsByGstNumberAndIdNotAndStatusNot(normalizedGst, trimmedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+                throw new DuplicateClientGstException(gstNumber);
+            }
         }
     }
 

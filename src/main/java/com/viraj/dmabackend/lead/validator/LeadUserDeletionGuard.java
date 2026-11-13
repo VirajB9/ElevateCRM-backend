@@ -13,13 +13,21 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LeadUserDeletionGuard implements UserDeletionGuard {
 
+    private static final List<LeadStatus> ACTIVE_STATUSES = List.of(
+            LeadStatus.NEW,
+            LeadStatus.CONTACTED,
+            LeadStatus.QUALIFIED,
+            LeadStatus.PROPOSAL_SENT,
+            LeadStatus.NEGOTIATION,
+            LeadStatus.WON
+    );
+
     private final LeadRepository leadRepository;
 
     @Override
     public void validateCanDeleteUser(String userId) {
         String normalizedUserId = userId != null ? userId.trim() : null;
-        if (normalizedUserId != null && leadRepository.existsByAssignedUserIdAndStatusIn(normalizedUserId,
-                List.of(LeadStatus.NEW, LeadStatus.CONTACTED, LeadStatus.QUALIFIED, LeadStatus.PROPOSAL_SENT, LeadStatus.NEGOTIATION))) {
+        if (normalizedUserId != null && leadRepository.existsByAssignedUserIdAndStatusIn(normalizedUserId, ACTIVE_STATUSES)) {
             throw new BadRequestException("Cannot delete user with active assigned leads. Please reassign the leads first.");
         }
     }

@@ -91,6 +91,12 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = findProjectById(projectId);
 
+        if (request.getVersion() != null && !request.getVersion().equals(project.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Project has been modified by another operation. Please refresh and try again."
+            );
+        }
+
         projectValidator.validateProjectEditable(project.getStatus());
         projectValidator.validateProjectStatusForUpdate(request.getStatus());
         projectValidator.validateProjectStatusTransition(project.getStatus(), request.getStatus());

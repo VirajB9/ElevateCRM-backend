@@ -68,7 +68,7 @@ public class JwtFilter extends OncePerRequestFilter {
             if (issuedAt != null) {
                 long issuedAtSeconds = issuedAt.getTime() / 1000;
                 long revokedAtSeconds = user.getTokensRevokedAt().toEpochSecond(java.time.ZoneOffset.UTC);
-                if (issuedAtSeconds < revokedAtSeconds) {
+                if (issuedAtSeconds <= revokedAtSeconds) {
                     filterChain.doFilter(request, response);
                     return;
                 }

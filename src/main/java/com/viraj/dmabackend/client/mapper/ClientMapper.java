@@ -31,6 +31,7 @@ public class ClientMapper {
                 .updatedAt(client.getUpdatedAt())
                 .createdBy(client.getCreatedBy())
                 .updatedBy(client.getUpdatedBy())
+                .version(client.getVersion())
                 .build();
     }
 }

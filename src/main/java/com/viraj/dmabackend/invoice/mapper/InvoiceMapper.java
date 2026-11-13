@@ -63,6 +63,7 @@ public class InvoiceMapper {
                 .updatedAt(invoice.getUpdatedAt())
                 .createdBy(invoice.getCreatedBy())
                 .updatedBy(invoice.getUpdatedBy())
+                .version(invoice.getVersion())
                 .build();
     }
 

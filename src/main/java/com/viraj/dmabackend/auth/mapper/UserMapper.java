@@ -27,6 +27,7 @@ public class UserMapper {
                 .updatedAt(user.getUpdatedAt())
                 .createdBy(user.getCreatedBy())
                 .updatedBy(user.getUpdatedBy())
+                .version(user.getVersion())
                 .build();
     }
 }

@@ -72,7 +72,12 @@ public class LeadServiceImpl implements LeadService {
                 .notes(lead.getNotes())
                 .build();
 
+        LeadStatus originalStatus = lead.getStatus();
+        String originalConvertedClientId = lead.getConvertedClientId();
+        LocalDateTime originalConvertedAt = lead.getConvertedAt();
+
         ClientResponse client = null;
+        Lead savedLead;
         try {
             client = clientService.createClientFromLead(data);
 
@@ -80,15 +85,7 @@ public class LeadServiceImpl implements LeadService {
             lead.setConvertedClientId(client.getId());
             lead.setConvertedAt(LocalDateTime.now(ZoneOffset.UTC));
 
-            Lead savedLead = leadRepository.save(lead);
-
-            com.viraj.dmabackend.common.dto.LeadConversionData eventData = data.toBuilder()
-                    .clientId(client.getId())
-                    .build();
-
-            eventPublisher.publishEvent(new LeadConvertedEvent(eventData));
-
-            return leadMapper.toLeadResponse(savedLead);
+            savedLead = leadRepository.save(lead);
         } catch (Exception ex) {
             if (client != null && client.getId() != null) {
                 try {
@@ -98,19 +95,46 @@ public class LeadServiceImpl implements LeadService {
                     log.error("Failed to purge orphaned client [{}]: {}", client.getId(), rollbackEx.getMessage());
                 }
             }
+            lead.setStatus(originalStatus);
+            lead.setConvertedClientId(originalConvertedClientId);
+            lead.setConvertedAt(originalConvertedAt);
+            try {
+                leadRepository.save(lead);
+            } catch (Exception leadRollbackEx) {
+                log.error("Failed to restore lead [{}] state: {}", lead.getId(), leadRollbackEx.getMessage());
+            }
             throw ex;
         }
+
+        try {
+            com.viraj.dmabackend.common.dto.LeadConversionData eventData = data.toBuilder()
+                    .clientId(client.getId())
+                    .build();
+
+            eventPublisher.publishEvent(new LeadConvertedEvent(eventData));
+        } catch (Exception eventEx) {
+            log.error("Error publishing LeadConvertedEvent for lead [{}]: {}", lead.getId(), eventEx.getMessage(), eventEx);
+        }
+
+        return leadMapper.toLeadResponse(savedLead);
     }
 
     @Override
     public LeadResponse getLeadById(String leadId) {
 
         Lead lead = findLeadById(leadId);
+        leadValidator.validateLeadAccess(lead);
         return leadMapper.toLeadResponse(lead);
     }
 
     @Override
     public Page<LeadResponse> getAllLeads(Pageable pageable) {
+
+        String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
+        if (restrictedUserId != null) {
+            return leadRepository.findByAssignedUserIdAndStatusNot(restrictedUserId, com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
+                    .map(leadMapper::toLeadResponse);
+        }
 
         return leadRepository.findByStatusNot(com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
@@ -119,7 +143,8 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public Page<LeadResponse> searchLeads(String keyword, Pageable pageable) {
 
-        return leadRepository.searchLeads(keyword, PaginationUtils.clampPageable(pageable)).map(leadMapper::toLeadResponse);
+        String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
+        return leadRepository.searchLeads(keyword, restrictedUserId, PaginationUtils.clampPageable(pageable)).map(leadMapper::toLeadResponse);
     }
 
     @Override
@@ -129,12 +154,24 @@ public class LeadServiceImpl implements LeadService {
             throw new BadRequestException("Querying soft-deleted leads is not permitted");
         }
 
+        String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
+        if (restrictedUserId != null) {
+            return leadRepository.findByStatusAndAssignedUserId(status, restrictedUserId, PaginationUtils.clampPageable(pageable))
+                    .map(leadMapper::toLeadResponse);
+        }
+
         return leadRepository.findByStatus(status, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
     }
 
     @Override
     public Page<LeadResponse> filterBySource(LeadSource source, Pageable pageable) {
+
+        String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
+        if (restrictedUserId != null) {
+            return leadRepository.findBySourceAndAssignedUserIdAndStatusNot(source, restrictedUserId, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
+                    .map(leadMapper::toLeadResponse);
+        }
 
         return leadRepository.findBySourceAndStatusNot(source, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
                 .map(leadMapper::toLeadResponse);
@@ -156,6 +193,12 @@ public class LeadServiceImpl implements LeadService {
     public LeadResponse updateLead(String leadId, UpdateLeadRequest request) {
 
         Lead existingLead = findLeadById(leadId);
+
+        if (request.getVersion() != null && !request.getVersion().equals(existingLead.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Lead has been modified by another operation. Please refresh and try again."
+            );
+        }
 
         leadValidator.validateLeadNotConverted(existingLead);
         leadValidator.validateAssignedUser(request.getAssignedUserId());

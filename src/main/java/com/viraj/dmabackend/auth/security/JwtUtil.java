@@ -36,6 +36,15 @@ public class JwtUtil {
             String role,
             List<String> permissions,
             boolean passwordChangeRequired) {
+        return generateToken(email, role, permissions, passwordChangeRequired, new Date());
+    }
+
+    public String generateToken(
+            String email,
+            String role,
+            List<String> permissions,
+            boolean passwordChangeRequired,
+            Date issuedAt) {
 
         return Jwts.builder()
                 .id(java.util.UUID.randomUUID().toString())
@@ -43,9 +52,9 @@ public class JwtUtil {
                 .claim("role", role)
                 .claim("permissions", permissions)
                 .claim("passwordChangeRequired", passwordChangeRequired)
-                .issuedAt(new Date())
+                .issuedAt(issuedAt)
                 .expiration(
-                        new Date(System.currentTimeMillis() + expiration)
+                        new Date(issuedAt.getTime() + expiration)
                 )
                 .signWith(key)
                 .compact();

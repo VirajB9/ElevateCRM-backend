@@ -26,4 +26,6 @@ public class RoleResponse {
     private String createdBy;
 
     private String updatedBy;
+
+    private Long version;
 }

@@ -179,4 +179,18 @@ public class ProjectServiceImplTest {
         assertThrows(BadRequestException.class, () -> projectService.deleteProject("proj-1"));
         verify(projectRepository, never()).save(any());
     }
+
+    @Test
+    void updateProject_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Project project = Project.builder().id("proj-1").status(ProjectStatus.ACTIVE).build();
+        project.setVersion(2L);
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+
+        UpdateProjectRequest request = new UpdateProjectRequest();
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> projectService.updateProject("proj-1", request));
+    }
 }

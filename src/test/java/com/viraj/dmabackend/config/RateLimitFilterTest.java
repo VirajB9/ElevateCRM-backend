@@ -250,4 +250,28 @@ public class RateLimitFilterTest {
         filter.doFilter(blockedReq, blockedRes, filterChain);
         assertEquals(429, blockedRes.getStatus());
     }
+
+    @Test
+    void rateLimit_whenDirectConnection_ignoresSpoofedXForwardedForHeader() throws ServletException, IOException {
+        String directPublicIp = "203.0.113.88";
+        // 5 requests with spoofed X-Forwarded-For rotating on every request
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+            req.setServletPath("/api/v1/auth/login");
+            req.setRemoteAddr(directPublicIp);
+            req.addHeader("X-Forwarded-For", "198.51.100." + i);
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, filterChain);
+            assertEquals(200, res.getStatus());
+        }
+
+        // 6th request with yet another spoofed IP is STILL blocked because direct connection remoteAddr is tracked
+        MockHttpServletRequest blockedReq = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        blockedReq.setServletPath("/api/v1/auth/login");
+        blockedReq.setRemoteAddr(directPublicIp);
+        blockedReq.addHeader("X-Forwarded-For", "1.2.3.4");
+        MockHttpServletResponse blockedRes = new MockHttpServletResponse();
+        filter.doFilter(blockedReq, blockedRes, filterChain);
+        assertEquals(429, blockedRes.getStatus());
+    }
 }

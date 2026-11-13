@@ -65,4 +65,55 @@ class InvoiceRequestValidationTest {
 
         assertThat(violations).isEmpty();
     }
+
+    @Test
+    void createInvoiceRequest_whenItemsExceedMax_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1"))
+                .unitPrice(new BigDecimal("100.00"))
+                .build();
+
+        List<InvoiceItemRequest> items = java.util.Collections.nCopies(101, item);
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(15))
+                .items(items)
+                .taxPercentage(new BigDecimal("18.00"))
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        Set<ConstraintViolation<CreateInvoiceRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("items")
+                && v.getMessage().contains("Invoice cannot contain more than 100 items"));
+    }
+
+    @Test
+    void updateInvoiceRequest_whenItemsExceedMax_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1"))
+                .unitPrice(new BigDecimal("100.00"))
+                .build();
+
+        List<InvoiceItemRequest> items = java.util.Collections.nCopies(101, item);
+
+        UpdateInvoiceRequest request = UpdateInvoiceRequest.builder()
+                .dueDate(LocalDate.now().plusDays(15))
+                .items(items)
+                .taxPercentage(new BigDecimal("18.00"))
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        Set<ConstraintViolation<UpdateInvoiceRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("items")
+                && v.getMessage().contains("Invoice cannot contain more than 100 items"));
+    }
 }

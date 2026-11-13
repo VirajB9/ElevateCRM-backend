@@ -102,4 +102,29 @@ class OwnerBootstrapTest {
 
         verify(userRepository, never()).save(any());
     }
+
+    @Test
+    void run_whenOwnerSoftDeleted_selfHealsAndResetsDeletedFlag() throws Exception {
+        when(roleRepository.findByName("OWNER")).thenReturn(Optional.of(ownerRole));
+
+        User softDeletedOwner = User.builder()
+                .id("user-owner-1")
+                .email("owner@agency.com")
+                .roleId("role-owner-id")
+                .status(UserStatus.DELETED)
+                .build();
+        softDeletedOwner.setDeleted(true);
+
+        when(userRepository.findByEmail("owner@agency.com")).thenReturn(Optional.empty());
+        when(userRepository.findDeletedByEmail("owner@agency.com")).thenReturn(Optional.of(softDeletedOwner));
+
+        ownerBootstrap.run();
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+
+        User healedOwner = captor.getValue();
+        assertThat(healedOwner.getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(healedOwner.isDeleted()).isFalse();
+    }
 }

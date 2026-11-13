@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -254,6 +255,28 @@ public class RoleServiceImplTest {
         verify(roleValidator).validateDescription("  Updated Employee description  ");
         verify(roleRepository).save(targetRole);
         assertEquals("Updated Employee description", targetRole.getDescription());
+    }
+
+    @Test
+    void updateRole_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Role ownerRole = Role.builder().id("owner-role").name("OWNER").build();
+        User currentUser = User.builder().id("owner-user").email("owner@test.com").roleId("owner-role").build();
+        Role targetRole = Role.builder().id("role-target").name("EMPLOYEE").description("Old desc").build();
+        targetRole.setVersion(2L);
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("owner@test.com", "pass"));
+
+        when(userRepository.findByEmailAndStatusNot("owner@test.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(currentUser));
+        when(roleRepository.findById("owner-role")).thenReturn(Optional.of(ownerRole));
+        when(roleRepository.findById("role-target")).thenReturn(Optional.of(targetRole));
+
+        com.viraj.dmabackend.auth.dto.UpdateRoleRequest request = new com.viraj.dmabackend.auth.dto.UpdateRoleRequest();
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> roleService.updateRole("role-target", request));
     }
 
     @Test

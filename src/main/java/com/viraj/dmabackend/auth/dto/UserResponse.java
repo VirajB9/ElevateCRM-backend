@@ -35,4 +35,6 @@ public class UserResponse {
     private String createdBy;
 
     private String updatedBy;
+
+    private Long version;
 }

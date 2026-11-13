@@ -124,6 +124,40 @@ public class LeadValidator {
         userService.getUserById(normalizedUserId);
     }
 
+    public String getAssignedUserScopeIfRestricted() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return null;
+        }
+
+        boolean isManagerOrOwner = auth.getAuthorities().stream().anyMatch(a ->
+                "ROLE_OWNER".equals(a.getAuthority()) || "ROLE_MANAGER".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority()));
+        if (isManagerOrOwner) {
+            return null;
+        }
+
+        String currentUserEmail = auth.getName();
+        if (currentUserEmail != null && !currentUserEmail.isBlank()) {
+            try {
+                UserResponse currentUser = userService.getUserByEmail(currentUserEmail);
+                if (currentUser != null) {
+                    return currentUser.getId();
+                }
+            } catch (UserNotFoundException ignored) {
+            }
+        }
+        return null;
+    }
+
+    public void validateLeadAccess(Lead lead) {
+        String restrictedUserId = getAssignedUserScopeIfRestricted();
+        if (restrictedUserId != null && (lead.getAssignedUserId() == null || !restrictedUserId.equals(lead.getAssignedUserId()))) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Access denied: You are not authorized to view leads assigned to another user");
+        }
+    }
+
     public void validateAssignedUserAccess(String userId) {
         org.springframework.security.core.Authentication auth =
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();

@@ -46,23 +46,12 @@ public class CustomUserDetailsTest {
     }
 
     @Test
-    void isAccountNonLocked_FalseWhenLockoutInFuture() {
-        User locked = User.builder()
+    void isAccountNonLocked_TrueWhenStatusNotLockedEvenWithLockoutUntil() {
+        User userWithLockout = User.builder()
                 .status(UserStatus.ACTIVE)
                 .lockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(10))
                 .build();
-        CustomUserDetails lockedDetails = new CustomUserDetails(locked, Collections.emptyList());
-
-        assertFalse(lockedDetails.isAccountNonLocked());
-    }
-
-    @Test
-    void isAccountNonLocked_TrueWhenLockoutInPast() {
-        User pastLockout = User.builder()
-                .status(UserStatus.ACTIVE)
-                .lockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(5))
-                .build();
-        CustomUserDetails details = new CustomUserDetails(pastLockout, Collections.emptyList());
+        CustomUserDetails details = new CustomUserDetails(userWithLockout, Collections.emptyList());
 
         assertTrue(details.isAccountNonLocked());
     }

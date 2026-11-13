@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -253,5 +254,19 @@ public class ClientServiceImplTest {
 
         org.junit.jupiter.api.Assertions.assertNotNull(response);
         verify(clientRepository).findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED);
+    }
+
+    @Test
+    void updateClient_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Client client = Client.builder().id("client-1").companyName("Acme").build();
+        client.setVersion(2L);
+        when(clientRepository.findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED))
+                .thenReturn(Optional.of(client));
+
+        UpdateClientRequest request = new UpdateClientRequest();
+        request.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> clientService.updateClient("client-1", request));
     }
 }

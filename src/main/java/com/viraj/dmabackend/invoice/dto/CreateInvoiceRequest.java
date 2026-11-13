@@ -40,6 +40,7 @@ public class CreateInvoiceRequest {
     private LocalDate dueDate;
 
     @NotEmpty(message = "At least one invoice item is required")
+    @jakarta.validation.constraints.Size(max = 100, message = "Invoice cannot contain more than 100 items")
     @Valid
     private List<InvoiceItemRequest> items;
 

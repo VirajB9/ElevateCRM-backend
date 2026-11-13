@@ -73,6 +73,12 @@ public class MenuServiceImpl implements MenuService {
 
         Menu menu = findMenuById(menuId);
 
+        if (request.getVersion() != null && !request.getVersion().equals(menu.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Menu has been modified by another operation. Please refresh and try again."
+            );
+        }
+
         validateUpdateMenuRequest(menuId, request);
 
         if (Boolean.FALSE.equals(request.getActive())) {

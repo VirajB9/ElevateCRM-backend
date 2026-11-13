@@ -27,6 +27,7 @@ public class MenuMapper {
                 .updatedAt(menu.getUpdatedAt())
                 .createdBy(menu.getCreatedBy())
                 .updatedBy(menu.getUpdatedBy())
+                .version(menu.getVersion())
                 .build();
     }
 

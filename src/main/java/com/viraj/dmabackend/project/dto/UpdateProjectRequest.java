@@ -39,4 +39,6 @@ public class UpdateProjectRequest {
 
     @Size(max = 2000)
     private String notes;
+
+    private Long version;
 }

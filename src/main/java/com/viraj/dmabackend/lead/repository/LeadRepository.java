@@ -12,8 +12,10 @@ import java.util.Optional;
 
 public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepositoryCustom {
 
+    @Query(value = "{ 'email': ?0, 'deleted': false }", exists = true)
     boolean existsByEmail(String email);
 
+    @Query(value = "{ 'phoneNumber': ?0, 'deleted': false }", exists = true)
     boolean existsByPhoneNumber(String phoneNumber);
 
     @Query(value = "{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
@@ -22,8 +24,10 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
     @Query(value = "{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
 
+    @Query("{ 'email': ?0, 'deleted': false }")
     Optional<Lead> findByEmail(String email);
 
+    @Query("{ 'phoneNumber': ?0, 'deleted': false }")
     Optional<Lead> findByPhoneNumber(String phoneNumber);
 
     @Query("{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
@@ -32,11 +36,20 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
     @Query("{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Optional<Lead> findByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
 
+    @Query("{ 'status': ?0, 'deleted': false }")
     Page<Lead> findByStatus(LeadStatus status, Pageable pageable);
 
+    @Query("{ 'status': ?0, 'assignedUserId': ?1, 'deleted': false }")
+    Page<Lead> findByStatusAndAssignedUserId(LeadStatus status, String assignedUserId, Pageable pageable);
+
+    @Query("{ 'assignedUserId': ?0, 'deleted': false }")
     Page<Lead> findByAssignedUserId(String assignedUserId, Pageable pageable);
 
+    @Query("{ 'source': ?0, 'deleted': false }")
     Page<Lead> findBySource(LeadSource source, Pageable pageable);
+
+    @Query("{ 'source': ?0, 'assignedUserId': ?1, 'status': { $ne: ?2 }, 'deleted': false }")
+    Page<Lead> findBySourceAndAssignedUserIdAndStatusNot(LeadSource source, String assignedUserId, LeadStatus status, Pageable pageable);
 
     @Query("{ 'source': ?0, 'status': { $ne: ?1 }, 'deleted': false }")
     Page<Lead> findBySourceAndStatusNot(LeadSource source, LeadStatus status, Pageable pageable);
@@ -50,5 +63,6 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
     @Query("{ 'status': { $ne: ?0 }, 'deleted': false }")
     Page<Lead> findByStatusNot(LeadStatus status, Pageable pageable);
 
+    @Query(value = "{ 'assignedUserId': ?0, 'status': { $in: ?1 }, 'deleted': false }", exists = true)
     boolean existsByAssignedUserIdAndStatusIn(String assignedUserId, java.util.Collection<LeadStatus> statuses);
 }

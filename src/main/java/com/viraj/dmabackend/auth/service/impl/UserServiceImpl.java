@@ -123,6 +123,12 @@ public class UserServiceImpl implements UserService {
 
         User user = findUserById(userId);
 
+        if (request.getVersion() != null && !request.getVersion().equals(user.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "User has been modified by another operation. Please refresh and try again."
+            );
+        }
+
         userValidator.validatePhoneForUpdate(request.getPhoneNumber(), user.getId());
 
         Role targetRole = findRoleById(user.getRoleId());

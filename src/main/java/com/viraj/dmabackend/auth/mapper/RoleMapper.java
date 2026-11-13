@@ -46,6 +46,7 @@ public class RoleMapper {
                 .updatedAt(role.getUpdatedAt())
                 .createdBy(role.getCreatedBy())
                 .updatedBy(role.getUpdatedBy())
+                .version(role.getVersion())
                 .build();
     }
 }
