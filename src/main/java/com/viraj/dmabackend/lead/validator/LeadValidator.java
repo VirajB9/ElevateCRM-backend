@@ -87,7 +87,17 @@ public class LeadValidator {
                     throw new InvalidLeadStatusException(currentStatus, newStatus);
                 }
             }
-            case WON, LOST, CONVERTED -> throw new InvalidLeadStatusException(currentStatus, newStatus);
+            case WON -> {
+                if (newStatus != LeadStatus.LOST) {
+                    throw new InvalidLeadStatusException(currentStatus, newStatus);
+                }
+            }
+            case LOST -> {
+                if (newStatus != LeadStatus.NEW && newStatus != LeadStatus.CONTACTED) {
+                    throw new InvalidLeadStatusException(currentStatus, newStatus);
+                }
+            }
+            case CONVERTED, DELETED -> throw new InvalidLeadStatusException(currentStatus, newStatus);
         }
     }
 

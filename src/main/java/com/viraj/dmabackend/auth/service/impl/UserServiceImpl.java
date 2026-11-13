@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -194,7 +195,7 @@ public class UserServiceImpl implements UserService {
             user.setLockoutUntil(null);
             user.setFailedLoginAttempts(0);
         } else {
-            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 
@@ -224,7 +225,7 @@ public class UserServiceImpl implements UserService {
 
         user.setStatus(UserStatus.DELETED);
         user.setDeleted(true);
-        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
 
         refreshTokenRepository.deleteByUserId(user.getId());
 

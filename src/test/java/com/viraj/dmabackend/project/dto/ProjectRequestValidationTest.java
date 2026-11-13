@@ -63,11 +63,28 @@ class ProjectRequestValidationTest {
         request.setStatus(ProjectStatus.ACTIVE);
         request.setStartDate(LocalDate.now());
         request.setBudget(new BigDecimal("-0.01"));
+        request.setVersion(1L);
 
         Set<ConstraintViolation<UpdateProjectRequest>> violations = validator.validate(request);
 
         assertThat(violations).isNotEmpty();
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("budget")
                 && v.getMessage().contains("Budget cannot be negative"));
+    }
+
+    @Test
+    void updateProjectRequest_withoutVersion_failsValidation() {
+        UpdateProjectRequest request = new UpdateProjectRequest();
+        request.setProjectName("ERP System");
+        request.setPriority(ProjectPriority.HIGH);
+        request.setStatus(ProjectStatus.ACTIVE);
+        request.setStartDate(LocalDate.now());
+        request.setVersion(null);
+
+        Set<ConstraintViolation<UpdateProjectRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("version")
+                && v.getMessage().contains("Version is required"));
     }
 }

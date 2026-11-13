@@ -50,6 +50,15 @@ public class ProjectValidator {
         }
     }
 
+    public void validateProjectCompletion(LocalDate endDate) {
+        if (endDate == null) {
+            throw new BadRequestException("Completion date is required when completing a project.");
+        }
+        if (endDate.isAfter(LocalDate.now(java.time.ZoneOffset.UTC))) {
+            throw new BadRequestException("Completion date cannot be in the future.");
+        }
+    }
+
     public void validateDuplicateProjectForUpdate(String projectName, String clientId, String projectId) {
         String normalizedProjectName = projectName != null ? projectName.trim() : null;
         String normalizedClientId = clientId != null ? clientId.trim() : null;

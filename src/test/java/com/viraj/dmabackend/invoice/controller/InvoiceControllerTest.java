@@ -172,6 +172,7 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
     void updateInvoiceStatus_whenAuthorized_returnsOk() throws Exception {
         UpdateInvoiceStatusRequest request = new UpdateInvoiceStatusRequest();
         request.setStatus(InvoiceStatus.SENT);
+        request.setVersion(0L);
 
         when(invoiceService.updateInvoiceStatus(eq("inv-1"), any())).thenReturn(InvoiceResponse.builder().id("inv-1").build());
 

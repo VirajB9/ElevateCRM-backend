@@ -28,8 +28,8 @@ public class ProjectClientDeletionGuard implements ClientDeletionGuard {
     public void validateCanDeactivateClient(String clientId) {
         String trimmedClientId = clientId != null ? clientId.trim() : null;
         if (trimmedClientId != null && projectRepository.existsByClientIdAndStatusIn(trimmedClientId,
-                List.of(ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))) {
-            throw new BadRequestException("Cannot deactivate client with active or ongoing projects.");
+                List.of(ProjectStatus.ACTIVE))) {
+            throw new BadRequestException("Cannot deactivate client with active projects. Please complete or pause active projects first.");
         }
     }
 }

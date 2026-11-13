@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.service.impl;
 
 import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.invoice.dto.InvoiceResponse;
 import com.viraj.dmabackend.invoice.entity.Invoice;
 import com.viraj.dmabackend.invoice.entity.InvoiceHistory;
 import com.viraj.dmabackend.invoice.entity.InvoiceItem;
@@ -19,6 +20,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -338,6 +341,84 @@ public class InvoiceServiceImplTest {
 
         assertThrows(InvalidInvoiceStatusException.class,
                 () -> invoiceService.deleteInvoice("inv-overdue"));
+
+        Invoice cancelledInvoice = new Invoice();
+        cancelledInvoice.setId("inv-cancelled");
+        cancelledInvoice.setStatus(InvoiceStatus.CANCELLED);
+        cancelledInvoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-cancelled")).thenReturn(Optional.of(cancelledInvoice));
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.deleteInvoice("inv-cancelled"));
+
+        Invoice paidInvoice = new Invoice();
+        paidInvoice.setId("inv-paid");
+        paidInvoice.setStatus(InvoiceStatus.PAID);
+        paidInvoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-paid")).thenReturn(Optional.of(paidInvoice));
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.deleteInvoice("inv-paid"));
+    }
+
+    @Test
+    void updateInvoiceStatus_ThrowsWhenVersionMismatch() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setVersion(2L);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.PAID);
+        req.setVersion(1L);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
+    void updateInvoiceStatus_ThrowsWhenTransitioningSentToOverdueBeforeDueDate() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setDueDate(LocalDate.now(ZoneOffset.UTC).plusDays(5));
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.OVERDUE);
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
+    void updateInvoiceStatus_SucceedsWhenTransitioningSentToOverdueAfterDueDate() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setDueDate(LocalDate.now(ZoneOffset.UTC).minusDays(1));
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+        when(invoiceMapper.toResponse(any())).thenReturn(InvoiceResponse.builder().id("inv-123").status(InvoiceStatus.OVERDUE).build());
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.OVERDUE);
+
+        InvoiceResponse response = invoiceService.updateInvoiceStatus("inv-123", req);
+        assertNotNull(response);
+        assertEquals(InvoiceStatus.OVERDUE, response.getStatus());
     }
 
     @Test

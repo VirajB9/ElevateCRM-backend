@@ -126,6 +126,7 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
         request.setPhoneNumber("9876543210");
         request.setSource(LeadSource.WEBSITE);
         request.setStatus(LeadStatus.CONTACTED);
+        request.setVersion(1L);
 
         when(leadService.updateLead(eq("lead-1"), any())).thenReturn(LeadResponse.builder().id("lead-1").build());
 

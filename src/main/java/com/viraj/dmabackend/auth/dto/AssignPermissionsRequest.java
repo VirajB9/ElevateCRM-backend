@@ -13,4 +13,6 @@ public class AssignPermissionsRequest {
 
     @NotEmpty(message = "At least one permission is required")
     private List<@NotBlank(message = "Permission ID cannot be blank") String> permissionIds;
+
+    private Long version;
 }

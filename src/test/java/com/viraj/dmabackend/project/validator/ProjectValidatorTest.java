@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -220,5 +221,23 @@ public class ProjectValidatorTest {
 
         assertThrows(DuplicateProjectException.class,
                 () -> projectValidator.validateDuplicateProjectForUpdate("  CRM App  ", "  client-123  ", "  proj-9  "));
+    }
+
+    @Test
+    void validateProjectCompletion_NullEndDate_ThrowsBadRequest() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectCompletion(null));
+    }
+
+    @Test
+    void validateProjectCompletion_FutureEndDate_ThrowsBadRequest() {
+        assertThrows(BadRequestException.class,
+                () -> projectValidator.validateProjectCompletion(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(2)));
+    }
+
+    @Test
+    void validateProjectCompletion_TodayOrPastEndDate_Passes() {
+        assertDoesNotThrow(() -> projectValidator.validateProjectCompletion(LocalDate.now(java.time.ZoneOffset.UTC)));
+        assertDoesNotThrow(() -> projectValidator.validateProjectCompletion(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1)));
     }
 }

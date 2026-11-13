@@ -17,4 +17,7 @@ public class UpdateInvoiceStatusRequest {
 
     @NotNull(message = "Invoice status is required")
     private InvoiceStatus status;
+
+    @NotNull(message = "Version is required for optimistic concurrency control")
+    private Long version;
 }

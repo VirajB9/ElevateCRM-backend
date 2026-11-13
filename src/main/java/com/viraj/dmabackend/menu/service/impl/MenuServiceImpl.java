@@ -215,6 +215,7 @@ public class MenuServiceImpl implements MenuService {
     private List<MenuTreeResponse> buildMenuTree(List<Menu> menus) {
 
         Map<String, MenuTreeResponse> menuMap = new HashMap<>();
+        Map<String, Menu> menuById = new HashMap<>();
 
         List<MenuTreeResponse> rootMenus = new ArrayList<>();
 
@@ -223,6 +224,7 @@ public class MenuServiceImpl implements MenuService {
             menuMap.put(
                     menu.getId(),
                     menuMapper.toMenuTreeResponse(menu));
+            menuById.put(menu.getId(), menu);
         }
 
         // Build the hierarchy
@@ -236,12 +238,31 @@ public class MenuServiceImpl implements MenuService {
 
                 MenuTreeResponse parentMenu = menuMap.get(menu.getParentId());
 
-                if (parentMenu != null) {
+                if (parentMenu != null && !createsCycle(menu.getId(), menu.getParentId(), menuById)) {
                     parentMenu.getChildren().add(currentMenu);
+                } else {
+                    // Parent is missing/filtered or cyclic; promote to root level to avoid orphaning
+                    rootMenus.add(currentMenu);
                 }
             }
         }
         return rootMenus;
+    }
+
+    private boolean createsCycle(String childId, String parentId, Map<String, Menu> menuById) {
+        String currentId = parentId;
+        Set<String> visited = new HashSet<>();
+        while (currentId != null) {
+            if (currentId.equals(childId)) {
+                return true;
+            }
+            if (!visited.add(currentId)) {
+                return true;
+            }
+            Menu parent = menuById.get(currentId);
+            currentId = parent != null ? parent.getParentId() : null;
+        }
+        return false;
     }
 
     private List<MenuResponse> mapToMenuResponseList(List<Menu> menus) {

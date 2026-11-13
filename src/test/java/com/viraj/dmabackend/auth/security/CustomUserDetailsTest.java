@@ -36,6 +36,14 @@ public class CustomUserDetailsTest {
     }
 
     @Test
+    void isEnabled_FalseWhenDeletedIsTrue() {
+        User activeButDeleted = User.builder().status(UserStatus.ACTIVE).build();
+        activeButDeleted.setDeleted(true);
+        CustomUserDetails details = new CustomUserDetails(activeButDeleted, Collections.emptyList());
+        assertFalse(details.isEnabled());
+    }
+
+    @Test
     void isAccountNonLocked_FalseWhenStatusIsLocked() {
         User locked = User.builder()
                 .status(UserStatus.LOCKED)
@@ -46,12 +54,23 @@ public class CustomUserDetailsTest {
     }
 
     @Test
-    void isAccountNonLocked_TrueWhenStatusNotLockedEvenWithLockoutUntil() {
+    void isAccountNonLocked_FalseWhenLockoutUntilIsInFuture() {
         User userWithLockout = User.builder()
                 .status(UserStatus.ACTIVE)
                 .lockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(10))
                 .build();
         CustomUserDetails details = new CustomUserDetails(userWithLockout, Collections.emptyList());
+
+        assertFalse(details.isAccountNonLocked());
+    }
+
+    @Test
+    void isAccountNonLocked_TrueWhenLockoutUntilIsInPast() {
+        User userWithExpiredLockout = User.builder()
+                .status(UserStatus.ACTIVE)
+                .lockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(1))
+                .build();
+        CustomUserDetails details = new CustomUserDetails(userWithExpiredLockout, Collections.emptyList());
 
         assertTrue(details.isAccountNonLocked());
     }

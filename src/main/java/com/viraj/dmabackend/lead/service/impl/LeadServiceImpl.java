@@ -98,11 +98,6 @@ public class LeadServiceImpl implements LeadService {
             lead.setStatus(originalStatus);
             lead.setConvertedClientId(originalConvertedClientId);
             lead.setConvertedAt(originalConvertedAt);
-            try {
-                leadRepository.save(lead);
-            } catch (Exception leadRollbackEx) {
-                log.error("Failed to restore lead [{}] state: {}", lead.getId(), leadRollbackEx.getMessage());
-            }
             throw ex;
         }
 

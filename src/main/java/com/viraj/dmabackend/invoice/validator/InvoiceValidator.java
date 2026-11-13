@@ -1,5 +1,7 @@
 package com.viraj.dmabackend.invoice.validator;
 
+import com.viraj.dmabackend.client.exception.ClientNotFoundException;
+import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
@@ -8,6 +10,8 @@ import com.viraj.dmabackend.invoice.dto.UpdateInvoiceRequest;
 import com.viraj.dmabackend.invoice.entity.Invoice;
 import com.viraj.dmabackend.invoice.exception.InvalidInvoiceDateException;
 import com.viraj.dmabackend.project.dto.ProjectResponse;
+import com.viraj.dmabackend.project.exception.ProjectNotFoundException;
+import com.viraj.dmabackend.project.repository.ProjectRepository;
 import com.viraj.dmabackend.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,6 +26,8 @@ public class InvoiceValidator {
 
     private final ClientService clientService;
     private final ProjectService projectService;
+    private final ClientRepository clientRepository;
+    private final ProjectRepository projectRepository;
 
     public void validateCreateInvoice(CreateInvoiceRequest request) {
 
@@ -50,11 +56,17 @@ public class InvoiceValidator {
     }
 
     public void validateClientExists(String clientId) {
-        clientService.getClientById(clientId != null ? clientId.trim() : null);
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        if (trimmedClientId == null || !clientRepository.existsById(trimmedClientId)) {
+            throw new ClientNotFoundException("Client not found with id: " + trimmedClientId);
+        }
     }
 
     public void validateProjectExists(String projectId) {
-        projectService.getProjectById(projectId != null ? projectId.trim() : null);
+        String trimmedProjectId = projectId != null ? projectId.trim() : null;
+        if (trimmedProjectId == null || !projectRepository.existsById(trimmedProjectId)) {
+            throw new ProjectNotFoundException(trimmedProjectId);
+        }
     }
 
     private void validateClientActiveForInvoice(String clientId) {

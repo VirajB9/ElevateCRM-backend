@@ -242,4 +242,39 @@ public class LeadValidatorTest {
                 () -> leadValidator.validateAssignedUserAccess("other-user-456")
         );
     }
+
+    @Test
+    void validateLeadStatus_WonToLost_ShouldPass() {
+        assertDoesNotThrow(() -> leadValidator.validateLeadStatus(LeadStatus.WON, LeadStatus.LOST));
+    }
+
+    @Test
+    void validateLeadStatus_WonToOther_ShouldThrow() {
+        assertThrows(InvalidLeadStatusException.class,
+                () -> leadValidator.validateLeadStatus(LeadStatus.WON, LeadStatus.NEGOTIATION));
+        assertThrows(InvalidLeadStatusException.class,
+                () -> leadValidator.validateLeadStatus(LeadStatus.WON, LeadStatus.NEW));
+    }
+
+    @Test
+    void validateLeadStatus_LostToNewOrContacted_ShouldPass() {
+        assertDoesNotThrow(() -> leadValidator.validateLeadStatus(LeadStatus.LOST, LeadStatus.NEW));
+        assertDoesNotThrow(() -> leadValidator.validateLeadStatus(LeadStatus.LOST, LeadStatus.CONTACTED));
+    }
+
+    @Test
+    void validateLeadStatus_LostToOther_ShouldThrow() {
+        assertThrows(InvalidLeadStatusException.class,
+                () -> leadValidator.validateLeadStatus(LeadStatus.LOST, LeadStatus.QUALIFIED));
+        assertThrows(InvalidLeadStatusException.class,
+                () -> leadValidator.validateLeadStatus(LeadStatus.LOST, LeadStatus.WON));
+    }
+
+    @Test
+    void validateLeadStatus_ConvertedOrDeleted_ShouldThrow() {
+        assertThrows(InvalidLeadStatusException.class,
+                () -> leadValidator.validateLeadStatus(LeadStatus.CONVERTED, LeadStatus.NEW));
+        assertThrows(InvalidLeadStatusException.class,
+                () -> leadValidator.validateLeadStatus(LeadStatus.DELETED, LeadStatus.NEW));
+    }
 }

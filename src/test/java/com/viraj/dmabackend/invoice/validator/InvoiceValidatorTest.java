@@ -18,6 +18,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
 
+import com.viraj.dmabackend.client.exception.ClientNotFoundException;
+import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.project.exception.ProjectNotFoundException;
+import com.viraj.dmabackend.project.repository.ProjectRepository;
+
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
@@ -30,6 +35,12 @@ class InvoiceValidatorTest {
 
     @Mock
     private ProjectService projectService;
+
+    @Mock
+    private ClientRepository clientRepository;
+
+    @Mock
+    private ProjectRepository projectRepository;
 
     @InjectMocks
     private InvoiceValidator invoiceValidator;
@@ -118,15 +129,29 @@ class InvoiceValidatorTest {
     }
 
     @Test
-    void validateClientExists_callsClientService() {
-        when(clientService.getClientById("client-123")).thenReturn(ClientResponse.builder().id("client-123").build());
+    void validateClientExists_checksClientRepository() {
+        when(clientRepository.existsById("client-123")).thenReturn(true);
         assertThatCode(() -> invoiceValidator.validateClientExists("client-123")).doesNotThrowAnyException();
     }
 
     @Test
-    void validateProjectExists_callsProjectService() {
-        when(projectService.getProjectById("proj-123")).thenReturn(ProjectResponse.builder().id("proj-123").build());
+    void validateClientExists_whenNotFound_throwsClientNotFoundException() {
+        when(clientRepository.existsById("client-missing")).thenReturn(false);
+        assertThatThrownBy(() -> invoiceValidator.validateClientExists("client-missing"))
+                .isInstanceOf(ClientNotFoundException.class);
+    }
+
+    @Test
+    void validateProjectExists_checksProjectRepository() {
+        when(projectRepository.existsById("proj-123")).thenReturn(true);
         assertThatCode(() -> invoiceValidator.validateProjectExists("proj-123")).doesNotThrowAnyException();
+    }
+
+    @Test
+    void validateProjectExists_whenNotFound_throwsProjectNotFoundException() {
+        when(projectRepository.existsById("proj-missing")).thenReturn(false);
+        assertThatThrownBy(() -> invoiceValidator.validateProjectExists("proj-missing"))
+                .isInstanceOf(ProjectNotFoundException.class);
     }
 
     @Test

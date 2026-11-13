@@ -100,6 +100,12 @@ public class ProjectServiceImpl implements ProjectService {
         projectValidator.validateProjectEditable(project.getStatus());
         projectValidator.validateProjectStatusForUpdate(request.getStatus());
         projectValidator.validateProjectStatusTransition(project.getStatus(), request.getStatus());
+        if (request.getStatus() == ProjectStatus.ACTIVE) {
+            projectValidator.validateClientActiveForProject(project.getClientId());
+        }
+        if (request.getStatus() == ProjectStatus.COMPLETED) {
+            projectValidator.validateProjectCompletion(request.getEndDate());
+        }
         projectValidator.validateDuplicateProjectForUpdate(
                 request.getProjectName() != null ? request.getProjectName().trim() : null,
                 project.getClientId(),

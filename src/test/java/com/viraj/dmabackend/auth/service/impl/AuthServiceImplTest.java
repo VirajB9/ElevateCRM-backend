@@ -506,4 +506,43 @@ public class AuthServiceImplTest {
         assertThrows(UnauthorizedException.class, () -> authService.refresh("   "));
         verify(mongoTemplate, never()).findAndModify(any(), any(), any(), any(Class.class));
     }
+
+    @Test
+    void login_WhenAccountNotActive_ThrowsBeforeCheckingPassword() {
+        user.setStatus(UserStatus.SUSPENDED);
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@agency.com");
+        request.setPassword("any_password");
+
+        when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
+                .thenReturn(Optional.of(user));
+
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.login(request));
+        assertEquals("User account is not active", ex.getMessage());
+        verify(passwordEncoder, never()).matches(any(), any());
+        verify(mongoTemplate, never()).findAndModify(any(), any(), any(), eq(User.class));
+    }
+
+    @Test
+    void refresh_withExpiredRevokedToken_ThrowsExpiredTokenInsteadOfCompromisedReuse() {
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
+                .thenReturn(null);
+
+        com.viraj.dmabackend.auth.entity.RefreshToken expiredRevoked = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
+                .id("t1")
+                .token("expired-revoked")
+                .userId("user-1")
+                .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(1))
+                .revoked(true)
+                .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusHours(1))
+                .build();
+
+        when(refreshTokenRepository.findByToken("expired-revoked")).thenReturn(Optional.of(expiredRevoked));
+
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("expired-revoked"));
+        assertEquals("Refresh token has expired", ex.getMessage());
+        verify(refreshTokenRepository, never()).deleteByUserId(any());
+        verify(userRepository, never()).save(any());
+    }
 }

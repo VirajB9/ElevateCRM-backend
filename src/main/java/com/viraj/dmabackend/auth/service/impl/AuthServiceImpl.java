@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -63,6 +64,10 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() ->
                         new UnauthorizedException("Invalid email or password"));
 
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new UnauthorizedException("User account is not active");
+        }
+
         if (user.getLockoutUntil() != null) {
             if (user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
                 throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
@@ -90,18 +95,16 @@ public class AuthServiceImpl implements AuthService {
 
             if (attempts >= MAX_FAILED_ATTEMPTS) {
                 LocalDateTime lockoutUntil = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES);
+                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS);
                 user.setLockoutUntil(lockoutUntil);
+                user.setTokensRevokedAt(revocationTime);
                 mongoTemplate.updateFirst(
                         Query.query(Criteria.where("id").is(user.getId())),
-                        new Update().set("lockoutUntil", lockoutUntil),
+                        new Update().set("lockoutUntil", lockoutUntil).set("tokensRevokedAt", revocationTime),
                         User.class
                 );
             }
             throw new UnauthorizedException("Invalid email or password");
-        }
-
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new UnauthorizedException("User account is not active");
         }
 
         if (user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
@@ -159,6 +162,9 @@ public class AuthServiceImpl implements AuthService {
                     .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
 
             if (existingToken.isRevoked()) {
+                if (existingToken.getExpiresAt() != null && existingToken.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
+                    throw new UnauthorizedException("Refresh token has expired");
+                }
                 // Concurrency grace window (15 seconds) protects against multi-request session destruction
                 if (existingToken.getRevokedAt() != null &&
                         existingToken.getRevokedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusSeconds(15))) {
@@ -167,7 +173,7 @@ public class AuthServiceImpl implements AuthService {
                 // Compromised token reuse detected: revoke all active tokens for this user
                 refreshTokenRepository.deleteByUserId(existingToken.getUserId());
                 userRepository.findById(existingToken.getUserId()).ifPresent(user -> {
-                    user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+                    user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
                     userRepository.save(user);
                 });
                 throw new UnauthorizedException("Refresh token was already revoked");

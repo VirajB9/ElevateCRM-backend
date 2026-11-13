@@ -70,5 +70,6 @@ public class UpdateLeadRequest {
     @jakarta.validation.constraints.Size(max = 2000)
     private String notes;
 
+    @NotNull(message = "Version is required for optimistic concurrency control")
     private Long version;
 }

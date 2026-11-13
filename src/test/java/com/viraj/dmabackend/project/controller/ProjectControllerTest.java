@@ -129,6 +129,7 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
         request.setPriority(ProjectPriority.HIGH);
         request.setStatus(ProjectStatus.ACTIVE);
         request.setStartDate(LocalDate.now());
+        request.setVersion(1L);
 
         when(projectService.updateProject(eq("p-1"), any())).thenReturn(ProjectResponse.builder().id("p-1").build());
 

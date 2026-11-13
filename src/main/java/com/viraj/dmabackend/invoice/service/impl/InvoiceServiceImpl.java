@@ -159,7 +159,13 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = findInvoiceById(invoiceId);
 
-        validateStatusTransition(invoice.getStatus(), request.getStatus());
+        if (request.getVersion() != null && !request.getVersion().equals(invoice.getVersion())) {
+            throw new OptimisticLockingFailureException(
+                    "Invoice has been modified by another user. Please refresh and try again."
+            );
+        }
+
+        validateStatusTransition(invoice, request.getStatus());
 
         invoice.setStatus(request.getStatus());
 
@@ -180,12 +186,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = findInvoiceById(invoiceId);
 
-        if (invoice.getStatus() == InvoiceStatus.PAID) {
-            throw new InvalidInvoiceStatusException("Paid invoices cannot be deleted.");
-        }
-
-        if (invoice.getStatus() == InvoiceStatus.SENT || invoice.getStatus() == InvoiceStatus.OVERDUE) {
-            throw new InvalidInvoiceStatusException("Issued or overdue invoices cannot be deleted. Please cancel the invoice instead.");
+        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            throw new InvalidInvoiceStatusException(
+                    "Only draft invoices can be deleted. Issued, paid, overdue, or cancelled invoices must be retained for tax audit compliance."
+            );
         }
 
         invoice.setActive(false);
@@ -279,7 +283,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
     }
 
-    private void validateStatusTransition(InvoiceStatus currentStatus, InvoiceStatus newStatus) {
+    private void validateStatusTransition(Invoice invoice, InvoiceStatus newStatus) {
+
+        InvoiceStatus currentStatus = invoice.getStatus();
 
         if (currentStatus == newStatus) {
             throw new InvalidInvoiceStatusException(
@@ -303,8 +309,14 @@ public class InvoiceServiceImpl implements InvoiceService {
             throw new InvalidInvoiceStatusException("Overdue invoices cannot be reverted to sent status.");
         }
 
-        if (newStatus == InvoiceStatus.OVERDUE && currentStatus != InvoiceStatus.SENT) {
-            throw new InvalidInvoiceStatusException("Only sent invoices can transition to overdue.");
+        if (newStatus == InvoiceStatus.OVERDUE) {
+            if (currentStatus != InvoiceStatus.SENT) {
+                throw new InvalidInvoiceStatusException("Only sent invoices can transition to overdue.");
+            }
+            LocalDate today = LocalDate.now(ZoneOffset.UTC);
+            if (invoice.getDueDate() == null || !today.isAfter(invoice.getDueDate())) {
+                throw new InvalidInvoiceStatusException("Invoice cannot be marked as overdue before its due date.");
+            }
         }
 
         if (newStatus == InvoiceStatus.PAID

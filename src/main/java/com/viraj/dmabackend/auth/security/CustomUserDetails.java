@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collection;
 
 @Getter
@@ -38,7 +40,9 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return user.getStatus() != com.viraj.dmabackend.auth.enums.UserStatus.LOCKED;
+        boolean isTemporarilyLocked = user.getLockoutUntil() != null
+                && user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC));
+        return user.getStatus() != com.viraj.dmabackend.auth.enums.UserStatus.LOCKED && !isTemporarilyLocked;
     }
 
     @Override
@@ -48,6 +52,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getStatus() == com.viraj.dmabackend.auth.enums.UserStatus.ACTIVE;
+        return user.getStatus() == com.viraj.dmabackend.auth.enums.UserStatus.ACTIVE && !user.isDeleted();
     }
 }

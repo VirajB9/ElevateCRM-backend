@@ -168,7 +168,7 @@ public class LeadServiceImplTest {
                 .lastName("Smith")
                 .companyName("Acme")
                 .email("alice@acme.com")
-                .status(LeadStatus.QUALIFIED)
+                .status(LeadStatus.WON)
                 .build();
 
         when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))

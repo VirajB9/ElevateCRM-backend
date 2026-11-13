@@ -37,6 +37,7 @@ class InvoiceRequestValidationTest {
                 .items(List.of(item))
                 .taxPercentage(BigDecimal.ZERO)
                 .discount(BigDecimal.ZERO)
+                .version(1L)
                 .build();
 
         Set<ConstraintViolation<UpdateInvoiceRequest>> violations = validator.validate(request);
@@ -59,6 +60,7 @@ class InvoiceRequestValidationTest {
                 .items(List.of(item))
                 .taxPercentage(new BigDecimal("18.00"))
                 .discount(BigDecimal.ZERO)
+                .version(1L)
                 .build();
 
         Set<ConstraintViolation<UpdateInvoiceRequest>> violations = validator.validate(request);
@@ -108,6 +110,7 @@ class InvoiceRequestValidationTest {
                 .items(items)
                 .taxPercentage(new BigDecimal("18.00"))
                 .discount(BigDecimal.ZERO)
+                .version(1L)
                 .build();
 
         Set<ConstraintViolation<UpdateInvoiceRequest>> violations = validator.validate(request);
@@ -115,5 +118,42 @@ class InvoiceRequestValidationTest {
         assertThat(violations).isNotEmpty();
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("items")
                 && v.getMessage().contains("Invoice cannot contain more than 100 items"));
+    }
+
+    @Test
+    void updateInvoiceRequest_whenVersionIsNull_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1"))
+                .unitPrice(new BigDecimal("100.00"))
+                .build();
+
+        UpdateInvoiceRequest request = UpdateInvoiceRequest.builder()
+                .dueDate(LocalDate.now().plusDays(15))
+                .items(List.of(item))
+                .taxPercentage(new BigDecimal("18.00"))
+                .discount(BigDecimal.ZERO)
+                .version(null)
+                .build();
+
+        Set<ConstraintViolation<UpdateInvoiceRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("version")
+                && v.getMessage().contains("Version is required"));
+    }
+
+    @Test
+    void updateInvoiceStatusRequest_whenVersionIsNull_failsValidation() {
+        UpdateInvoiceStatusRequest request = UpdateInvoiceStatusRequest.builder()
+                .status(com.viraj.dmabackend.invoice.enums.InvoiceStatus.SENT)
+                .version(null)
+                .build();
+
+        Set<ConstraintViolation<UpdateInvoiceStatusRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("version")
+                && v.getMessage().contains("Version is required"));
     }
 }

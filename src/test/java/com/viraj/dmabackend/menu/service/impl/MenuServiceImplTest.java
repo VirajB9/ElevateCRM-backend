@@ -122,7 +122,7 @@ class MenuServiceImplTest {
     }
 
     @Test
-    void getMenuTree_doesNotPromoteOrphanSubmenuToRootWhenParentIsMissingOrRestricted() {
+    void getMenuTree_promotesOrphanSubmenuToRootWhenParentIsMissingOrRestricted() {
         Menu childMenu = Menu.builder()
                 .id("child-1")
                 .parentId("parent-missing")
@@ -138,7 +138,37 @@ class MenuServiceImplTest {
 
         List<MenuTreeResponse> result = menuService.getMenuTree();
 
-        assertThat(result).isEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Sub Report");
+    }
+
+    @Test
+    void getMenuTree_whenCyclicRelationshipExists_breaksCycleAndSerializesWithoutStackOverflow() throws Exception {
+        Menu menuA = Menu.builder()
+                .id("A")
+                .parentId("B")
+                .title("Menu A")
+                .orderIndex(1)
+                .active(true)
+                .build();
+
+        Menu menuB = Menu.builder()
+                .id("B")
+                .parentId("A")
+                .title("Menu B")
+                .orderIndex(2)
+                .active(true)
+                .build();
+
+        when(menuRepository.findByActiveTrueOrderByOrderIndexAsc())
+                .thenReturn(List.of(menuA, menuB));
+
+        List<MenuTreeResponse> result = menuService.getMenuTree();
+
+        assertThat(result).isNotEmpty();
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        String json = mapper.writeValueAsString(result);
+        assertThat(json).isNotBlank();
     }
 
     @Test
