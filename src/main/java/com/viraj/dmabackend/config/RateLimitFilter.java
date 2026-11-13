@@ -42,10 +42,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
             path = path.replaceAll("/+", "/").replaceAll("/$", "");
         }
 
-        if (!("/api/v1/auth/login".equals(path)
+        boolean isChangePassword = "/api/v1/auth/change-password".equals(path);
+        boolean isRateLimitedPath = "/api/v1/auth/login".equals(path)
                 || "/api/v1/auth/refresh".equals(path)
-                || "/api/v1/auth/change-password".equals(path))
-                || !"POST".equalsIgnoreCase(request.getMethod())) {
+                || isChangePassword;
+
+        String method = request.getMethod();
+        boolean isAllowedMethod = "POST".equalsIgnoreCase(method)
+                || (isChangePassword && "PATCH".equalsIgnoreCase(method));
+
+        if (!isRateLimitedPath || !isAllowedMethod) {
             filterChain.doFilter(request, response);
             return;
         }

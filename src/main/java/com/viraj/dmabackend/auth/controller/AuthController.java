@@ -83,7 +83,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Invalid request formatting or incorrect current password"),
             @ApiResponse(responseCode = "401", description = "Unauthorized: Missing, invalid, or expired JWT token")
     })
-    @PatchMapping("/change-password")
+    @RequestMapping(value = "/change-password", method = {RequestMethod.POST, RequestMethod.PATCH})
     public AuthenticationResponse changePassword(
             @Valid @RequestBody com.viraj.dmabackend.auth.dto.ChangePasswordRequest request) {
 

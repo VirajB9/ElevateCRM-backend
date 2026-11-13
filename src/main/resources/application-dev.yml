@@ -25,4 +25,5 @@ cors:
 
 owner:
   email: ${OWNER_EMAIL:owner@agency.com}
-  initial-password: ${OWNER_INITIAL_PASSWORD}
+  initial-password: ${OWNER_INITIAL_PASSWORD:Admin@12345}
+  phone-number: ${OWNER_PHONE_NUMBER:9999999999}

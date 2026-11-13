@@ -101,6 +101,21 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
 
     @Test
     @WithMockUser(authorities = "role:update")
+    void assignPermissions_withHttpPost_returnsOk() throws Exception {
+        AssignPermissionsRequest request = new AssignPermissionsRequest();
+        request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
+
+        when(roleService.assignPermissions(eq("r-1"), any())).thenReturn(RoleResponse.builder().id("r-1").build());
+
+        mockMvc.perform(post("/api/v1/roles/r-1/permissions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = "role:update")
     void removePermissions_whenAuthorized_returnsOk() throws Exception {
         RemovePermissionsRequest request = new RemovePermissionsRequest();
         request.setPermissionIds(List.of("perm-1"));

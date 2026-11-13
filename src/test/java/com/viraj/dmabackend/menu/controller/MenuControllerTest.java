@@ -117,6 +117,15 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
     }
 
     @Test
+    @WithMockUser(authorities = "menu:delete")
+    void deactivateMenu_withDeleteMethod_returnsOk() throws Exception {
+        doNothing().when(menuService).deactivateMenu("m-1");
+
+        mockMvc.perform(delete("/api/v1/menus/m-1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @WithMockUser(authorities = "menu:read")
     void deactivateMenu_whenInsufficientAuthority_returnsForbidden() throws Exception {
         mockMvc.perform(patch("/api/v1/menus/m-1/deactivate"))

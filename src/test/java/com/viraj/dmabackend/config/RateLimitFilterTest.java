@@ -296,4 +296,26 @@ public class RateLimitFilterTest {
         assertEquals(429, blockedResponse.getStatus());
         org.junit.jupiter.api.Assertions.assertTrue(blockedResponse.getContentAsString().contains("Too many password change attempts"));
     }
+
+    @Test
+    void doFilter_ChangePasswordEndpointWithPatchMethod_AppliesRateLimit() throws ServletException, IOException {
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("PATCH", "/api/v1/auth/change-password");
+            request.setServletPath("/api/v1/auth/change-password");
+            request.setRemoteAddr("10.0.0.100");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            filter.doFilter(request, response, filterChain);
+            assertEquals(200, response.getStatus());
+        }
+
+        MockHttpServletRequest blocked = new MockHttpServletRequest("PATCH", "/api/v1/auth/change-password");
+        blocked.setServletPath("/api/v1/auth/change-password");
+        blocked.setRemoteAddr("10.0.0.100");
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+
+        filter.doFilter(blocked, blockedResponse, filterChain);
+        assertEquals(429, blockedResponse.getStatus());
+        org.junit.jupiter.api.Assertions.assertTrue(blockedResponse.getContentAsString().contains("Too many password change attempts"));
+    }
 }

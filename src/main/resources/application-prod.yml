@@ -32,6 +32,7 @@ cors:
 owner:
   email: ${OWNER_EMAIL}
   initial-password: ${OWNER_INITIAL_PASSWORD}
+  phone-number: ${OWNER_PHONE_NUMBER:9999999999}
 
 management:
   endpoints:
