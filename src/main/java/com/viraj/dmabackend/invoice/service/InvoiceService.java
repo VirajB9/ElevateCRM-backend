@@ -13,7 +13,7 @@ public interface InvoiceService {
 
     InvoiceResponse getInvoiceById(String id);
 
-    List<InvoiceHistoryResponse> getInvoiceHistory(String id);
+    Page<InvoiceHistoryResponse> getInvoiceHistory(String id, Pageable pageable);
 
     Page<InvoiceResponse> getAllInvoices(Pageable pageable);
 

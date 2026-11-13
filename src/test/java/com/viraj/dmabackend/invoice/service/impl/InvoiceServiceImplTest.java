@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.service.impl;
 
 import com.viraj.dmabackend.client.repository.ClientRepository;
+import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.invoice.dto.InvoiceResponse;
 import com.viraj.dmabackend.invoice.entity.Invoice;
 import com.viraj.dmabackend.invoice.entity.InvoiceHistory;
@@ -119,6 +120,15 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void createInvoice_whenValidationFails_doesNotCallInvoiceNumberGeneratorOrLeakSequenceGap() {
+        com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest request = new com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest();
+        doThrow(new BadRequestException("Invalid client")).when(invoiceValidator).validateCreateInvoice(request);
+
+        assertThrows(BadRequestException.class, () -> invoiceService.createInvoice(request));
+        verify(invoiceNumberGenerator, never()).generate();
+    }
+
+    @Test
     void calculateInvoiceTotals_whenItemsContainNullElement_ignoresNullAndCalculatesTotals() {
         Invoice invoice = new Invoice();
         InvoiceItem item = new InvoiceItem();
@@ -210,46 +220,32 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
-    void getInvoiceHistory_ReturnsHistoryList() {
+    void getInvoiceHistory_ReturnsPaginatedHistoryList() {
         Invoice invoice = new Invoice();
         invoice.setId("inv-123");
         invoice.setActive(true);
 
-        when(invoiceRepository.findById("inv-123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
 
         com.viraj.dmabackend.invoice.entity.InvoiceHistory history =
                 new com.viraj.dmabackend.invoice.entity.InvoiceHistory();
         history.setInvoiceId("inv-123");
         history.setInvoiceVersion(0L);
 
-        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc("inv-123"))
-                .thenReturn(List.of(history));
+        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc(eq("inv-123"), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(history)));
 
-        var result = invoiceService.getInvoiceHistory("inv-123");
+        var result = invoiceService.getInvoiceHistory("inv-123", org.springframework.data.domain.PageRequest.of(0, 10));
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertEquals(1, result.getTotalElements());
     }
 
     @Test
-    void getInvoiceHistory_ReturnsHistoryList_WhenInvoiceIsSoftDeleted() {
-        Invoice deletedInvoice = new Invoice();
-        deletedInvoice.setId("inv-deleted");
-        deletedInvoice.setActive(false);
-        deletedInvoice.setDeleted(true);
+    void getInvoiceHistory_WhenInvoiceIsSoftDeleted_ThrowsInvoiceNotFoundException() {
+        when(invoiceRepository.findByIdAndActiveTrue("inv-deleted")).thenReturn(Optional.empty());
 
-        when(invoiceRepository.findById("inv-deleted")).thenReturn(Optional.of(deletedInvoice));
-
-        com.viraj.dmabackend.invoice.entity.InvoiceHistory history =
-                new com.viraj.dmabackend.invoice.entity.InvoiceHistory();
-        history.setInvoiceId("inv-deleted");
-        history.setActive(false);
-
-        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc("inv-deleted"))
-                .thenReturn(List.of(history));
-
-        var result = invoiceService.getInvoiceHistory("inv-deleted");
-        assertNotNull(result);
-        assertEquals(1, result.size());
+        assertThrows(com.viraj.dmabackend.invoice.exception.InvoiceNotFoundException.class,
+                () -> invoiceService.getInvoiceHistory("inv-deleted", org.springframework.data.domain.PageRequest.of(0, 10)));
     }
 
     @Test

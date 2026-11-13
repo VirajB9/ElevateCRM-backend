@@ -54,13 +54,13 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = invoiceMapper.toEntity(request);
 
-        invoice.setInvoiceNumber(invoiceNumberGenerator.generate());
-
         invoice.setStatus(InvoiceStatus.DRAFT);
 
         invoice.setActive(true);
 
         calculateInvoiceTotals(invoice);
+
+        invoice.setInvoiceNumber(invoiceNumberGenerator.generate());
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
@@ -78,18 +78,15 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
-    public java.util.List<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId) {
+    public Page<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId, Pageable pageable) {
 
         String trimmedInvoiceId = invoiceId != null ? invoiceId.trim() : null;
-        invoiceRepository.findById(trimmedInvoiceId)
+        invoiceRepository.findByIdAndActiveTrue(trimmedInvoiceId)
                 .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
 
-        List<InvoiceHistory> historyList = invoiceHistoryRepository
-                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId);
-
-        return historyList.stream()
-                .map(invoiceMapper::toHistoryResponse)
-                .toList();
+        return invoiceHistoryRepository
+                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId, PaginationUtils.clampPageable(pageable))
+                .map(invoiceMapper::toHistoryResponse);
     }
 
     @Override
