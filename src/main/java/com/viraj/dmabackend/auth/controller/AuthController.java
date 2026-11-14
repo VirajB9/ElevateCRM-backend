@@ -31,7 +31,8 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User authenticated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid login request formatting"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "429", description = "Too many login attempts - rate limit exceeded. Please inspect Retry-After header.")
     })
     @PostMapping("/login")
     public AuthenticationResponse login(
@@ -46,7 +47,8 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request formatting"),
-            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
+            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token"),
+            @ApiResponse(responseCode = "429", description = "Too many refresh attempts - rate limit exceeded. Please inspect Retry-After header.")
     })
     @PostMapping("/refresh")
     public AuthenticationResponse refresh(
@@ -59,11 +61,11 @@ public class AuthController {
 
     @Operation(
             summary = "User logout",
-            description = "Revokes the provided refresh token to prevent further access token generation.")
+            description = "Revokes the provided refresh token to prevent further access token generation. Idempotent operation.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User logged out successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request formatting"),
-            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
+            @ApiResponse(responseCode = "429", description = "Too many logout attempts - rate limit exceeded. Please inspect Retry-After header.")
     })
     @PostMapping("/logout")
     public void logout(
@@ -81,7 +83,8 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Password changed successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request formatting or incorrect current password"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized: Missing, invalid, or expired JWT token")
+            @ApiResponse(responseCode = "401", description = "Unauthorized: Missing, invalid, or expired JWT token"),
+            @ApiResponse(responseCode = "429", description = "Too many password change attempts - rate limit exceeded. Please inspect Retry-After header.")
     })
     @RequestMapping(value = "/change-password", method = {RequestMethod.POST, RequestMethod.PATCH})
     public AuthenticationResponse changePassword(

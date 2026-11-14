@@ -34,12 +34,67 @@ public class ChangePasswordRequestTest {
     }
 
     @Test
-    void validate_PasswordWith8OrMoreChars_PassesValidation() {
+    void validate_PasswordWith8OrMoreCharsAndComplexity_PassesValidation() {
         ChangePasswordRequest request = new ChangePasswordRequest();
-        request.setCurrentPassword("oldPassword123");
-        request.setNewPassword("newPassword123"); // 14 chars
+        request.setCurrentPassword("oldPassword123!");
+        request.setNewPassword("NewPassword123!");
 
         Set<ConstraintViolation<ChangePasswordRequest>> violations = validator.validate(request);
         assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void validate_PasswordWithoutUppercase_FailsValidation() {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("oldPassword123!");
+        request.setNewPassword("newpassword123!");
+
+        Set<ConstraintViolation<ChangePasswordRequest>> violations = validator.validate(request);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("newPassword")));
+    }
+
+    @Test
+    void validate_PasswordWithoutLowercase_FailsValidation() {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("oldPassword123!");
+        request.setNewPassword("NEWPASSWORD123!");
+
+        Set<ConstraintViolation<ChangePasswordRequest>> violations = validator.validate(request);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("newPassword")));
+    }
+
+    @Test
+    void validate_PasswordWithoutDigit_FailsValidation() {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("oldPassword123!");
+        request.setNewPassword("NewPassword!");
+
+        Set<ConstraintViolation<ChangePasswordRequest>> violations = validator.validate(request);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("newPassword")));
+    }
+
+    @Test
+    void validate_PasswordWithoutSpecialChar_FailsValidation() {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("oldPassword123!");
+        request.setNewPassword("NewPassword123");
+
+        Set<ConstraintViolation<ChangePasswordRequest>> violations = validator.validate(request);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("newPassword")));
+    }
+
+    @Test
+    void validate_PasswordWithWhitespace_FailsValidation() {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("oldPassword123!");
+        request.setNewPassword("New Password123!");
+
+        Set<ConstraintViolation<ChangePasswordRequest>> violations = validator.validate(request);
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("newPassword")));
     }
 }

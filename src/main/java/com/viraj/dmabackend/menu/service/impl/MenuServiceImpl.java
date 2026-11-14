@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,6 +28,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MenuServiceImpl implements MenuService {
 
+    private static final Object MENU_HIERARCHY_LOCK = new Object();
+
     private final MenuRepository menuRepository;
 
     private final MenuMapper menuMapper;
@@ -34,6 +37,7 @@ public class MenuServiceImpl implements MenuService {
     private final MenuValidator menuValidator;
 
     @Override
+    @Transactional
     @CacheEvict(value = "menuTree", allEntries = true)
     public MenuResponse createMenu(CreateMenuRequest request) {
 
@@ -68,28 +72,30 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "menuTree", allEntries = true)
     public MenuResponse updateMenu(String menuId, UpdateMenuRequest request) {
+        synchronized (MENU_HIERARCHY_LOCK) {
+            Menu menu = findMenuById(menuId);
 
-        Menu menu = findMenuById(menuId);
+            if (request.getVersion() != null && !request.getVersion().equals(menu.getVersion())) {
+                throw new org.springframework.dao.OptimisticLockingFailureException(
+                        "Menu has been modified by another operation. Please refresh and try again."
+                );
+            }
 
-        if (request.getVersion() != null && !request.getVersion().equals(menu.getVersion())) {
-            throw new org.springframework.dao.OptimisticLockingFailureException(
-                    "Menu has been modified by another operation. Please refresh and try again."
-            );
+            validateUpdateMenuRequest(menuId, request);
+
+            if (Boolean.FALSE.equals(request.getActive())) {
+                menuValidator.validateMenuDeactivation(menuId);
+            }
+
+            updateMenuFields(menu, request);
+
+            Menu updatedMenu = menuRepository.save(menu);
+
+            return menuMapper.toMenuResponse(updatedMenu);
         }
-
-        validateUpdateMenuRequest(menuId, request);
-
-        if (Boolean.FALSE.equals(request.getActive())) {
-            menuValidator.validateMenuDeactivation(menuId);
-        }
-
-        updateMenuFields(menu, request);
-
-        Menu updatedMenu = menuRepository.save(menu);
-
-        return menuMapper.toMenuResponse(updatedMenu);
     }
 
     @Override
@@ -105,7 +111,7 @@ public class MenuServiceImpl implements MenuService {
         menuRepository.save(menu);
     }
 
-    @Cacheable(value = "menuTree", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication() != null ? T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getAuthorities().toString() : 'anonymous'")
+    @Cacheable(value = "menuTree", key = "T(com.viraj.dmabackend.menu.service.impl.MenuServiceImpl).resolveMenuTreeCacheKey()")
     @Override
     public List<MenuTreeResponse> getMenuTree() {
 
@@ -114,6 +120,18 @@ public class MenuServiceImpl implements MenuService {
         menus = filterMenusByPermission(menus);
 
         return buildMenuTree(menus);
+    }
+
+    public static String resolveMenuTreeCacheKey() {
+        org.springframework.security.core.Authentication auth =
+                SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return "anonymous";
+        }
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .sorted()
+                .collect(Collectors.joining(","));
     }
 
 

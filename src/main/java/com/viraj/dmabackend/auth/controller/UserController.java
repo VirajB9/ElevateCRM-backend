@@ -141,7 +141,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('user:read')")
-    @GetMapping("/filter")
+    @GetMapping({"/status", "/filter"})
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Filter Users By Status", description = "Retrieves a paginated list of users filtered by their exact status. Requires 'user:read' authority.")
     @ApiResponses({

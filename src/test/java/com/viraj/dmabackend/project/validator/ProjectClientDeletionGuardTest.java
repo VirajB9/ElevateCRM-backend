@@ -47,30 +47,26 @@ class ProjectClientDeletionGuardTest {
     }
 
     @Test
-    void validateCanDeactivateClient_whenActiveProjectsExist_throwsBadRequest() {
+    void validateCanDeactivateClient_whenActiveOrOngoingProjectsExist_throwsBadRequest() {
         when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), eq(List.of(
-                ProjectStatus.ACTIVE))))
+                ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))))
                 .thenReturn(true);
 
         assertThrows(BadRequestException.class, () -> guard.validateCanDeactivateClient("  client-1  "));
     }
 
     @Test
-    void validateCanDeactivateClient_whenNoActiveProjects_passes() {
+    void validateCanDeactivateClient_whenNoActiveOrOngoingProjects_passes() {
         when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), eq(List.of(
-                ProjectStatus.ACTIVE))))
+                ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD))))
                 .thenReturn(false);
 
         assertDoesNotThrow(() -> guard.validateCanDeactivateClient("client-1"));
     }
 
     @Test
-    void validateCanDeactivateClient_whenProjectsAreOnHoldOrPlanning_passes() {
-        when(projectRepository.existsByClientIdAndStatusIn(eq("client-1"), eq(List.of(
-                ProjectStatus.ACTIVE))))
-                .thenReturn(false);
-
-        assertDoesNotThrow(() -> guard.validateCanDeactivateClient("client-1"));
+    void validateCanDeactivateClient_whenClientIdIsNull_passes() {
+        assertDoesNotThrow(() -> guard.validateCanDeactivateClient(null));
     }
 
     @Test

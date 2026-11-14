@@ -121,6 +121,30 @@ public class LeadServiceImplTest {
     }
 
     @Test
+    void createLead_whenEmployeeCreatesLeadWithNullAssignedUserId_autoAssignsToEmployee() {
+        when(leadValidator.getAssignedUserScopeIfRestricted()).thenReturn("emp-123");
+
+        com.viraj.dmabackend.lead.dto.CreateLeadRequest request = new com.viraj.dmabackend.lead.dto.CreateLeadRequest();
+        request.setFirstName("John");
+        request.setLastName("Doe");
+        request.setCompanyName("Acme Inc");
+        request.setEmail("john.doe@example.com");
+        request.setPhoneNumber("9876543210");
+        request.setSource(LeadSource.LINKEDIN);
+        request.setAssignedUserId(null);
+
+        org.mockito.ArgumentCaptor<Lead> captor = org.mockito.ArgumentCaptor.forClass(Lead.class);
+        when(leadRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(leadMapper.toLeadResponse(any(Lead.class))).thenReturn(LeadResponse.builder().id("lead-1").build());
+
+        leadService.createLead(request);
+
+        Lead savedLead = captor.getValue();
+        assertEquals("emp-123", savedLead.getAssignedUserId());
+        verify(leadValidator).validateAssignedUser("emp-123");
+    }
+
+    @Test
     void updateLead_NormalizesStringsAndSetsBlankAssignedUserIdToNull() {
         Lead existingLead = Lead.builder()
                 .id("lead-1")
@@ -408,5 +432,57 @@ public class LeadServiceImplTest {
 
         verify(leadRepository).findBySourceAndAssignedUserIdAndStatusNot(LeadSource.LINKEDIN, "emp-1", LeadStatus.DELETED, pageable);
         verify(leadRepository, never()).findBySourceAndStatusNot(LeadSource.LINKEDIN, LeadStatus.DELETED, pageable);
+    }
+
+    @Test
+    void updateLead_WhenLeadAccessDenied_ThrowsAccessDeniedException() {
+        Lead lead = Lead.builder().id("lead-1").assignedUserId("other-user").build();
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+        doThrow(new org.springframework.security.access.AccessDeniedException("Access denied"))
+                .when(leadValidator).validateLeadAccess(lead);
+
+        UpdateLeadRequest request = new UpdateLeadRequest();
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadService.updateLead("lead-1", request)
+        );
+
+        verify(leadValidator).validateLeadAccess(lead);
+        verify(leadRepository, never()).save(any());
+    }
+
+    @Test
+    void deleteLead_WhenLeadAccessDenied_ThrowsAccessDeniedException() {
+        Lead lead = Lead.builder().id("lead-1").assignedUserId("other-user").build();
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+        doThrow(new org.springframework.security.access.AccessDeniedException("Access denied"))
+                .when(leadValidator).validateLeadAccess(lead);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadService.deleteLead("lead-1")
+        );
+
+        verify(leadValidator).validateLeadAccess(lead);
+        verify(leadRepository, never()).save(any());
+    }
+
+    @Test
+    void convertLeadToClient_WhenLeadAccessDenied_ThrowsAccessDeniedException() {
+        Lead lead = Lead.builder().id("lead-1").assignedUserId("other-user").build();
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+        doThrow(new org.springframework.security.access.AccessDeniedException("Access denied"))
+                .when(leadValidator).validateLeadAccess(lead);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadService.convertLeadToClient("lead-1")
+        );
+
+        verify(leadValidator).validateLeadAccess(lead);
+        verify(clientService, never()).createClientFromLead(any());
     }
 }

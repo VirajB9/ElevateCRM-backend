@@ -62,4 +62,21 @@ class PaginationUtilsTest {
         assertEquals(100, clamped.length());
         assertEquals("a".repeat(100), clamped);
     }
+
+    @Test
+    void clampKeyword_SanitizesUnbalancedQuotes() {
+        assertEquals("john", PaginationUtils.clampKeyword("john\""));
+        assertEquals("", PaginationUtils.clampKeyword("\""));
+        assertEquals("phrase test", PaginationUtils.clampKeyword("\"phrase\" test\""));
+    }
+
+    @Test
+    void clampKeyword_PreservesBalancedQuotes() {
+        assertEquals("\"Acme Corp\"", PaginationUtils.clampKeyword("\"Acme Corp\""));
+    }
+
+    @Test
+    void clampKeyword_StripsBackslashes() {
+        assertEquals("foobar", PaginationUtils.clampKeyword("foo\\bar"));
+    }
 }

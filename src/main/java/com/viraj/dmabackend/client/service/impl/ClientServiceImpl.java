@@ -211,11 +211,12 @@ public class ClientServiceImpl implements ClientService {
             return null;
         }
         if (first == null) {
-            return last;
+            return last.length() > 100 ? last.substring(0, 100) : last;
         }
         if (last == null) {
-            return first;
+            return first.length() > 100 ? first.substring(0, 100) : first;
         }
-        return first + " " + last;
+        String combined = first + " " + last;
+        return combined.length() > 100 ? combined.substring(0, 100) : combined;
     }
 }

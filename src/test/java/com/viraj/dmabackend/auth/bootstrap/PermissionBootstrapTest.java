@@ -57,4 +57,12 @@ class PermissionBootstrapTest {
         assertThat(existingWithoutModule.getModule()).isEqualTo("USER");
         verify(permissionRepository).save(existingWithoutModule);
     }
+
+    @Test
+    void permissionType_DoesNotContainDeadRoleCreateOrRoleDelete() {
+        for (PermissionType pt : PermissionType.values()) {
+            assertThat(pt.name()).isNotEqualTo("ROLE_CREATE");
+            assertThat(pt.name()).isNotEqualTo("ROLE_DELETE");
+        }
+    }
 }

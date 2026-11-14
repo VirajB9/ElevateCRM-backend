@@ -81,8 +81,9 @@ public class InvoiceServiceImpl implements InvoiceService {
     public Page<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId, Pageable pageable) {
 
         String trimmedInvoiceId = invoiceId != null ? invoiceId.trim() : null;
-        invoiceRepository.findByIdAndActiveTrue(trimmedInvoiceId)
-                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+        if (trimmedInvoiceId == null || !invoiceRepository.existsById(trimmedInvoiceId)) {
+            throw new InvoiceNotFoundException(invoiceId);
+        }
 
         return invoiceHistoryRepository
                 .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId, PaginationUtils.clampPageable(pageable))
@@ -220,7 +221,9 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
 
                 BigDecimal quantity = Optional.ofNullable(item.getQuantity())
-                        .orElse(BigDecimal.ZERO);
+                        .orElse(BigDecimal.ZERO)
+                        .setScale(2, RoundingMode.HALF_UP);
+                item.setQuantity(quantity);
 
                 BigDecimal unitPrice = Optional.ofNullable(item.getUnitPrice())
                         .orElse(BigDecimal.ZERO)
@@ -296,6 +299,10 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         if (currentStatus == InvoiceStatus.CANCELLED) {
             throw new InvalidInvoiceStatusException("Cancelled invoices cannot change status.");
+        }
+
+        if (newStatus == InvoiceStatus.CANCELLED && currentStatus == InvoiceStatus.DRAFT) {
+            throw new InvalidInvoiceStatusException("Draft invoices cannot be cancelled. Unissued drafts must be deleted.");
         }
 
         if (newStatus == InvoiceStatus.DRAFT && currentStatus != InvoiceStatus.DRAFT) {

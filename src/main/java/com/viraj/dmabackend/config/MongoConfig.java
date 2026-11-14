@@ -37,7 +37,10 @@ public class MongoConfig {
     @Profile("prod")
     public MongoClientSettingsBuilderCustomizer mongoConnectionCustomizer() {
         return clientSettingsBuilder -> clientSettingsBuilder
-                .applyToConnectionPoolSettings(pool -> pool.maxSize(50).minSize(5))
+                .applyToConnectionPoolSettings(pool -> pool
+                        .maxSize(50)
+                        .minSize(5)
+                        .maxWaitTime(5000, TimeUnit.MILLISECONDS))
                 .applyToSocketSettings(socket -> socket
                         .connectTimeout(10000, TimeUnit.MILLISECONDS)
                         .readTimeout(10000, TimeUnit.MILLISECONDS));

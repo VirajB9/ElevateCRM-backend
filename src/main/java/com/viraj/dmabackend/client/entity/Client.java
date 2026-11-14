@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,6 +21,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @Document(collection = "clients")
 @TypeAlias("Client")
+@CompoundIndex(name = "idx_client_status_deleted", def = "{'status': 1, 'deleted': 1}")
+@CompoundIndex(name = "idx_client_deleted_created_at", def = "{'deleted': 1, 'createdAt': -1}")
 public class Client extends BaseEntity {
 
     @Id

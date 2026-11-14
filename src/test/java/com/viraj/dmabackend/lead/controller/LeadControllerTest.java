@@ -19,6 +19,7 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -164,6 +165,48 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "lead:read")
     void deleteLead_whenInsufficientAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(delete("/api/v1/leads/lead-1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "lead:update")
+    void updateLead_whenAccessDenied_returnsForbidden() throws Exception {
+        UpdateLeadRequest request = new UpdateLeadRequest();
+        request.setFirstName("Peter");
+        request.setLastName("Parker");
+        request.setCompanyName("Daily Bugle");
+        request.setEmail("peter@example.com");
+        request.setPhoneNumber("9876543210");
+        request.setSource(LeadSource.WEBSITE);
+        request.setStatus(LeadStatus.CONTACTED);
+        request.setVersion(1L);
+
+        when(leadService.updateLead(eq("lead-1"), any()))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("Access denied"));
+
+        mockMvc.perform(put("/api/v1/leads/lead-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "lead:convert")
+    void convertLeadToClient_whenAccessDenied_returnsForbidden() throws Exception {
+        when(leadService.convertLeadToClient("lead-1"))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("Access denied"));
+
+        mockMvc.perform(post("/api/v1/leads/lead-1/convert"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "lead:delete")
+    void deleteLead_whenAccessDenied_returnsForbidden() throws Exception {
+        doThrow(new org.springframework.security.access.AccessDeniedException("Access denied"))
+                .when(leadService).deleteLead("lead-1");
+
         mockMvc.perform(delete("/api/v1/leads/lead-1"))
                 .andExpect(status().isForbidden());
     }

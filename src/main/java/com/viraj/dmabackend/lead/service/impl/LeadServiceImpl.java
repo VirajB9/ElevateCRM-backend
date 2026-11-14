@@ -44,6 +44,11 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public LeadResponse createLead(CreateLeadRequest request) {
 
+        String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
+        if ((request.getAssignedUserId() == null || request.getAssignedUserId().isBlank()) && restrictedUserId != null) {
+            request.setAssignedUserId(restrictedUserId);
+        }
+
         leadValidator.validateDuplicateLead(request);
         leadValidator.validateAssignedUser(request.getAssignedUserId());
 
@@ -59,6 +64,7 @@ public class LeadServiceImpl implements LeadService {
 
         Lead lead = findLeadById(leadId);
 
+        leadValidator.validateLeadAccess(lead);
         leadValidator.validateLeadConversion(lead);
 
         com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
@@ -205,6 +211,7 @@ public class LeadServiceImpl implements LeadService {
             );
         }
 
+        leadValidator.validateLeadAccess(existingLead);
         leadValidator.validateLeadNotConverted(existingLead);
         leadValidator.validateAssignedUser(request.getAssignedUserId());
         leadValidator.validateDuplicateLeadForUpdate(existingLead, request);
@@ -221,6 +228,7 @@ public class LeadServiceImpl implements LeadService {
     public void deleteLead(String leadId) {
 
         Lead lead = findLeadById(leadId);
+        leadValidator.validateLeadAccess(lead);
         leadValidator.validateLeadNotConverted(lead);
         lead.setStatus(LeadStatus.DELETED);
         lead.setDeleted(true);

@@ -173,7 +173,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateUserStatus(String userId, UpdateUserStatusRequest request) {
 
-        userValidator.validateStatusUpdate(request.getStatus());
+        userValidator.validateStatusUpdate(request.getStatus(), userId);
 
         User user = findUserById(userId);
 

@@ -19,12 +19,11 @@ import java.time.LocalDate;
 import java.util.Collections;
 
 import com.viraj.dmabackend.client.exception.ClientNotFoundException;
-import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.project.exception.ProjectNotFoundException;
-import com.viraj.dmabackend.project.repository.ProjectRepository;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,12 +34,6 @@ class InvoiceValidatorTest {
 
     @Mock
     private ProjectService projectService;
-
-    @Mock
-    private ClientRepository clientRepository;
-
-    @Mock
-    private ProjectRepository projectRepository;
 
     @InjectMocks
     private InvoiceValidator invoiceValidator;
@@ -62,6 +55,22 @@ class InvoiceValidatorTest {
         assertThatThrownBy(() -> invoiceValidator.validateCreateInvoice(request))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Cannot create an invoice for an inactive client");
+    }
+
+    @Test
+    void validateCreateInvoice_whenItemsContainOnlyNullElements_throwsBadRequestException() {
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(10))
+                .items(Collections.singletonList(null))
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        assertThatThrownBy(() -> invoiceValidator.validateCreateInvoice(request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invoice must contain at least one valid line item");
     }
 
     @Test
@@ -151,27 +160,29 @@ class InvoiceValidatorTest {
     }
 
     @Test
-    void validateClientExists_checksClientRepository() {
-        when(clientRepository.existsById("client-123")).thenReturn(true);
+    void validateClientExists_delegatesToClientService() {
+        when(clientService.getClientById("client-123")).thenReturn(ClientResponse.builder().id("client-123").build());
         assertThatCode(() -> invoiceValidator.validateClientExists("client-123")).doesNotThrowAnyException();
+        verify(clientService).getClientById("client-123");
     }
 
     @Test
     void validateClientExists_whenNotFound_throwsClientNotFoundException() {
-        when(clientRepository.existsById("client-missing")).thenReturn(false);
+        when(clientService.getClientById("client-missing")).thenThrow(new ClientNotFoundException("client-missing"));
         assertThatThrownBy(() -> invoiceValidator.validateClientExists("client-missing"))
                 .isInstanceOf(ClientNotFoundException.class);
     }
 
     @Test
-    void validateProjectExists_checksProjectRepository() {
-        when(projectRepository.existsById("proj-123")).thenReturn(true);
+    void validateProjectExists_delegatesToProjectService() {
+        when(projectService.getProjectById("proj-123")).thenReturn(ProjectResponse.builder().id("proj-123").build());
         assertThatCode(() -> invoiceValidator.validateProjectExists("proj-123")).doesNotThrowAnyException();
+        verify(projectService).getProjectById("proj-123");
     }
 
     @Test
     void validateProjectExists_whenNotFound_throwsProjectNotFoundException() {
-        when(projectRepository.existsById("proj-missing")).thenReturn(false);
+        when(projectService.getProjectById("proj-missing")).thenThrow(new ProjectNotFoundException("proj-missing"));
         assertThatThrownBy(() -> invoiceValidator.validateProjectExists("proj-missing"))
                 .isInstanceOf(ProjectNotFoundException.class);
     }
@@ -195,7 +206,7 @@ class InvoiceValidatorTest {
 
         assertThatThrownBy(() -> invoiceValidator.validateUpdateInvoice(invoice, request))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Cannot create an invoice for an inactive client");
+                .hasMessageContaining("Cannot update an invoice for an inactive client");
     }
 
     @Test

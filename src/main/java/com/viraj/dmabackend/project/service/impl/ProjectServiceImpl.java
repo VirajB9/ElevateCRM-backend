@@ -101,12 +101,15 @@ public class ProjectServiceImpl implements ProjectService {
         projectValidator.validateProjectStatusForUpdate(request.getStatus());
         projectValidator.validateProjectStatusTransition(project.getStatus(), request.getStatus());
         if (request.getStatus() == ProjectStatus.ACTIVE) {
-            projectValidator.validateClientActiveForProject(project.getClientId());
+            projectValidator.validateClientActiveForProjectUpdate(project.getClientId());
             projectValidator.validateActiveProjectDates(request.getStatus(), request.getStartDate(), request.getEndDate());
         }
         if (request.getStatus() == ProjectStatus.COMPLETED) {
             projectValidator.validateProjectCompletion(request.getEndDate());
             projectValidator.validateProjectCompletionGuards(projectId);
+        }
+        if (request.getStatus() == ProjectStatus.CANCELLED) {
+            projectValidator.validateProjectCancellationGuards(projectId);
         }
         projectValidator.validateDuplicateProjectForUpdate(
                 request.getProjectName() != null ? request.getProjectName().trim() : null,

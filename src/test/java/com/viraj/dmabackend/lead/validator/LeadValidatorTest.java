@@ -12,6 +12,8 @@ import com.viraj.dmabackend.lead.exception.DuplicateLeadException;
 import com.viraj.dmabackend.lead.exception.InvalidLeadStatusException;
 import com.viraj.dmabackend.lead.exception.LeadAlreadyConvertedException;
 import com.viraj.dmabackend.lead.repository.LeadRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,6 +37,12 @@ public class LeadValidatorTest {
 
     @InjectMocks
     private LeadValidator leadValidator;
+
+    @BeforeEach
+    @AfterEach
+    void resetSecurityContext() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
 
     @Test
     void validateLeadStatus_ValidTransitions_ShouldPass() {
@@ -217,11 +225,69 @@ public class LeadValidatorTest {
     }
 
     @Test
+    void validateAssignedUser_whenCallerIsEmployeeAssigningToOther_throwsAccessDeniedException() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "emp@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("emp@agency.com"))
+                .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
+
+        UserResponse otherUser = UserResponse.builder().id("other-user-456").status(UserStatus.ACTIVE).build();
+        when(userService.getUserById("other-user-456")).thenReturn(otherUser);
+
+        assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadValidator.validateAssignedUser("other-user-456")
+        );
+    }
+
+    @Test
+    void validateAssignedUser_whenCallerIsEmployeeAssigningToSelf_passes() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "emp@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("emp@agency.com"))
+                .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
+
+        UserResponse selfUser = UserResponse.builder().id("emp-user-123").status(UserStatus.ACTIVE).build();
+        when(userService.getUserById("emp-user-123")).thenReturn(selfUser);
+
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUser("emp-user-123"));
+    }
+
+    @Test
+    void validateAssignedUser_whenCallerIsManagerAssigningToOther_passes() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "manager@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_MANAGER"))));
+
+        UserResponse anyUser = UserResponse.builder().id("emp-user-789").status(UserStatus.ACTIVE).build();
+        when(userService.getUserById("emp-user-789")).thenReturn(anyUser);
+
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUser("emp-user-789"));
+    }
+
+    @Test
     void validateAssignedUserAccess_whenCallerIsOwner_passesEvenForOtherUser() {
         org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         "owner@agency.com", "pass",
                         List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_OWNER"))));
+
+        assertDoesNotThrow(() -> leadValidator.validateAssignedUserAccess("other-user-123"));
+    }
+
+    @Test
+    void validateAssignedUserAccess_whenCallerIsAdmin_passesEvenForOtherUser() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "admin@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
 
         assertDoesNotThrow(() -> leadValidator.validateAssignedUserAccess("other-user-123"));
     }
@@ -252,6 +318,69 @@ public class LeadValidatorTest {
         assertThrows(
                 org.springframework.security.access.AccessDeniedException.class,
                 () -> leadValidator.validateAssignedUserAccess("other-user-456")
+        );
+    }
+
+    @Test
+    void validateLeadAccess_whenLeadUnassigned_passesForEmployee() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "emp@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("emp@agency.com"))
+                .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
+
+        Lead unassignedLead = Lead.builder().id("lead-1").assignedUserId(null).build();
+        assertDoesNotThrow(() -> leadValidator.validateLeadAccess(unassignedLead));
+    }
+
+    @Test
+    void validateLeadAccess_whenLeadAssignedToOtherEmployee_throwsAccessDeniedException() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "emp@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("emp@agency.com"))
+                .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
+
+        Lead otherLead = Lead.builder().id("lead-1").assignedUserId("other-emp-456").build();
+        assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadValidator.validateLeadAccess(otherLead)
+        );
+    }
+
+    @Test
+    void getAssignedUserScopeIfRestricted_whenEmployeeUserNotFound_throwsAccessDeniedException() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "unknown@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("unknown@agency.com"))
+                .thenThrow(new UserNotFoundException("User not found"));
+
+        assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadValidator.getAssignedUserScopeIfRestricted()
+        );
+    }
+
+    @Test
+    void validateAssignedUserAccess_whenEmployeeUserNotFound_throwsAccessDeniedException() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "unknown@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("unknown@agency.com"))
+                .thenThrow(new UserNotFoundException("User not found"));
+
+        assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
+                () -> leadValidator.validateAssignedUserAccess("any-id")
         );
     }
 

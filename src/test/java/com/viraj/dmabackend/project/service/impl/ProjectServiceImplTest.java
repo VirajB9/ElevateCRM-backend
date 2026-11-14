@@ -85,6 +85,30 @@ public class ProjectServiceImplTest {
     }
 
     @Test
+    void updateProject_whenCancelling_validatesProjectCancellationGuards() {
+        Project project = new Project();
+        project.setId("proj-1");
+        project.setClientId("client-1");
+        project.setProjectName("Test Project");
+        project.setStatus(ProjectStatus.ACTIVE);
+
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+        when(projectRepository.save(any(Project.class))).thenAnswer(i -> i.getArgument(0));
+        when(projectMapper.toProjectResponse(any())).thenReturn(com.viraj.dmabackend.project.dto.ProjectResponse.builder().build());
+
+        UpdateProjectRequest req = new UpdateProjectRequest();
+        req.setProjectName("Test Project");
+        req.setPriority(ProjectPriority.MEDIUM);
+        req.setStatus(ProjectStatus.CANCELLED);
+        req.setStartDate(LocalDate.now());
+
+        projectService.updateProject("proj-1", req);
+
+        verify(projectValidator).validateProjectCancellationGuards("proj-1");
+    }
+
+    @Test
     void updateProject_ThrowsWhenProjectIsCancelled() {
         Project project = new Project();
         project.setId("proj-1");

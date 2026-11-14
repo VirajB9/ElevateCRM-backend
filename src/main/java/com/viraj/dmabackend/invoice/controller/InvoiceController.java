@@ -94,6 +94,20 @@ public class InvoiceController {
     }
 
     @PreAuthorize("hasAuthority('invoice:read')")
+    @GetMapping("/status")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Filter Invoices By Status Query", description = "Retrieves invoices filtered by their status using query parameter. Requires 'invoice:read' authority.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Filtered invoices returned successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public Page<InvoiceResponse> filterInvoicesByStatus(
+            @Parameter(description = "Invoice status", required = true) @RequestParam InvoiceStatus status,
+            @Parameter(description = "Pagination parameters") Pageable pageable) {
+        return invoiceService.getInvoicesByStatus(status, pageable);
+    }
+
+    @PreAuthorize("hasAuthority('invoice:read')")
     @GetMapping("/status/{status}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get Invoices By Status", description = "Retrieves invoices filtered by their status. Requires 'invoice:read' authority.")

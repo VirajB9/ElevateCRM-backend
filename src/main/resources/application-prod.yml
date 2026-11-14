@@ -7,7 +7,7 @@ spring:
         max-page-size: 100
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}
-      auto-index-creation: true
+      auto-index-creation: false
       transaction:
         enabled: ${SPRING_DATA_MONGODB_TRANSACTION_ENABLED:true}
       
@@ -19,12 +19,22 @@ server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
   shutdown: graceful
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:50}
+      min-spare: 10
 
 app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:900000}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  rate-limit:
+    # In-memory Bucket4j filter limits auth endpoints to 5 requests/minute per IP per instance.
+    # For multi-instance clusters, ensure ingress/gateway rate limiting (Nginx/WAF) is active.
+    capacity: 5
+    refill-tokens: 5
+    refill-duration-minutes: 1
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}

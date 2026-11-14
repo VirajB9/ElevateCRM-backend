@@ -24,4 +24,10 @@ class LeadEntityTest {
         assertThat(hasAssignedUserStatusIndex).isTrue();
         assertThat(hasSourceStatusIndex).isTrue();
     }
+
+    @Test
+    void leadEntity_CompanyName_HasTextIndexedAnnotation() throws NoSuchFieldException {
+        java.lang.reflect.Field companyNameField = Lead.class.getDeclaredField("companyName");
+        assertThat(companyNameField.isAnnotationPresent(org.springframework.data.mongodb.core.index.TextIndexed.class)).isTrue();
+    }
 }

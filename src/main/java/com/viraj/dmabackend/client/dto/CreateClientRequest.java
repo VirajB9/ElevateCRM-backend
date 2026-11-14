@@ -15,7 +15,7 @@ public class CreateClientRequest {
     private String companyName;
 
     @NotBlank
-    @Size(max = 100)
+    @Size(max = 150)
     private String contactPerson;
 
     @NotBlank

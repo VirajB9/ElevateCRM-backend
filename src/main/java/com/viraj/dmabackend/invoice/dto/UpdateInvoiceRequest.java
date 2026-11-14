@@ -28,7 +28,7 @@ public class UpdateInvoiceRequest {
     @NotEmpty(message = "At least one invoice item is required")
     @jakarta.validation.constraints.Size(max = 100, message = "Invoice cannot contain more than 100 items")
     @Valid
-    private List<InvoiceItemRequest> items;
+    private List<@NotNull(message = "Invoice item cannot be null") @Valid InvoiceItemRequest> items;
 
     @NotNull(message = "Tax percentage is required")
     @DecimalMin(value = "0.00", message = "Tax percentage cannot be negative")

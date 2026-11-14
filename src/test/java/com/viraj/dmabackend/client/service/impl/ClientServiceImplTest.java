@@ -20,6 +20,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -152,6 +153,31 @@ public class ClientServiceImplTest {
         assertEquals("9876543210", saved.getPhoneNumber());
         assertEquals("https://acme.com", saved.getWebsite());
         assertEquals("Tech", saved.getIndustry());
+    }
+
+    @Test
+    void createClientFromLead_ClampsContactPersonToMax100Characters() {
+        String longFirst = "A".repeat(50);
+        String longLast = "B".repeat(50);
+
+        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
+                .leadId("lead-long")
+                .firstName(longFirst)
+                .lastName(longLast)
+                .companyName("Acme Inc")
+                .email("jane@acme.com")
+                .phoneNumber("9876543210")
+                .build();
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        clientService.createClientFromLead(data);
+
+        ArgumentCaptor<Client> captor = ArgumentCaptor.forClass(Client.class);
+        verify(clientRepository, atLeastOnce()).save(captor.capture());
+        Client saved = captor.getValue();
+        assertEquals(100, saved.getContactPerson().length());
+        assertTrue(saved.getContactPerson().startsWith(longFirst + " "));
     }
 
     @Test

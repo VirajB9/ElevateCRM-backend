@@ -25,6 +25,7 @@ public class InvoiceItemRequest {
 
     @NotNull(message = "Quantity is required")
     @DecimalMin(value = "0.01", message = "Quantity must be greater than zero")
+    @jakarta.validation.constraints.Digits(integer = 10, fraction = 2, message = "Quantity cannot have more than 2 decimal places")
     private BigDecimal quantity;
 
     @NotNull(message = "Unit price is required")

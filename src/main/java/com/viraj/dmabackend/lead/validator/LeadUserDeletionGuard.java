@@ -31,4 +31,12 @@ public class LeadUserDeletionGuard implements UserDeletionGuard {
             throw new BadRequestException("Cannot delete user with active assigned leads. Please reassign the leads first.");
         }
     }
+
+    @Override
+    public void validateCanDeactivateUser(String userId) {
+        String normalizedUserId = userId != null ? userId.trim() : null;
+        if (normalizedUserId != null && leadRepository.existsByAssignedUserIdAndStatusIn(normalizedUserId, ACTIVE_STATUSES)) {
+            throw new BadRequestException("Cannot deactivate user with active assigned leads. Please reassign the leads first.");
+        }
+    }
 }

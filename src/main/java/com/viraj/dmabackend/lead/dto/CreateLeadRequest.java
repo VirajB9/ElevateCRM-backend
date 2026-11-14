@@ -2,6 +2,7 @@ package com.viraj.dmabackend.lead.dto;
 
 import com.viraj.dmabackend.lead.enums.LeadSource;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -56,6 +57,7 @@ public class CreateLeadRequest {
     private String assignedUserId;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "Estimated budget cannot be negative.")
+    @Digits(integer = 15, fraction = 2, message = "Estimated budget must have at most 15 integer digits and 2 decimal places")
     private BigDecimal estimatedBudget;
 
     

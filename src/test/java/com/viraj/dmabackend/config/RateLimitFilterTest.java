@@ -84,6 +84,29 @@ public class RateLimitFilterTest {
     }
 
     @Test
+    void doFilter_LogoutRateLimitExceeded_ReturnsLogoutSpecificMessage() throws ServletException, IOException {
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/logout");
+            request.setServletPath("/api/v1/auth/logout");
+            request.setRemoteAddr("10.0.0.7");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            filter.doFilter(request, response, filterChain);
+            assertEquals(200, response.getStatus());
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/logout");
+        request.setServletPath("/api/v1/auth/logout");
+        request.setRemoteAddr("10.0.0.7");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, filterChain);
+        assertEquals(429, response.getStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(response.getHeader("Retry-After"));
+        org.junit.jupiter.api.Assertions.assertTrue(response.getContentAsString().contains("Too many logout attempts"));
+    }
+
+    @Test
     void doFilter_WithTrailingSlash_StillAppliesRateLimit() throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login/");
         request.setServletPath("/api/v1/auth/login/");

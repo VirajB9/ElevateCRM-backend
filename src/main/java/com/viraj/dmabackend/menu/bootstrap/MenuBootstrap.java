@@ -142,7 +142,7 @@ public class MenuBootstrap implements CommandLineRunner {
                 "settings",
                 null,
                 6,
-                "role:read");
+                null);
         createMenu(
                 "User Accounts",
                 "/settings/users",
@@ -179,11 +179,11 @@ public class MenuBootstrap implements CommandLineRunner {
         }
 
         boolean updated = false;
-        if (parentId != null && !parentId.equals(existing.getParentId())) {
+        if (!java.util.Objects.equals(parentId, existing.getParentId())) {
             existing.setParentId(parentId);
             updated = true;
         }
-        if (requiredPermission != null && !requiredPermission.equals(existing.getRequiredPermission())) {
+        if (!java.util.Objects.equals(requiredPermission, existing.getRequiredPermission())) {
             existing.setRequiredPermission(requiredPermission);
             updated = true;
         }

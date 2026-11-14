@@ -129,6 +129,12 @@ public class LeadValidator {
             if (user.getStatus() != UserStatus.ACTIVE) {
                 throw new BadRequestException("Cannot assign lead to an inactive, suspended, or locked user.");
             }
+
+            String restrictedUserId = getAssignedUserScopeIfRestricted();
+            if (restrictedUserId != null && !restrictedUserId.equals(normalizedUserId)) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Access denied: You are not authorized to assign leads to another user");
+            }
         }
     }
 
@@ -161,14 +167,15 @@ public class LeadValidator {
                     return currentUser.getId();
                 }
             } catch (UserNotFoundException ignored) {
+                throw new org.springframework.security.access.AccessDeniedException("Unable to resolve user authorization scope");
             }
         }
-        return null;
+        throw new org.springframework.security.access.AccessDeniedException("Unable to resolve user authorization scope");
     }
 
     public void validateLeadAccess(Lead lead) {
         String restrictedUserId = getAssignedUserScopeIfRestricted();
-        if (restrictedUserId != null && (lead.getAssignedUserId() == null || !restrictedUserId.equals(lead.getAssignedUserId()))) {
+        if (restrictedUserId != null && lead.getAssignedUserId() != null && !restrictedUserId.equals(lead.getAssignedUserId())) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "Access denied: You are not authorized to view leads assigned to another user");
         }
@@ -182,7 +189,7 @@ public class LeadValidator {
         }
 
         boolean isManagerOrOwner = auth.getAuthorities().stream().anyMatch(a ->
-                "ROLE_OWNER".equals(a.getAuthority()) || "ROLE_MANAGER".equals(a.getAuthority()));
+                "ROLE_OWNER".equals(a.getAuthority()) || "ROLE_MANAGER".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority()));
         if (isManagerOrOwner) {
             return;
         }
@@ -191,13 +198,17 @@ public class LeadValidator {
         if (currentUserEmail != null && !currentUserEmail.isBlank()) {
             try {
                 UserResponse currentUser = userService.getUserByEmail(currentUserEmail);
-                if (currentUser != null && !currentUser.getId().equals(userId)) {
-                    throw new org.springframework.security.access.AccessDeniedException(
-                            "Access denied: You are not authorized to view leads assigned to another user");
+                if (currentUser != null) {
+                    if (!currentUser.getId().equals(userId)) {
+                        throw new org.springframework.security.access.AccessDeniedException(
+                                "Access denied: You are not authorized to view leads assigned to another user");
+                    }
+                    return;
                 }
             } catch (UserNotFoundException ignored) {
-                // If user not in DB, continue
+                throw new org.springframework.security.access.AccessDeniedException("Unable to resolve user authorization scope");
             }
         }
+        throw new org.springframework.security.access.AccessDeniedException("Unable to resolve user authorization scope");
     }
 }

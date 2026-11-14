@@ -50,4 +50,26 @@ class LeadUserDeletionGuardTest {
     void validateCanDeleteUser_whenUserIdIsNull_passes() {
         assertDoesNotThrow(() -> guard.validateCanDeleteUser(null));
     }
+
+    @Test
+    void validateCanDeactivateUser_whenUserHasActiveLeads_throwsBadRequestException() {
+        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(ACTIVE_STATUSES)))
+                .thenReturn(true);
+
+        assertThrows(BadRequestException.class, () -> guard.validateCanDeactivateUser("  u-1  "));
+    }
+
+    @Test
+    void validateCanDeactivateUser_whenUserHasNoActiveLeads_passes() {
+        when(leadRepository.existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(ACTIVE_STATUSES)))
+                .thenReturn(false);
+
+        assertDoesNotThrow(() -> guard.validateCanDeactivateUser("u-1"));
+        verify(leadRepository).existsByAssignedUserIdAndStatusIn(eq("u-1"), eq(ACTIVE_STATUSES));
+    }
+
+    @Test
+    void validateCanDeactivateUser_whenUserIdIsNull_passes() {
+        assertDoesNotThrow(() -> guard.validateCanDeactivateUser(null));
+    }
 }

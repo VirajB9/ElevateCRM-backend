@@ -149,4 +149,45 @@ public class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().isSuccess());
         assertEquals("Email already exists: test@agency.com", response.getBody().getMessage());
     }
+
+    @Test
+    void handleMongoCommandException_TextSearchParseError_ReturnsBadRequest() {
+        com.mongodb.MongoCommandException ex = mock(com.mongodb.MongoCommandException.class);
+        when(ex.getErrorCode()).thenReturn(15);
+        when(ex.getMessage()).thenReturn("Command failed with error 15 (FailedToParse): syntax error in text search phrase");
+
+        ResponseEntity<ApiResponse<Object>> response = handler.handleMongoCommandException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Invalid search query syntax", response.getBody().getMessage());
+    }
+
+    @Test
+    void handleMongoCommandException_OtherError_ReturnsInternalServerError() {
+        com.mongodb.MongoCommandException ex = mock(com.mongodb.MongoCommandException.class);
+        when(ex.getErrorCode()).thenReturn(50);
+        when(ex.getMessage()).thenReturn("ExceededTimeLimit");
+
+        ResponseEntity<ApiResponse<Object>> response = handler.handleMongoCommandException(ex);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+    }
+
+    @Test
+    void handleUncategorizedMongoDbException_TextSearchParseError_ReturnsBadRequest() {
+        com.mongodb.MongoCommandException cause = mock(com.mongodb.MongoCommandException.class);
+        when(cause.getErrorCode()).thenReturn(15);
+        when(cause.getMessage()).thenReturn("syntax error in text search phrase");
+
+        org.springframework.data.mongodb.UncategorizedMongoDbException ex =
+                new org.springframework.data.mongodb.UncategorizedMongoDbException("Query failed", cause);
+
+        ResponseEntity<ApiResponse<Object>> response = handler.handleUncategorizedMongoDbException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("Invalid search query syntax", response.getBody().getMessage());
+    }
 }

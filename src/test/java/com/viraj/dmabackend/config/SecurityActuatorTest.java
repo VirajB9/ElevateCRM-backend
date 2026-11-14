@@ -60,4 +60,25 @@ public class SecurityActuatorTest {
                 .as("RateLimitFilter must execute before JwtFilter")
                 .isLessThan(jwtIndex);
     }
+
+    @Autowired
+    private org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource;
+
+    @Test
+    void corsConfiguration_exposesRetryAfterHeader() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest();
+        request.setRequestURI("/api/v1/auth/login");
+        org.springframework.web.cors.CorsConfiguration config = corsConfigurationSource.getCorsConfiguration(request);
+        assertThat(config).isNotNull();
+        assertThat(config.getExposedHeaders()).contains("Retry-After", "x-auth-token", "X-Request-ID");
+    }
+
+    @Test
+    void corsConfiguration_permitsStandardBrowserHeaders() {
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest();
+        request.setRequestURI("/api/v1/clients");
+        org.springframework.web.cors.CorsConfiguration config = corsConfigurationSource.getCorsConfiguration(request);
+        assertThat(config).isNotNull();
+        assertThat(config.getAllowedHeaders()).contains("Accept", "Origin", "X-Requested-With", "Authorization", "Content-Type");
+    }
 }

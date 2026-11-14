@@ -23,6 +23,7 @@ public class ProjectValidator {
     private final ClientService clientService;
     private final List<ProjectDeletionGuard> projectDeletionGuards;
     private final List<ProjectCompletionGuard> projectCompletionGuards;
+    private final List<ProjectCancellationGuard> projectCancellationGuards;
 
     public void validateClientExists(String clientId) {
         String normalizedClientId = clientId != null ? clientId.trim() : null;
@@ -30,10 +31,18 @@ public class ProjectValidator {
     }
 
     public void validateClientActiveForProject(String clientId) {
+        validateClientActiveForProject(clientId, "Cannot create a project for an inactive client.");
+    }
+
+    public void validateClientActiveForProjectUpdate(String clientId) {
+        validateClientActiveForProject(clientId, "Cannot update a project for an inactive client.");
+    }
+
+    public void validateClientActiveForProject(String clientId, String errorMessage) {
         String normalizedClientId = clientId != null ? clientId.trim() : null;
         ClientResponse client = clientService.getClientById(normalizedClientId);
         if (client.getStatus() != ClientStatus.ACTIVE) {
-            throw new BadRequestException("Cannot create a project for an inactive client.");
+            throw new BadRequestException(errorMessage);
         }
     }
 
@@ -64,6 +73,14 @@ public class ProjectValidator {
         if (projectCompletionGuards != null) {
             for (ProjectCompletionGuard guard : projectCompletionGuards) {
                 guard.validateCanCompleteProject(projectId);
+            }
+        }
+    }
+
+    public void validateProjectCancellationGuards(String projectId) {
+        if (projectCancellationGuards != null) {
+            for (ProjectCancellationGuard guard : projectCancellationGuards) {
+                guard.validateCanCancelProject(projectId);
             }
         }
     }

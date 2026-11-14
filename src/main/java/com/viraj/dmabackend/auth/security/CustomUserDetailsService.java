@@ -1,12 +1,10 @@
 package com.viraj.dmabackend.auth.security;
 
-
-import com.viraj.dmabackend.auth.entity.Permission;
-import com.viraj.dmabackend.auth.entity.Role;
+import com.viraj.dmabackend.auth.dto.RoleResponse;
 import com.viraj.dmabackend.auth.entity.User;
-import com.viraj.dmabackend.auth.repository.PermissionRepository;
-import com.viraj.dmabackend.auth.repository.RoleRepository;
+import com.viraj.dmabackend.auth.exception.RoleNotFoundException;
 import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.auth.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,9 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    private final RoleRepository roleRepository;
-
-    private final PermissionRepository permissionRepository;
+    private final RoleService roleService;
 
     @Override
     public UserDetails loadUserByUsername(String email)
@@ -35,34 +31,31 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found"));
 
-        Role role = roleRepository
-                .findById(user.getRoleId())
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("Role not found for user: " + email));
-
-        List<String> permissionIds = role.getPermissionIds() != null
-                ? role.getPermissionIds()
-                : java.util.Collections.emptyList();
-
-        List<Permission> permissions =
-                permissionRepository.findAllById(permissionIds);
+        RoleResponse role;
+        try {
+            role = roleService.getRoleById(user.getRoleId());
+        } catch (RoleNotFoundException ex) {
+            throw new UsernameNotFoundException("Role not found for user: " + email, ex);
+        }
 
         List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
         if (role.getName() != null && !role.getName().isBlank()) {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName().trim()));
         }
 
-        permissions.stream()
-                .filter(permission -> permission != null && permission.getPermissionType() != null)
-                .map(permission ->
-                        new SimpleGrantedAuthority(
-                                permission.getPermissionType()
-                                        .name()
-                                        .toLowerCase()
-                                        .replace("_", ":")
-                        )
-                )
-                .forEach(authorities::add);
+        if (role.getPermissions() != null) {
+            role.getPermissions().stream()
+                    .filter(permission -> permission != null && permission.getName() != null && !permission.getName().isBlank())
+                    .map(permission ->
+                            new SimpleGrantedAuthority(
+                                    permission.getName()
+                                            .toLowerCase()
+                                            .replace("_", ":")
+                            )
+                    )
+                    .sorted(java.util.Comparator.comparing(SimpleGrantedAuthority::getAuthority))
+                    .forEach(authorities::add);
+        }
 
         return new CustomUserDetails(
                 user,

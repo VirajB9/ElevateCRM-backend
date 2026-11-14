@@ -46,10 +46,8 @@ public enum PermissionType {
     // ===========================
     // ROLE MANAGEMENT
     // ===========================
-    ROLE_CREATE,
     ROLE_READ,
     ROLE_UPDATE,
-    ROLE_DELETE,
 
     // ===========================
     // MENU MANAGEMENT

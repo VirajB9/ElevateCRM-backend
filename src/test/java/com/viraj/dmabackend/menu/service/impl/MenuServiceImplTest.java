@@ -174,6 +174,56 @@ class MenuServiceImplTest {
     }
 
     @Test
+    void getMenuTree_whenUserHasUserReadWithoutRoleRead_includesSettingsAndUsersSubmenuExcludingRoles() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("hr@agency.com", "pass",
+                        List.of(new SimpleGrantedAuthority("user:read")))
+        );
+
+        Menu settingsRoot = Menu.builder()
+                .id("settings-root")
+                .parentId(null)
+                .title("System Administration")
+                .path("/settings")
+                .orderIndex(6)
+                .requiredPermission(null)
+                .active(true)
+                .build();
+
+        Menu usersSubmenu = Menu.builder()
+                .id("users-sub")
+                .parentId("settings-root")
+                .title("User Accounts")
+                .path("/settings/users")
+                .orderIndex(1)
+                .requiredPermission("user:read")
+                .active(true)
+                .build();
+
+        Menu rolesSubmenu = Menu.builder()
+                .id("roles-sub")
+                .parentId("settings-root")
+                .title("Roles & Permissions")
+                .path("/settings/roles")
+                .orderIndex(2)
+                .requiredPermission("role:read")
+                .active(true)
+                .build();
+
+        when(menuRepository.findByActiveTrueOrderByOrderIndexAsc())
+                .thenReturn(List.of(settingsRoot, usersSubmenu, rolesSubmenu));
+
+        List<MenuTreeResponse> result = menuService.getMenuTree();
+
+        assertThat(result).hasSize(1);
+        MenuTreeResponse root = result.get(0);
+        assertThat(root.getTitle()).isEqualTo("System Administration");
+        assertThat(root.getChildren()).hasSize(1);
+        assertThat(root.getChildren().get(0).getTitle()).isEqualTo("User Accounts");
+        assertThat(root.getChildren().get(0).getPath()).isEqualTo("/settings/users");
+    }
+
+    @Test
     void getMenuTree_whenCyclicRelationshipExists_breaksCycleAndSerializesWithoutStackOverflow() throws Exception {
         Menu menuRoot = Menu.builder()
                 .id("R")
@@ -385,5 +435,53 @@ class MenuServiceImplTest {
                 org.springframework.dao.OptimisticLockingFailureException.class,
                 () -> menuService.updateMenu("menu-1", request)
         );
+    }
+
+    @Test
+    void updateMenu_WhenCircularRelationshipAttempted_ThrowsCircularMenuException() {
+        Menu menuA = Menu.builder().id("menu-A").title("Menu A").parentId("menu-B").build();
+        when(menuRepository.findById("menu-A")).thenReturn(java.util.Optional.of(menuA));
+
+        org.mockito.Mockito.doThrow(new com.viraj.dmabackend.menu.exception.CircularMenuException())
+                .when(menuValidator).validateParentRelationship("menu-A", "menu-B");
+
+        com.viraj.dmabackend.menu.dto.UpdateMenuRequest request = new com.viraj.dmabackend.menu.dto.UpdateMenuRequest();
+        request.setTitle("Menu A");
+        request.setParentId("menu-B");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.viraj.dmabackend.menu.exception.CircularMenuException.class,
+                () -> menuService.updateMenu("menu-A", request)
+        );
+    }
+
+    @Test
+    void resolveMenuTreeCacheKey_whenUnauthenticated_returnsAnonymous() {
+        SecurityContextHolder.clearContext();
+        assertThat(MenuServiceImpl.resolveMenuTreeCacheKey()).isEqualTo("anonymous");
+    }
+
+    @Test
+    void resolveMenuTreeCacheKey_producesCanonicalSortedKeyRegardlessOfInputOrder() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "user@agency.com", "pass",
+                        List.of(new SimpleGrantedAuthority("lead:read"),
+                                new SimpleGrantedAuthority("ROLE_MANAGER"),
+                                new SimpleGrantedAuthority("client:read"))));
+
+        String key1 = MenuServiceImpl.resolveMenuTreeCacheKey();
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "user2@agency.com", "pass",
+                        List.of(new SimpleGrantedAuthority("ROLE_MANAGER"),
+                                new SimpleGrantedAuthority("client:read"),
+                                new SimpleGrantedAuthority("lead:read"))));
+
+        String key2 = MenuServiceImpl.resolveMenuTreeCacheKey();
+
+        assertThat(key1).isEqualTo("ROLE_MANAGER,client:read,lead:read");
+        assertThat(key1).isEqualTo(key2);
     }
 }

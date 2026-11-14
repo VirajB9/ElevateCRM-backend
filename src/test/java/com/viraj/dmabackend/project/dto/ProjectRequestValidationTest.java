@@ -87,4 +87,37 @@ class ProjectRequestValidationTest {
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("version")
                 && v.getMessage().contains("Version is required"));
     }
+
+    @Test
+    void createProjectRequest_withExcessiveBudgetFraction_failsValidation() {
+        CreateProjectRequest request = new CreateProjectRequest();
+        request.setClientId("client-1");
+        request.setProjectName("ERP System");
+        request.setPriority(ProjectPriority.HIGH);
+        request.setStartDate(LocalDate.now());
+        request.setBudget(new BigDecimal("100.123"));
+
+        Set<ConstraintViolation<CreateProjectRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("budget")
+                && v.getMessage().contains("at most 15 integer digits and 2 decimal places"));
+    }
+
+    @Test
+    void updateProjectRequest_withExcessiveBudgetInteger_failsValidation() {
+        UpdateProjectRequest request = new UpdateProjectRequest();
+        request.setProjectName("ERP System");
+        request.setPriority(ProjectPriority.HIGH);
+        request.setStatus(ProjectStatus.ACTIVE);
+        request.setStartDate(LocalDate.now());
+        request.setVersion(1L);
+        request.setBudget(new BigDecimal("10000000000000000.00")); // 17 digits
+
+        Set<ConstraintViolation<UpdateProjectRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("budget")
+                && v.getMessage().contains("at most 15 integer digits and 2 decimal places"));
+    }
 }

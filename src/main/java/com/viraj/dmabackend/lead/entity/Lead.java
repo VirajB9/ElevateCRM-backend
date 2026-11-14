@@ -34,6 +34,7 @@ public class Lead extends BaseEntity {
     @TextIndexed
     private String lastName;
 
+    @TextIndexed
     private String companyName;
 
     @Builder.Default

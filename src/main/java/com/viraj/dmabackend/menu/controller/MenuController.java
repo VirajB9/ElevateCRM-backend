@@ -93,10 +93,10 @@ public class MenuController {
 
     @PreAuthorize("hasAuthority('menu:delete')")
     @RequestMapping(value = {"/{menuId}", "/{menuId}/deactivate"}, method = {RequestMethod.DELETE, RequestMethod.PATCH})
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Deactivate / Delete Menu", description = "Soft deletes a menu item by setting it to inactive. Requires 'menu:delete' authority.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Menu item deactivated successfully"),
+            @ApiResponse(responseCode = "204", description = "Menu item deactivated successfully"),
             @ApiResponse(responseCode = "404", description = "Menu item not found"),
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })

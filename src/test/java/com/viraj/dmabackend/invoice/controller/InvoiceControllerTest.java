@@ -128,6 +128,16 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
 
     @Test
     @WithMockUser(authorities = "invoice:read")
+    void filterInvoicesByStatus_queryParam_whenAuthorized_returnsOk() throws Exception {
+        when(invoiceService.getInvoicesByStatus(eq(InvoiceStatus.DRAFT), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/v1/invoices/status")
+                        .param("status", "DRAFT"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = "invoice:read")
     void getInvoicesByClientId_whenAuthorized_returnsOk() throws Exception {
         when(invoiceService.getInvoicesByClientId(eq("client-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
@@ -209,6 +219,72 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
     @WithMockUser(authorities = "invoice:read")
     void getInvoicesByClientId_withInvalidIdPattern_returnsBadRequest() throws Exception {
         mockMvc.perform(get("/api/v1/invoices/client/invalid!client@id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "invoice:create")
+    void createInvoice_whenItemsContainNullElement_returnsBadRequest() throws Exception {
+        String jsonPayload = """
+                {
+                    "clientId": "client-1",
+                    "projectId": "proj-1",
+                    "issueDate": "2026-11-14",
+                    "dueDate": "2026-11-30",
+                    "taxPercentage": 18.0,
+                    "discount": 0.0,
+                    "items": [null]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/invoices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "invoice:update")
+    void updateInvoice_whenItemsContainNullElement_returnsBadRequest() throws Exception {
+        String jsonPayload = """
+                {
+                    "dueDate": "2026-11-30",
+                    "taxPercentage": 18.0,
+                    "discount": 0.0,
+                    "items": [null]
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/invoices/inv-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "invoice:create")
+    void createInvoice_whenQuantityHasMoreThanTwoDecimals_returnsBadRequest() throws Exception {
+        String jsonPayload = """
+                {
+                    "clientId": "client-1",
+                    "projectId": "proj-1",
+                    "issueDate": "2026-11-14",
+                    "dueDate": "2026-11-30",
+                    "taxPercentage": 18.0,
+                    "discount": 0.0,
+                    "items": [
+                        {
+                            "description": "Item 1",
+                            "quantity": 3.333,
+                            "unitPrice": 100.00
+                        }
+                    ]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/invoices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
                 .andExpect(status().isBadRequest());
     }
 }

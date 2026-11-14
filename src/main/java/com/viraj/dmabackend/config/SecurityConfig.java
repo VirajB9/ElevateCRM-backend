@@ -119,10 +119,13 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
+                "Accept",
+                "Origin",
                 "x-auth-token",
-                "X-Request-ID"
+                "X-Request-ID",
+                "X-Requested-With"
         ));
-        configuration.setExposedHeaders(List.of("x-auth-token", "X-Request-ID"));
+        configuration.setExposedHeaders(List.of("x-auth-token", "X-Request-ID", "Retry-After"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

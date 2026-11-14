@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,11 +39,20 @@ public class ProjectValidatorTest {
     @Mock
     private ProjectCompletionGuard projectCompletionGuard;
 
+    @Mock
+    private ProjectCancellationGuard projectCancellationGuard;
+
     private ProjectValidator projectValidator;
 
     @BeforeEach
     void setUp() {
-        projectValidator = new ProjectValidator(projectRepository, clientService, List.of(projectDeletionGuard), List.of(projectCompletionGuard));
+        projectValidator = new ProjectValidator(
+                projectRepository,
+                clientService,
+                List.of(projectDeletionGuard),
+                List.of(projectCompletionGuard),
+                List.of(projectCancellationGuard)
+        );
     }
 
     @Test
@@ -175,6 +185,13 @@ public class ProjectValidatorTest {
     }
 
     @Test
+    void validateProjectCancellationGuards_DelegatesToGuards() {
+        doNothing().when(projectCancellationGuard).validateCanCancelProject("proj-1");
+        assertDoesNotThrow(() -> projectValidator.validateProjectCancellationGuards("proj-1"));
+        verify(projectCancellationGuard).validateCanCancelProject("proj-1");
+    }
+
+    @Test
     void validateProjectStatusTransition_ThrowsWhenOnHoldDirectToCompleted() {
         assertThrows(BadRequestException.class,
                 () -> projectValidator.validateProjectStatusTransition(ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED));
@@ -231,8 +248,23 @@ public class ProjectValidatorTest {
 
         when(clientService.getClientById("client-2")).thenReturn(client);
 
-        assertThrows(BadRequestException.class,
+        BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> projectValidator.validateClientActiveForProject("client-2"));
+        assertEquals("Cannot create a project for an inactive client.", ex.getMessage());
+    }
+
+    @Test
+    void validateClientActiveForProjectUpdate_ThrowsWhenInactive() {
+        ClientResponse client = ClientResponse.builder()
+                .id("client-2")
+                .status(ClientStatus.INACTIVE)
+                .build();
+
+        when(clientService.getClientById("client-2")).thenReturn(client);
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> projectValidator.validateClientActiveForProjectUpdate("client-2"));
+        assertEquals("Cannot update a project for an inactive client.", ex.getMessage());
     }
 
     @Test

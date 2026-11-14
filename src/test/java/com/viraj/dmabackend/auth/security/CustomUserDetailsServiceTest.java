@@ -1,13 +1,12 @@
 package com.viraj.dmabackend.auth.security;
 
-import com.viraj.dmabackend.auth.entity.Permission;
-import com.viraj.dmabackend.auth.entity.Role;
+import com.viraj.dmabackend.auth.dto.PermissionResponse;
+import com.viraj.dmabackend.auth.dto.RoleResponse;
 import com.viraj.dmabackend.auth.entity.User;
-import com.viraj.dmabackend.auth.enums.PermissionType;
 import com.viraj.dmabackend.auth.enums.UserStatus;
-import com.viraj.dmabackend.auth.repository.PermissionRepository;
-import com.viraj.dmabackend.auth.repository.RoleRepository;
+import com.viraj.dmabackend.auth.exception.RoleNotFoundException;
 import com.viraj.dmabackend.auth.repository.UserRepository;
+import com.viraj.dmabackend.auth.service.RoleService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +21,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,10 +31,7 @@ class CustomUserDetailsServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private RoleRepository roleRepository;
-
-    @Mock
-    private PermissionRepository permissionRepository;
+    private RoleService roleService;
 
     @InjectMocks
     private CustomUserDetailsService customUserDetailsService;
@@ -54,7 +51,7 @@ class CustomUserDetailsServiceTest {
         User user = User.builder().id("u1").email("user@example.com").roleId("r1").status(UserStatus.ACTIVE).build();
         when(userRepository.findByEmailAndStatusNot("user@example.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
-        when(roleRepository.findById("r1")).thenReturn(Optional.empty());
+        when(roleService.getRoleById("r1")).thenThrow(new RoleNotFoundException("r1"));
 
         assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername("user@example.com"))
                 .isInstanceOf(UsernameNotFoundException.class)
@@ -62,49 +59,49 @@ class CustomUserDetailsServiceTest {
     }
 
     @Test
-    void loadUserByUsername_whenRoleHasNullPermissionIds_returnsUserDetailsWithEmptyAuthorities() {
+    void loadUserByUsername_whenRoleHasNullPermissions_returnsUserDetailsWithRoleAuthority() {
         User user = User.builder().id("u1").email("user@example.com").roleId("r1").status(UserStatus.ACTIVE).build();
-        Role role = Role.builder().id("r1").name("EMPLOYEE").permissionIds(null).build();
+        RoleResponse role = RoleResponse.builder().id("r1").name("EMPLOYEE").permissions(null).build();
 
         when(userRepository.findByEmailAndStatusNot("user@example.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
-        when(roleRepository.findById("r1")).thenReturn(Optional.of(role));
-        when(permissionRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
+        when(roleService.getRoleById("r1")).thenReturn(role);
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername("user@example.com");
 
         assertThat(userDetails).isNotNull();
         assertThat(userDetails.getAuthorities()).extracting("authority")
                 .containsExactly("ROLE_EMPLOYEE");
+        verify(roleService).getRoleById("r1");
     }
 
     @Test
     void loadUserByUsername_whenValidUserAndPermissions_returnsAuthorities() {
         User user = User.builder().id("u1").email("user@example.com").roleId("r1").status(UserStatus.ACTIVE).build();
-        Role role = Role.builder().id("r1").name("MANAGER").permissionIds(List.of("p1")).build();
-        Permission permission = Permission.builder().id("p1").permissionType(PermissionType.LEAD_READ).build();
+        RoleResponse role = RoleResponse.builder().id("r1").name("MANAGER")
+                .permissions(List.of(PermissionResponse.builder().id("p1").name("LEAD_READ").build()))
+                .build();
 
         when(userRepository.findByEmailAndStatusNot("user@example.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
-        when(roleRepository.findById("r1")).thenReturn(Optional.of(role));
-        when(permissionRepository.findAllById(List.of("p1"))).thenReturn(List.of(permission));
+        when(roleService.getRoleById("r1")).thenReturn(role);
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername("user@example.com");
 
         assertThat(userDetails).isNotNull();
         assertThat(userDetails.getAuthorities()).extracting("authority")
                 .containsExactlyInAnyOrder("ROLE_MANAGER", "lead:read");
+        verify(roleService).getRoleById("r1");
     }
 
     @Test
     void loadUserByUsername_normalizesEmailCasingAndWhitespace() {
         User user = User.builder().id("u1").email("user@example.com").roleId("r1").status(UserStatus.ACTIVE).build();
-        Role role = Role.builder().id("r1").name("EMPLOYEE").permissionIds(Collections.emptyList()).build();
+        RoleResponse role = RoleResponse.builder().id("r1").name("EMPLOYEE").permissions(Collections.emptyList()).build();
 
         when(userRepository.findByEmailAndStatusNot("user@example.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
-        when(roleRepository.findById("r1")).thenReturn(Optional.of(role));
-        when(permissionRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
+        when(roleService.getRoleById("r1")).thenReturn(role);
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername("  User@Example.COM  ");
 

@@ -1,7 +1,6 @@
 package com.viraj.dmabackend.invoice.validator;
 
 import com.viraj.dmabackend.client.exception.ClientNotFoundException;
-import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
@@ -11,7 +10,6 @@ import com.viraj.dmabackend.invoice.entity.Invoice;
 import com.viraj.dmabackend.invoice.exception.InvalidInvoiceDateException;
 import com.viraj.dmabackend.project.dto.ProjectResponse;
 import com.viraj.dmabackend.project.exception.ProjectNotFoundException;
-import com.viraj.dmabackend.project.repository.ProjectRepository;
 import com.viraj.dmabackend.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -26,12 +24,12 @@ public class InvoiceValidator {
 
     private final ClientService clientService;
     private final ProjectService projectService;
-    private final ClientRepository clientRepository;
-    private final ProjectRepository projectRepository;
 
     public void validateCreateInvoice(CreateInvoiceRequest request) {
 
-        validateClientActiveForInvoice(request.getClientId());
+        validateItems(request.getItems());
+
+        validateClientActiveForInvoice(request.getClientId(), "Cannot create an invoice for an inactive client.");
 
         validateProjectBelongsToClient(request.getProjectId(), request.getClientId());
 
@@ -42,8 +40,10 @@ public class InvoiceValidator {
 
     public void validateUpdateInvoice(Invoice invoice, UpdateInvoiceRequest request) {
 
+        validateItems(request.getItems());
+
         if (invoice.getClientId() != null) {
-            validateClientActiveForInvoice(invoice.getClientId());
+            validateClientActiveForInvoice(invoice.getClientId(), "Cannot update an invoice for an inactive client.");
         }
 
         if (invoice.getProjectId() != null && invoice.getClientId() != null) {
@@ -55,25 +55,27 @@ public class InvoiceValidator {
         validateDiscount(request.getItems(), request.getDiscount());
     }
 
+    private void validateItems(List<InvoiceItemRequest> items) {
+        if (items != null && !items.isEmpty() && items.stream().noneMatch(java.util.Objects::nonNull)) {
+            throw new BadRequestException("Invoice must contain at least one valid line item");
+        }
+    }
+
     public void validateClientExists(String clientId) {
         String trimmedClientId = clientId != null ? clientId.trim() : null;
-        if (trimmedClientId == null || !clientRepository.existsById(trimmedClientId)) {
-            throw new ClientNotFoundException("Client not found with id: " + trimmedClientId);
-        }
+        clientService.getClientById(trimmedClientId);
     }
 
     public void validateProjectExists(String projectId) {
         String trimmedProjectId = projectId != null ? projectId.trim() : null;
-        if (trimmedProjectId == null || !projectRepository.existsById(trimmedProjectId)) {
-            throw new ProjectNotFoundException(trimmedProjectId);
-        }
+        projectService.getProjectById(trimmedProjectId);
     }
 
-    private void validateClientActiveForInvoice(String clientId) {
+    private void validateClientActiveForInvoice(String clientId, String errorMessage) {
         String trimmedClientId = clientId != null ? clientId.trim() : null;
         com.viraj.dmabackend.client.dto.ClientResponse client = clientService.getClientById(trimmedClientId);
         if (client.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
-            throw new BadRequestException("Cannot create an invoice for an inactive client.");
+            throw new BadRequestException(errorMessage);
         }
     }
 

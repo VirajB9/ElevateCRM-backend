@@ -126,6 +126,26 @@ class MongoSearchRepositoryIntegrationTest extends AbstractMongoIntegrationTest 
     }
 
     @Test
+    void leadSearch_findsLeadsByCompanyName() {
+        Lead lead = Lead.builder()
+                .firstName("Clark")
+                .lastName("Kent")
+                .companyName("Acme Global Solutions")
+                .email("clark@acmeglobal.com")
+                .phoneNumber("9876543204")
+                .status(LeadStatus.NEW)
+                .source(LeadSource.WEBSITE)
+                .build();
+        lead.setDeleted(false);
+
+        leadRepository.save(lead);
+
+        Page<Lead> results = leadRepository.searchLeads("Acme", PageRequest.of(0, 10));
+        assertThat(results.getContent()).hasSize(1);
+        assertThat(results.getContent().get(0).getCompanyName()).isEqualTo("Acme Global Solutions");
+    }
+
+    @Test
     void projectSearch_findsProjectsByName() {
         Project proj = Project.builder()
                 .projectName("Quantum Computing Prototype")

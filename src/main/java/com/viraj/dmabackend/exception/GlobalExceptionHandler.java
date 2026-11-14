@@ -1,9 +1,11 @@
 package com.viraj.dmabackend.exception;
 
+import com.mongodb.MongoCommandException;
 import com.viraj.dmabackend.common.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -290,6 +292,69 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 response,
                 HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MongoCommandException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMongoCommandException(
+            MongoCommandException ex) {
+
+        if (ex.getErrorCode() == 15 || (ex.getErrorMessage() != null && ex.getErrorMessage().contains("text search phrase"))) {
+            log.warn("MongoDB text search query syntax error: {}", ex.getMessage());
+            ApiResponse<Object> response = new ApiResponse<>(
+                    false,
+                    "Invalid search query syntax",
+                    null);
+            return new ResponseEntity<>(
+                    response,
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        log.error("Unhandled MongoCommandException occurred", ex);
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "An unexpected database error occurred",
+                null);
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(UncategorizedMongoDbException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUncategorizedMongoDbException(
+            UncategorizedMongoDbException ex) {
+
+        Throwable cause = ex.getCause();
+        if (cause instanceof MongoCommandException mce) {
+            if (mce.getErrorCode() == 15 || (mce.getErrorMessage() != null && mce.getErrorMessage().contains("text search phrase"))) {
+                log.warn("MongoDB text search query syntax error: {}", mce.getMessage());
+                ApiResponse<Object> response = new ApiResponse<>(
+                        false,
+                        "Invalid search query syntax",
+                        null);
+                return new ResponseEntity<>(
+                        response,
+                        HttpStatus.BAD_REQUEST);
+            }
+        }
+        if (ex.getMessage() != null && ex.getMessage().contains("text search phrase")) {
+            log.warn("MongoDB text search query syntax error: {}", ex.getMessage());
+            ApiResponse<Object> response = new ApiResponse<>(
+                    false,
+                    "Invalid search query syntax",
+                    null);
+            return new ResponseEntity<>(
+                    response,
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        log.error("Unhandled UncategorizedMongoDbException occurred", ex);
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "An unexpected database error occurred",
+                null);
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)

@@ -27,8 +27,18 @@ public final class PaginationUtils {
         }
         String trimmed = keyword.trim();
         if (trimmed.length() > MAX_KEYWORD_LENGTH) {
-            return trimmed.substring(0, MAX_KEYWORD_LENGTH);
+            trimmed = trimmed.substring(0, MAX_KEYWORD_LENGTH);
         }
-        return trimmed;
+
+        if (trimmed.contains("\\")) {
+            trimmed = trimmed.replace("\\", "");
+        }
+
+        long quoteCount = trimmed.chars().filter(ch -> ch == '"').count();
+        if (quoteCount % 2 != 0) {
+            trimmed = trimmed.replace("\"", "");
+        }
+
+        return trimmed.trim();
     }
 }

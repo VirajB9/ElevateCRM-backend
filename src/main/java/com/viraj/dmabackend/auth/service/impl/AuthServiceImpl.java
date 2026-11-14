@@ -71,14 +71,6 @@ public class AuthServiceImpl implements AuthService {
         if (user.getLockoutUntil() != null) {
             if (user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
                 throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
-            } else {
-                user.setFailedLoginAttempts(0);
-                user.setLockoutUntil(null);
-                mongoTemplate.updateFirst(
-                        Query.query(Criteria.where("id").is(user.getId())),
-                        new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
-                        User.class
-                );
             }
         }
 
@@ -275,14 +267,6 @@ public class AuthServiceImpl implements AuthService {
         if (user.getLockoutUntil() != null) {
             if (user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
                 throw new UnauthorizedException("Account is temporarily locked. Try again later.");
-            } else {
-                user.setFailedLoginAttempts(0);
-                user.setLockoutUntil(null);
-                mongoTemplate.updateFirst(
-                        Query.query(Criteria.where("id").is(user.getId())),
-                        new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
-                        User.class
-                );
             }
         }
 

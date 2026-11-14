@@ -165,6 +165,24 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void calculateInvoiceTotals_NormalizesQuantityScale() {
+        Invoice invoice = new Invoice();
+        invoice.setTaxPercentage(BigDecimal.ZERO);
+        invoice.setDiscount(BigDecimal.ZERO);
+
+        InvoiceItem item = new InvoiceItem();
+        item.setQuantity(new BigDecimal("3.33333"));
+        item.setUnitPrice(new BigDecimal("10.00"));
+        invoice.setItems(List.of(item));
+
+        invoiceService.calculateInvoiceTotals(invoice);
+
+        assertEquals(new BigDecimal("3.33"), item.getQuantity());
+        assertEquals(new BigDecimal("33.30"), item.getLineTotal());
+        assertEquals(new BigDecimal("33.30"), invoice.getSubtotal());
+    }
+
+    @Test
     void deleteInvoice_ThrowsWhenStatusIsPaid() {
         Invoice invoice = new Invoice();
         invoice.setId("inv-123");
@@ -221,11 +239,7 @@ public class InvoiceServiceImplTest {
 
     @Test
     void getInvoiceHistory_ReturnsPaginatedHistoryList() {
-        Invoice invoice = new Invoice();
-        invoice.setId("inv-123");
-        invoice.setActive(true);
-
-        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.existsById("inv-123")).thenReturn(true);
 
         com.viraj.dmabackend.invoice.entity.InvoiceHistory history =
                 new com.viraj.dmabackend.invoice.entity.InvoiceHistory();
@@ -241,11 +255,28 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
-    void getInvoiceHistory_WhenInvoiceIsSoftDeleted_ThrowsInvoiceNotFoundException() {
-        when(invoiceRepository.findByIdAndActiveTrue("inv-deleted")).thenReturn(Optional.empty());
+    void getInvoiceHistory_WhenInvoiceIsSoftDeleted_ReturnsHistoricalRecords() {
+        when(invoiceRepository.existsById("inv-deleted")).thenReturn(true);
+
+        com.viraj.dmabackend.invoice.entity.InvoiceHistory history =
+                new com.viraj.dmabackend.invoice.entity.InvoiceHistory();
+        history.setInvoiceId("inv-deleted");
+        history.setInvoiceVersion(1L);
+
+        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc(eq("inv-deleted"), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(history)));
+
+        var result = invoiceService.getInvoiceHistory("inv-deleted", org.springframework.data.domain.PageRequest.of(0, 10));
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void getInvoiceHistory_WhenInvoiceDoesNotExist_ThrowsInvoiceNotFoundException() {
+        when(invoiceRepository.existsById("inv-missing")).thenReturn(false);
 
         assertThrows(com.viraj.dmabackend.invoice.exception.InvoiceNotFoundException.class,
-                () -> invoiceService.getInvoiceHistory("inv-deleted", org.springframework.data.domain.PageRequest.of(0, 10)));
+                () -> invoiceService.getInvoiceHistory("inv-missing", org.springframework.data.domain.PageRequest.of(0, 10)));
     }
 
     @Test
@@ -314,6 +345,44 @@ public class InvoiceServiceImplTest {
 
         assertThrows(InvalidInvoiceStatusException.class,
                 () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
+    void updateInvoiceStatus_ThrowsWhenTransitioningDraftToCancelled() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.DRAFT);
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.CANCELLED);
+
+        assertThrows(InvalidInvoiceStatusException.class,
+                () -> invoiceService.updateInvoiceStatus("inv-123", req));
+    }
+
+    @Test
+    void updateInvoiceStatus_SucceedsWhenTransitioningSentToCancelled() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setActive(true);
+        invoice.setVersion(0L);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(invoice);
+        when(invoiceMapper.toResponse(any(Invoice.class))).thenReturn(new com.viraj.dmabackend.invoice.dto.InvoiceResponse());
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.CANCELLED);
+        req.setVersion(0L);
+
+        assertDoesNotThrow(() -> invoiceService.updateInvoiceStatus("inv-123", req));
+        verify(invoiceRepository).save(invoice);
     }
 
     @Test

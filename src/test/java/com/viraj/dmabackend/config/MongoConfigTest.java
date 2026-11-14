@@ -33,6 +33,7 @@ class MongoConfigTest {
 
         assertEquals(50, settings.getConnectionPoolSettings().getMaxSize());
         assertEquals(5, settings.getConnectionPoolSettings().getMinSize());
+        assertEquals(5000, settings.getConnectionPoolSettings().getMaxWaitTime(TimeUnit.MILLISECONDS));
         assertEquals(10000, settings.getSocketSettings().getConnectTimeout(TimeUnit.MILLISECONDS));
         assertEquals(10000, settings.getSocketSettings().getReadTimeout(TimeUnit.MILLISECONDS));
     }
@@ -63,5 +64,25 @@ class MongoConfigTest {
         MongoTransactionManager tm = mongoConfig.transactionManager(dbFactory);
         assertNotNull(tm);
         assertEquals(dbFactory, tm.getDatabaseFactory());
+    }
+
+    @Test
+    void productionProfile_DisablesAutoIndexCreation() {
+        org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
+        java.io.InputStream inputStream = getClass().getClassLoader().getResourceAsStream("application-prod.yml");
+        assertNotNull(inputStream, "application-prod.yml should exist");
+        java.util.Map<String, Object> data = yaml.load(inputStream);
+
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> spring = (java.util.Map<String, Object>) data.get("spring");
+        assertNotNull(spring);
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> springData = (java.util.Map<String, Object>) spring.get("data");
+        assertNotNull(springData);
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> mongodb = (java.util.Map<String, Object>) springData.get("mongodb");
+        assertNotNull(mongodb);
+
+        assertEquals(Boolean.FALSE, mongodb.get("auto-index-creation"));
     }
 }

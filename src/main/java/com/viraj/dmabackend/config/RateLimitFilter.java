@@ -17,6 +17,16 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Rate limit filter using Bucket4j and Caffeine.
+ *
+ * NOTE FOR HORIZONTALLY SCALED / MULTI-INSTANCE DEPLOYMENTS:
+ * This rate limiter utilizes an in-memory Caffeine cache scoped to the local JVM process.
+ * In clustered environments running multiple application replicas behind a load balancer,
+ * token consumption is per-node. For strict cluster-wide rate limiting, enforce rate limits
+ * at the reverse proxy / API gateway layer (e.g., Nginx limit_req_zone, AWS WAF, or Cloudflare),
+ * or configure a distributed Bucket4j proxy backend (e.g., Redis).
+ */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
@@ -45,6 +55,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         boolean isChangePassword = "/api/v1/auth/change-password".equals(path);
         boolean isRateLimitedPath = "/api/v1/auth/login".equals(path)
                 || "/api/v1/auth/refresh".equals(path)
+                || "/api/v1/auth/logout".equals(path)
                 || isChangePassword;
 
         String method = request.getMethod();
@@ -77,6 +88,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String errorMessage;
         if ("/api/v1/auth/refresh".equals(path)) {
             errorMessage = "Too many refresh attempts. Please try again later.";
+        } else if ("/api/v1/auth/logout".equals(path)) {
+            errorMessage = "Too many logout attempts. Please try again later.";
         } else if ("/api/v1/auth/change-password".equals(path)) {
             errorMessage = "Too many password change attempts. Please try again later.";
         } else {

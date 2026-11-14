@@ -60,41 +60,23 @@ public class UserValidatorTest {
     }
 
     @Test
-    void validateRoleAssignment_ManagerCanCreateEmployee() {
+    void validateRoleAssignment_NonOwnerCannotCreateUsers() {
         User managerUser = new User();
         Role managerRole = new Role();
         managerRole.setName("MANAGER");
-        
+
         Role targetRole = new Role();
         targetRole.setName("EMPLOYEE");
-        
-        assertDoesNotThrow(() -> userValidator.validateRoleAssignment(managerUser, managerRole, targetRole));
-    }
 
-    @Test
-    void validateRoleAssignment_ManagerCannotCreateOwner() {
-        User managerUser = new User();
-        Role managerRole = new Role();
-        managerRole.setName("MANAGER");
-        
-        Role targetRole = new Role();
-        targetRole.setName("OWNER");
-        
-        assertThrows(UnauthorizedRoleAssignmentException.class, 
-            () -> userValidator.validateRoleAssignment(managerUser, managerRole, targetRole));
-    }
+        assertThrows(UnauthorizedRoleAssignmentException.class,
+                () -> userValidator.validateRoleAssignment(managerUser, managerRole, targetRole));
 
-    @Test
-    void validateRoleAssignment_EmployeeCannotCreateUsers() {
         User employeeUser = new User();
         Role employeeRole = new Role();
         employeeRole.setName("EMPLOYEE");
-        
-        Role targetRole = new Role();
-        targetRole.setName("INTERN");
-        
-        assertThrows(UnauthorizedRoleAssignmentException.class, 
-            () -> userValidator.validateRoleAssignment(employeeUser, employeeRole, targetRole));
+
+        assertThrows(UnauthorizedRoleAssignmentException.class,
+                () -> userValidator.validateRoleAssignment(employeeUser, employeeRole, targetRole));
     }
 
     @Test
@@ -107,15 +89,7 @@ public class UserValidatorTest {
     }
 
     @Test
-    void validateUserManagement_ManagerCannotManageOtherManagers() {
-        Role managerRole = Role.builder().name("MANAGER").build();
-
-        assertThrows(UnauthorizedRoleAssignmentException.class, () ->
-                userValidator.validateUserManagement(new User(), managerRole, new User(), managerRole));
-    }
-
-    @Test
-    void validateUserManagement_ManagerCannotManageOwner() {
+    void validateUserManagement_NonOwnerCannotManageOwner() {
         Role managerRole = Role.builder().name("MANAGER").build();
         Role ownerRole = Role.builder().name("OWNER").build();
 
@@ -124,21 +98,12 @@ public class UserValidatorTest {
     }
 
     @Test
-    void validateUserManagement_ManagerCanManageEmployee() {
+    void validateUserManagement_NonOwnerCannotManageUsers() {
         Role managerRole = Role.builder().name("MANAGER").build();
         Role employeeRole = Role.builder().name("EMPLOYEE").build();
 
-        assertDoesNotThrow(() ->
+        assertThrows(UnauthorizedRoleAssignmentException.class, () ->
                 userValidator.validateUserManagement(new User(), managerRole, new User(), employeeRole));
-    }
-
-    @Test
-    void validateUserManagement_ManagerCanManageSelf() {
-        Role managerRole = Role.builder().name("MANAGER").build();
-        User manager = User.builder().id("m-1").build();
-
-        assertDoesNotThrow(() ->
-                userValidator.validateUserManagement(manager, managerRole, manager, managerRole));
     }
 
     @Test
@@ -183,5 +148,31 @@ public class UserValidatorTest {
         doNothing().when(userDeletionGuard).validateCanDeleteUser("u-1");
 
         assertDoesNotThrow(() -> userValidator.validateUserDeletable("u-1"));
+    }
+
+    @Test
+    void validateStatusUpdate_whenInactiveAndHasActiveLeads_invokesGuardAndThrows() {
+        doThrow(new BadRequestException("Cannot deactivate user with active assigned leads."))
+                .when(userDeletionGuard).validateCanDeactivateUser("u-1");
+
+        assertThrows(BadRequestException.class,
+                () -> userValidator.validateStatusUpdate(com.viraj.dmabackend.auth.enums.UserStatus.INACTIVE, "u-1"));
+        verify(userDeletionGuard).validateCanDeactivateUser("u-1");
+    }
+
+    @Test
+    void validateStatusUpdate_whenSuspendedAndHasActiveLeads_invokesGuardAndThrows() {
+        doThrow(new BadRequestException("Cannot deactivate user with active assigned leads."))
+                .when(userDeletionGuard).validateCanDeactivateUser("u-1");
+
+        assertThrows(BadRequestException.class,
+                () -> userValidator.validateStatusUpdate(com.viraj.dmabackend.auth.enums.UserStatus.SUSPENDED, "u-1"));
+        verify(userDeletionGuard).validateCanDeactivateUser("u-1");
+    }
+
+    @Test
+    void validateStatusUpdate_whenActive_doesNotInvokeDeactivationGuard() {
+        assertDoesNotThrow(() -> userValidator.validateStatusUpdate(com.viraj.dmabackend.auth.enums.UserStatus.ACTIVE, "u-1"));
+        verify(userDeletionGuard, never()).validateCanDeactivateUser(any());
     }
 }

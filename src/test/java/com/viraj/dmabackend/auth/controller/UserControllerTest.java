@@ -216,6 +216,16 @@ class UserControllerTest extends BaseControllerWebMvcTest {
 
     @Test
     @WithMockUser(authorities = "user:read")
+    void filterUsersByStatus_viaStandardStatusEndpoint_whenAuthorized_returnsOk() throws Exception {
+        when(userService.filterUsersByStatus(eq(UserStatus.ACTIVE), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/v1/users/status")
+                        .param("status", "ACTIVE"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = "user:read")
     void getUserById_withInvalidIdPattern_returnsBadRequest() throws Exception {
         mockMvc.perform(get("/api/v1/users/invalid!user@id"))
                 .andExpect(status().isBadRequest());
