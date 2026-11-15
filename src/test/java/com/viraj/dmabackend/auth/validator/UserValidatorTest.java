@@ -171,6 +171,16 @@ public class UserValidatorTest {
     }
 
     @Test
+    void validateStatusUpdate_whenLockedAndHasActiveLeads_invokesGuardAndThrows() {
+        doThrow(new BadRequestException("Cannot deactivate user with active assigned leads."))
+                .when(userDeletionGuard).validateCanDeactivateUser("u-1");
+
+        assertThrows(BadRequestException.class,
+                () -> userValidator.validateStatusUpdate(com.viraj.dmabackend.auth.enums.UserStatus.LOCKED, "u-1"));
+        verify(userDeletionGuard).validateCanDeactivateUser("u-1");
+    }
+
+    @Test
     void validateStatusUpdate_whenActive_doesNotInvokeDeactivationGuard() {
         assertDoesNotThrow(() -> userValidator.validateStatusUpdate(com.viraj.dmabackend.auth.enums.UserStatus.ACTIVE, "u-1"));
         verify(userDeletionGuard, never()).validateCanDeactivateUser(any());

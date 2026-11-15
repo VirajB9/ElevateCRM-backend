@@ -156,4 +156,109 @@ class InvoiceRequestValidationTest {
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("version")
                 && v.getMessage().contains("Version is required"));
     }
+
+    @Test
+    void invoiceItemRequest_whenUnitPriceExceedsAllowedFraction_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1.00"))
+                .unitPrice(new BigDecimal("100.123"))
+                .build();
+
+        Set<ConstraintViolation<InvoiceItemRequest>> violations = validator.validate(item);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("unitPrice")
+                && v.getMessage().contains("Unit price must have at most 15 integer digits and 2 decimal places"));
+    }
+
+    @Test
+    void invoiceItemRequest_whenUnitPriceExceedsAllowedIntegerDigits_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1.00"))
+                .unitPrice(new BigDecimal("1234567890123456.00"))
+                .build();
+
+        Set<ConstraintViolation<InvoiceItemRequest>> violations = validator.validate(item);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("unitPrice")
+                && v.getMessage().contains("Unit price must have at most 15 integer digits and 2 decimal places"));
+    }
+
+    @Test
+    void createInvoiceRequest_whenTaxPercentageExceedsAllowedFraction_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1.00"))
+                .unitPrice(new BigDecimal("100.00"))
+                .build();
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(15))
+                .items(List.of(item))
+                .taxPercentage(new BigDecimal("18.123"))
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        Set<ConstraintViolation<CreateInvoiceRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("taxPercentage")
+                && v.getMessage().contains("Tax percentage must have at most 3 integer digits and 2 decimal places"));
+    }
+
+    @Test
+    void createInvoiceRequest_whenDiscountExceedsAllowedFraction_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1.00"))
+                .unitPrice(new BigDecimal("100.00"))
+                .build();
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(15))
+                .items(List.of(item))
+                .taxPercentage(new BigDecimal("18.00"))
+                .discount(new BigDecimal("50.999"))
+                .build();
+
+        Set<ConstraintViolation<CreateInvoiceRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("discount")
+                && v.getMessage().contains("Discount must have at most 15 integer digits and 2 decimal places"));
+    }
+
+    @Test
+    void updateInvoiceRequest_whenFinancialFieldsExceedAllowedFraction_failsValidation() {
+        InvoiceItemRequest item = InvoiceItemRequest.builder()
+                .description("Service")
+                .quantity(new BigDecimal("1.00"))
+                .unitPrice(new BigDecimal("100.00"))
+                .build();
+
+        UpdateInvoiceRequest request = UpdateInvoiceRequest.builder()
+                .dueDate(LocalDate.now().plusDays(15))
+                .items(List.of(item))
+                .taxPercentage(new BigDecimal("18.555"))
+                .discount(new BigDecimal("10.123"))
+                .version(1L)
+                .build();
+
+        Set<ConstraintViolation<UpdateInvoiceRequest>> violations = validator.validate(request);
+
+        assertThat(violations).hasSize(2);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("taxPercentage")
+                && v.getMessage().contains("Tax percentage must have at most 3 integer digits and 2 decimal places"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("discount")
+                && v.getMessage().contains("Discount must have at most 15 integer digits and 2 decimal places"));
+    }
 }

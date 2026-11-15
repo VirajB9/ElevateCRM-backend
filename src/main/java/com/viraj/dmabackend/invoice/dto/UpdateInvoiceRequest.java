@@ -3,8 +3,10 @@ package com.viraj.dmabackend.invoice.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,21 +28,22 @@ public class UpdateInvoiceRequest {
     private LocalDate dueDate;
 
     @NotEmpty(message = "At least one invoice item is required")
-    @jakarta.validation.constraints.Size(max = 100, message = "Invoice cannot contain more than 100 items")
+    @Size(max = 100, message = "Invoice cannot contain more than 100 items")
     @Valid
     private List<@NotNull(message = "Invoice item cannot be null") @Valid InvoiceItemRequest> items;
 
     @NotNull(message = "Tax percentage is required")
     @DecimalMin(value = "0.00", message = "Tax percentage cannot be negative")
     @DecimalMax(value = "100.00", message = "Tax percentage cannot exceed 100")
+    @Digits(integer = 3, fraction = 2, message = "Tax percentage must have at most 3 integer digits and 2 decimal places")
     private BigDecimal taxPercentage;
 
     @NotNull(message = "Discount is required")
     @DecimalMin(value = "0.00", message = "Discount cannot be negative")
+    @Digits(integer = 15, fraction = 2, message = "Discount must have at most 15 integer digits and 2 decimal places")
     private BigDecimal discount;
 
-    
-    @jakarta.validation.constraints.Size(max = 2000)
+    @Size(max = 2000)
     private String notes;
 
     @NotNull(message = "Version is required for optimistic concurrency control")

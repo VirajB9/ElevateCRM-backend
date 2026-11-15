@@ -87,7 +87,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (attempts >= MAX_FAILED_ATTEMPTS) {
                 LocalDateTime lockoutUntil = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES);
-                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS);
+                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC);
                 user.setLockoutUntil(lockoutUntil);
                 user.setTokensRevokedAt(revocationTime);
                 mongoTemplate.updateFirst(
@@ -112,9 +112,10 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.deleteByUserId(user.getId());
 
         String refreshTokenValue = jwtUtil.generateRefreshToken();
+        String tokenHash = RefreshToken.hashToken(refreshTokenValue);
 
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(refreshTokenValue)
+                .tokenHash(tokenHash)
                 .userId(user.getId())
                 .expiresAt(
                         LocalDateTime.now(ZoneOffset.UTC)
@@ -135,9 +136,10 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String trimmedToken = refreshTokenValue.trim();
+        String tokenHash = RefreshToken.hashToken(trimmedToken);
 
         // Atomic rotation: claim the active unrevoked token
-        Query atomicQuery = Query.query(Criteria.where("token").is(trimmedToken).and("revoked").is(false));
+        Query atomicQuery = Query.query(Criteria.where("tokenHash").is(tokenHash).and("revoked").is(false));
         Update atomicUpdate = new Update()
                 .set("revoked", true)
                 .set("revokedAt", LocalDateTime.now(ZoneOffset.UTC));
@@ -150,7 +152,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         if (activeToken == null) {
-            RefreshToken existingToken = refreshTokenRepository.findByToken(trimmedToken)
+            RefreshToken existingToken = refreshTokenRepository.findByTokenHash(tokenHash)
                     .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
 
             if (existingToken.isRevoked()) {
@@ -171,7 +173,7 @@ public class AuthServiceImpl implements AuthService {
                 // Compromised token reuse detected: revoke all active tokens for this user
                 refreshTokenRepository.deleteByUserId(existingToken.getUserId());
                 userRepository.findById(existingToken.getUserId()).ifPresent(user -> {
-                    user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
+                    user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
                     userRepository.save(user);
                 });
                 throw new UnauthorizedException("Refresh token was already revoked");
@@ -196,9 +198,10 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate and persist new rotated refresh token
         String newRefreshTokenValue = jwtUtil.generateRefreshToken();
+        String newTokenHash = RefreshToken.hashToken(newRefreshTokenValue);
 
         RefreshToken newRefreshToken = RefreshToken.builder()
-                .token(newRefreshTokenValue)
+                .tokenHash(newTokenHash)
                 .userId(user.getId())
                 .expiresAt(
                         LocalDateTime.now(ZoneOffset.UTC)
@@ -210,7 +213,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(newRefreshToken);
 
         mongoTemplate.updateFirst(
-                Query.query(Criteria.where("token").is(trimmedToken)),
+                Query.query(Criteria.where("tokenHash").is(tokenHash)),
                 new Update().set("replacedByToken", newRefreshTokenValue),
                 RefreshToken.class
         );
@@ -221,17 +224,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String refreshTokenValue) {
 
-        LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC)
-                .truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+        LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC);
 
         if (refreshTokenValue != null && !refreshTokenValue.isBlank()) {
             String trimmedToken = refreshTokenValue.trim();
+            String tokenHash = RefreshToken.hashToken(trimmedToken);
             mongoTemplate.updateFirst(
-                    Query.query(Criteria.where("token").is(trimmedToken).and("revoked").is(false)),
+                    Query.query(Criteria.where("tokenHash").is(tokenHash).and("revoked").is(false)),
                     new Update().set("revoked", true).set("revokedAt", revocationTime),
                     RefreshToken.class
             );
-            refreshTokenRepository.findByToken(trimmedToken).ifPresent(token -> {
+            refreshTokenRepository.findByTokenHash(tokenHash).ifPresent(token -> {
                 if (token.getUserId() != null) {
                     refreshTokenRepository.deleteByUserId(token.getUserId());
                     userRepository.findById(token.getUserId()).ifPresent(user -> {
@@ -283,7 +286,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (attempts >= MAX_FAILED_ATTEMPTS) {
                 LocalDateTime lockoutUntil = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES);
-                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS);
+                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC);
                 user.setLockoutUntil(lockoutUntil);
                 user.setTokensRevokedAt(revocationTime);
                 mongoTemplate.updateFirst(
@@ -315,15 +318,16 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setPasswordChangeRequired(false);
-        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
+        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
         userRepository.save(user);
 
         refreshTokenRepository.deleteByUserId(user.getId());
 
         String refreshTokenValue = jwtUtil.generateRefreshToken();
+        String tokenHash = RefreshToken.hashToken(refreshTokenValue);
 
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(refreshTokenValue)
+                .tokenHash(tokenHash)
                 .userId(user.getId())
                 .expiresAt(
                         LocalDateTime.now(ZoneOffset.UTC)

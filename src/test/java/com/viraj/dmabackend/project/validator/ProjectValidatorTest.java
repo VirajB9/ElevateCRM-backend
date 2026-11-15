@@ -302,4 +302,38 @@ public class ProjectValidatorTest {
         assertDoesNotThrow(() -> projectValidator.validateProjectCompletion(LocalDate.now(java.time.ZoneOffset.UTC)));
         assertDoesNotThrow(() -> projectValidator.validateProjectCompletion(LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1)));
     }
+
+    @Test
+    void validateProjectDatesForUpdate_ThrowsWhenNewStartDateIsAfterExistingEndDate() {
+        Project existing = Project.builder()
+                .startDate(LocalDate.of(2026, 1, 1))
+                .endDate(LocalDate.of(2026, 6, 30))
+                .build();
+
+        assertThrows(com.viraj.dmabackend.project.exception.InvalidProjectDateException.class,
+                () -> projectValidator.validateProjectDatesForUpdate(existing, LocalDate.of(2026, 7, 1), null));
+    }
+
+    @Test
+    void validateProjectDatesForUpdate_ThrowsWhenNewEndDateIsBeforeExistingStartDate() {
+        Project existing = Project.builder()
+                .startDate(LocalDate.of(2026, 3, 1))
+                .endDate(LocalDate.of(2026, 6, 30))
+                .build();
+
+        assertThrows(com.viraj.dmabackend.project.exception.InvalidProjectDateException.class,
+                () -> projectValidator.validateProjectDatesForUpdate(existing, null, LocalDate.of(2026, 2, 1)));
+    }
+
+    @Test
+    void validateProjectDatesForUpdate_PassesWhenChronologyIsMaintained() {
+        Project existing = Project.builder()
+                .startDate(LocalDate.of(2026, 3, 1))
+                .endDate(LocalDate.of(2026, 6, 30))
+                .build();
+
+        assertDoesNotThrow(() -> projectValidator.validateProjectDatesForUpdate(existing, LocalDate.of(2026, 2, 1), null));
+        assertDoesNotThrow(() -> projectValidator.validateProjectDatesForUpdate(existing, null, LocalDate.of(2026, 8, 1)));
+        assertDoesNotThrow(() -> projectValidator.validateProjectDatesForUpdate(existing, LocalDate.of(2026, 4, 1), LocalDate.of(2026, 5, 1)));
+    }
 }

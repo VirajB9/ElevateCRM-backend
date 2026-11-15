@@ -226,12 +226,12 @@ public class AuthServiceImplTest {
     void logout_whenValidActiveToken_purgesAllUserRefreshTokensAndRevokesAccessTokens() {
         com.viraj.dmabackend.auth.entity.RefreshToken token = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("active-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("active-token"))
                 .userId("user-1")
                 .revoked(false)
                 .build();
 
-        when(refreshTokenRepository.findByToken("active-token")).thenReturn(Optional.of(token));
+        when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("active-token"))).thenReturn(Optional.of(token));
         when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
 
         authService.logout("active-token");
@@ -379,7 +379,7 @@ public class AuthServiceImplTest {
     void refresh_withValidToken_rotatesAndReturnsNewAuthenticationResponse() {
         com.viraj.dmabackend.auth.entity.RefreshToken activeToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("valid-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("valid-token"))
                 .userId("user-1")
                 .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).plusDays(1))
                 .revoked(false)
@@ -409,7 +409,7 @@ public class AuthServiceImplTest {
     void refresh_withExpiredToken_throwsUnauthorizedException() {
         com.viraj.dmabackend.auth.entity.RefreshToken expiredToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("expired-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("expired-token"))
                 .userId("user-1")
                 .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(1))
                 .revoked(false)
@@ -426,7 +426,7 @@ public class AuthServiceImplTest {
     void refresh_withInactiveUser_throwsUnauthorizedException() {
         com.viraj.dmabackend.auth.entity.RefreshToken activeToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("valid-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("valid-token"))
                 .userId("user-1")
                 .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).plusDays(1))
                 .revoked(false)
@@ -446,7 +446,7 @@ public class AuthServiceImplTest {
     void refresh_withSoftDeletedUser_throwsUnauthorizedException() {
         com.viraj.dmabackend.auth.entity.RefreshToken activeToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("valid-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("valid-token"))
                 .userId("user-deleted")
                 .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).plusDays(1))
                 .revoked(false)
@@ -467,7 +467,7 @@ public class AuthServiceImplTest {
 
         com.viraj.dmabackend.auth.entity.RefreshToken recentlyRotated = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("concurrent-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("concurrent-token"))
                 .userId("user-1")
                 .revoked(true)
                 .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusSeconds(2))
@@ -478,7 +478,7 @@ public class AuthServiceImplTest {
         role.setId("role-1");
         role.setName("EMPLOYEE");
 
-        when(refreshTokenRepository.findByToken("concurrent-token")).thenReturn(Optional.of(recentlyRotated));
+        when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("concurrent-token"))).thenReturn(Optional.of(recentlyRotated));
         when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(Optional.of(user));
         when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
         when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
@@ -500,13 +500,13 @@ public class AuthServiceImplTest {
 
         com.viraj.dmabackend.auth.entity.RefreshToken stolenToken = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("stolen-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("stolen-token"))
                 .userId("user-1")
                 .revoked(true)
                 .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(5))
                 .build();
 
-        when(refreshTokenRepository.findByToken("stolen-token")).thenReturn(Optional.of(stolenToken));
+        when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("stolen-token"))).thenReturn(Optional.of(stolenToken));
         when(userRepository.findById("user-1")).thenReturn(Optional.of(user));
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("stolen-token"));
@@ -556,13 +556,13 @@ public class AuthServiceImplTest {
 
         com.viraj.dmabackend.auth.entity.RefreshToken recentlyRotated = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("concurrent-token")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("concurrent-token"))
                 .userId("user-1")
                 .revoked(true)
                 .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusSeconds(2))
                 .build();
 
-        when(refreshTokenRepository.findByToken("concurrent-token")).thenReturn(Optional.of(recentlyRotated));
+        when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("concurrent-token"))).thenReturn(Optional.of(recentlyRotated));
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("concurrent-token"));
         assertTrue(ex.getMessage().contains("recently rotated"));
@@ -600,14 +600,14 @@ public class AuthServiceImplTest {
 
         com.viraj.dmabackend.auth.entity.RefreshToken expiredRevoked = com.viraj.dmabackend.auth.entity.RefreshToken.builder()
                 .id("t1")
-                .token("expired-revoked")
+                .tokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("expired-revoked"))
                 .userId("user-1")
                 .expiresAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(1))
                 .revoked(true)
                 .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusHours(1))
                 .build();
 
-        when(refreshTokenRepository.findByToken("expired-revoked")).thenReturn(Optional.of(expiredRevoked));
+        when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("expired-revoked"))).thenReturn(Optional.of(expiredRevoked));
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("expired-revoked"));
         assertEquals("Refresh token has expired", ex.getMessage());

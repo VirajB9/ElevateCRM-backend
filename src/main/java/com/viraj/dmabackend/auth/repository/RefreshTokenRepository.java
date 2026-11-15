@@ -7,9 +7,9 @@ import java.util.Optional;
 
 public interface RefreshTokenRepository extends MongoRepository<RefreshToken, String> {
 
-    Optional<RefreshToken> findByToken(String token);
+    Optional<RefreshToken> findByTokenHash(String tokenHash);
 
-    Optional<RefreshToken> findByTokenAndRevokedFalse(String token);
+    Optional<RefreshToken> findByTokenHashAndRevokedFalse(String tokenHash);
 
     void deleteByUserId(String userId);
 }

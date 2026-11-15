@@ -138,16 +138,20 @@ public class LeadServiceImpl implements LeadService {
         return leadMapper.toLeadResponse(lead);
     }
 
+    private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
+            "id", "title", "name", "email", "phone", "company", "status", "source", "estimatedBudget", "assignedUserId", "createdAt", "updatedAt"
+    );
+
     @Override
     public Page<LeadResponse> getAllLeads(Pageable pageable) {
 
         String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
         if (restrictedUserId != null) {
-            return leadRepository.findByAssignedUserIdAndStatusNot(restrictedUserId, com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
+            return leadRepository.findByAssignedUserIdAndStatusNot(restrictedUserId, com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                     .map(leadMapper::toLeadResponse);
         }
 
-        return leadRepository.findByStatusNot(com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
+        return leadRepository.findByStatusNot(com.viraj.dmabackend.lead.enums.LeadStatus.DELETED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(leadMapper::toLeadResponse);
     }
 
@@ -155,7 +159,7 @@ public class LeadServiceImpl implements LeadService {
     public Page<LeadResponse> searchLeads(String keyword, Pageable pageable) {
 
         String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
-        return leadRepository.searchLeads(keyword, restrictedUserId, PaginationUtils.clampPageable(pageable)).map(leadMapper::toLeadResponse);
+        return leadRepository.searchLeads(keyword, restrictedUserId, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES)).map(leadMapper::toLeadResponse);
     }
 
     @Override
@@ -167,11 +171,11 @@ public class LeadServiceImpl implements LeadService {
 
         String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
         if (restrictedUserId != null) {
-            return leadRepository.findByStatusAndAssignedUserId(status, restrictedUserId, PaginationUtils.clampPageable(pageable))
+            return leadRepository.findByStatusAndAssignedUserId(status, restrictedUserId, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                     .map(leadMapper::toLeadResponse);
         }
 
-        return leadRepository.findByStatus(status, PaginationUtils.clampPageable(pageable))
+        return leadRepository.findByStatus(status, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(leadMapper::toLeadResponse);
     }
 
@@ -180,11 +184,11 @@ public class LeadServiceImpl implements LeadService {
 
         String restrictedUserId = leadValidator.getAssignedUserScopeIfRestricted();
         if (restrictedUserId != null) {
-            return leadRepository.findBySourceAndAssignedUserIdAndStatusNot(source, restrictedUserId, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
+            return leadRepository.findBySourceAndAssignedUserIdAndStatusNot(source, restrictedUserId, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                     .map(leadMapper::toLeadResponse);
         }
 
-        return leadRepository.findBySourceAndStatusNot(source, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
+        return leadRepository.findBySourceAndStatusNot(source, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(leadMapper::toLeadResponse);
     }
 
@@ -196,7 +200,7 @@ public class LeadServiceImpl implements LeadService {
         leadValidator.validateUserExists(normalizedUserId);
         leadValidator.validateAssignedUserAccess(normalizedUserId);
 
-        return leadRepository.findByAssignedUserIdAndStatusNot(normalizedUserId, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable))
+        return leadRepository.findByAssignedUserIdAndStatusNot(normalizedUserId, LeadStatus.DELETED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(leadMapper::toLeadResponse);
     }
 

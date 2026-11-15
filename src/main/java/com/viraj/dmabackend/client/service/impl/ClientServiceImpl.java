@@ -69,17 +69,21 @@ public class ClientServiceImpl implements ClientService {
         return clientMapper.toClientResponse(client);
     }
 
+    private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
+            "id", "name", "companyName", "email", "phone", "status", "createdAt", "updatedAt"
+    );
+
     @Override
     public Page<ClientResponse> getAllClients(Pageable pageable) {
 
-        Page<Client> clients = clientRepository.findByStatusNot(ClientStatus.ARCHIVED, PaginationUtils.clampPageable(pageable));
+        Page<Client> clients = clientRepository.findByStatusNot(ClientStatus.ARCHIVED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES));
         return clients.map(clientMapper::toClientResponse);
     }
 
     @Override
     public Page<ClientResponse> searchClients(String keyword, Pageable pageable) {
         
-        Page<Client> clients = clientRepository.searchClients(keyword, PaginationUtils.clampPageable(pageable));
+        Page<Client> clients = clientRepository.searchClients(keyword, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES));
         return clients.map(clientMapper::toClientResponse);
     }
 
@@ -90,7 +94,7 @@ public class ClientServiceImpl implements ClientService {
             throw new BadRequestException("Querying archived clients is not permitted");
         }
 
-        Page<Client> clients = clientRepository.findByStatus(status, PaginationUtils.clampPageable(pageable));
+        Page<Client> clients = clientRepository.findByStatus(status, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES));
         return clients.map(clientMapper::toClientResponse);
     }
 

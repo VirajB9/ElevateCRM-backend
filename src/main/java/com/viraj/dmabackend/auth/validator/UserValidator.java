@@ -48,7 +48,7 @@ public class UserValidator {
         }
 
         String normalizedUserId = userId != null ? userId.trim() : null;
-        if ((status == UserStatus.INACTIVE || status == UserStatus.SUSPENDED) && normalizedUserId != null) {
+        if ((status == UserStatus.INACTIVE || status == UserStatus.SUSPENDED || status == UserStatus.LOCKED) && normalizedUserId != null) {
             if (userDeletionGuards != null) {
                 for (UserDeletionGuard guard : userDeletionGuards) {
                     guard.validateCanDeactivateUser(normalizedUserId);

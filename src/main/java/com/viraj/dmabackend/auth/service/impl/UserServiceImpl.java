@@ -93,17 +93,21 @@ public class UserServiceImpl implements UserService {
         return mapUser(user);
     }
 
+    private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
+            "id", "firstName", "lastName", "email", "phoneNumber", "status", "roleId", "createdAt", "updatedAt"
+    );
+
     @Override
     public Page<UserResponse> getAllUsers(Pageable pageable) {
 
-        Page<User> users = userRepository.findByStatusNot(UserStatus.DELETED, PaginationUtils.clampPageable(pageable));
+        Page<User> users = userRepository.findByStatusNot(UserStatus.DELETED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES));
         return mapToUserResponsePage(users);
     }
 
     @Override
     public Page<UserResponse> searchUsers(String keyword, Pageable pageable) {
 
-        Page<User> users = userRepository.searchUsers(keyword, PaginationUtils.clampPageable(pageable));
+        Page<User> users = userRepository.searchUsers(keyword, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES));
         return mapToUserResponsePage(users);
     }
 
@@ -114,7 +118,7 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Querying soft-deleted users is not permitted");
         }
 
-        Page<User> users = userRepository.findByStatus(status, PaginationUtils.clampPageable(pageable));
+        Page<User> users = userRepository.findByStatus(status, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES));
         return mapToUserResponsePage(users);
     }
 
@@ -161,7 +165,7 @@ public class UserServiceImpl implements UserService {
         updateUserFields(user, request, newRole);
 
         if (roleChanged) {
-            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
+            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 
@@ -202,7 +206,7 @@ public class UserServiceImpl implements UserService {
             user.setLockoutUntil(null);
             user.setFailedLoginAttempts(0);
         } else {
-            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
+            user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
             refreshTokenRepository.deleteByUserId(user.getId());
         }
 
@@ -232,7 +236,7 @@ public class UserServiceImpl implements UserService {
 
         user.setStatus(UserStatus.DELETED);
         user.setDeleted(true);
-        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS));
+        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
 
         refreshTokenRepository.deleteByUserId(user.getId());
 

@@ -60,6 +60,14 @@ public class ProjectValidator {
         }
     }
 
+    public void validateProjectDatesForUpdate(Project existingProject, LocalDate newStartDate, LocalDate newEndDate) {
+        LocalDate effectiveStart = newStartDate != null ? newStartDate : (existingProject != null ? existingProject.getStartDate() : null);
+        LocalDate effectiveEnd = newEndDate != null ? newEndDate : (existingProject != null ? existingProject.getEndDate() : null);
+        if (effectiveStart != null && effectiveEnd != null && effectiveEnd.isBefore(effectiveStart)) {
+            throw new InvalidProjectDateException();
+        }
+    }
+
     public void validateProjectCompletion(LocalDate endDate) {
         if (endDate == null) {
             throw new BadRequestException("Completion date is required when completing a project.");

@@ -224,6 +224,114 @@ class MenuServiceImplTest {
     }
 
     @Test
+    void getMenuTree_whenUserLacksBothUserReadAndRoleRead_suppressesEmptySettingsContainer() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("employee@agency.com", "pass",
+                        List.of(new SimpleGrantedAuthority("lead:read")))
+        );
+
+        Menu dashboardMenu = Menu.builder()
+                .id("dashboard")
+                .parentId(null)
+                .title("Dashboard")
+                .path("/dashboard")
+                .orderIndex(1)
+                .requiredPermission(null)
+                .active(true)
+                .build();
+
+        Menu settingsRoot = Menu.builder()
+                .id("settings-root")
+                .parentId(null)
+                .title("System Administration")
+                .path("/settings")
+                .orderIndex(6)
+                .requiredPermission(null)
+                .active(true)
+                .build();
+
+        Menu usersSubmenu = Menu.builder()
+                .id("users-sub")
+                .parentId("settings-root")
+                .title("User Accounts")
+                .path("/settings/users")
+                .orderIndex(1)
+                .requiredPermission("user:read")
+                .active(true)
+                .build();
+
+        Menu rolesSubmenu = Menu.builder()
+                .id("roles-sub")
+                .parentId("settings-root")
+                .title("Roles & Permissions")
+                .path("/settings/roles")
+                .orderIndex(2)
+                .requiredPermission("role:read")
+                .active(true)
+                .build();
+
+        when(menuRepository.findByActiveTrueOrderByOrderIndexAsc())
+                .thenReturn(List.of(dashboardMenu, settingsRoot, usersSubmenu, rolesSubmenu));
+
+        List<MenuTreeResponse> result = menuService.getMenuTree();
+
+        // System Administration must be suppressed because all its children were filtered out
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Dashboard");
+        assertThat(result).noneMatch(m -> m.getTitle().equals("System Administration"));
+    }
+
+    @Test
+    void getMenuTree_whenUserHasRoleReadWithoutUserRead_includesSettingsAndRolesSubmenuExcludingUsers() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("auditor@agency.com", "pass",
+                        List.of(new SimpleGrantedAuthority("role:read")))
+        );
+
+        Menu settingsRoot = Menu.builder()
+                .id("settings-root")
+                .parentId(null)
+                .title("System Administration")
+                .path("/settings")
+                .orderIndex(6)
+                .requiredPermission(null)
+                .active(true)
+                .build();
+
+        Menu usersSubmenu = Menu.builder()
+                .id("users-sub")
+                .parentId("settings-root")
+                .title("User Accounts")
+                .path("/settings/users")
+                .orderIndex(1)
+                .requiredPermission("user:read")
+                .active(true)
+                .build();
+
+        Menu rolesSubmenu = Menu.builder()
+                .id("roles-sub")
+                .parentId("settings-root")
+                .title("Roles & Permissions")
+                .path("/settings/roles")
+                .orderIndex(2)
+                .requiredPermission("role:read")
+                .active(true)
+                .build();
+
+        when(menuRepository.findByActiveTrueOrderByOrderIndexAsc())
+                .thenReturn(List.of(settingsRoot, usersSubmenu, rolesSubmenu));
+
+        List<MenuTreeResponse> result = menuService.getMenuTree();
+
+        assertThat(result).hasSize(1);
+        MenuTreeResponse root = result.get(0);
+        assertThat(root.getTitle()).isEqualTo("System Administration");
+        assertThat(root.getChildren()).hasSize(1);
+        assertThat(root.getChildren().get(0).getTitle()).isEqualTo("Roles & Permissions");
+        assertThat(root.getChildren().get(0).getPath()).isEqualTo("/settings/roles");
+    }
+
+    @Test
     void getMenuTree_whenCyclicRelationshipExists_breaksCycleAndSerializesWithoutStackOverflow() throws Exception {
         Menu menuRoot = Menu.builder()
                 .id("R")

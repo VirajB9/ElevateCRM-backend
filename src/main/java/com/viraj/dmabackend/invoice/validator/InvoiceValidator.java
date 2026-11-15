@@ -31,7 +31,7 @@ public class InvoiceValidator {
 
         validateClientActiveForInvoice(request.getClientId(), "Cannot create an invoice for an inactive client.");
 
-        validateProjectBelongsToClient(request.getProjectId(), request.getClientId());
+        validateProjectBelongsToClient(request.getProjectId(), request.getClientId(), "create");
 
         validateDates(request.getIssueDate(), request.getDueDate());
 
@@ -47,7 +47,7 @@ public class InvoiceValidator {
         }
 
         if (invoice.getProjectId() != null && invoice.getClientId() != null) {
-            validateProjectBelongsToClient(invoice.getProjectId(), invoice.getClientId());
+            validateProjectBelongsToClient(invoice.getProjectId(), invoice.getClientId(), "update");
         }
 
         validateDates(invoice.getIssueDate(), request.getDueDate());
@@ -79,7 +79,7 @@ public class InvoiceValidator {
         }
     }
 
-    private void validateProjectBelongsToClient(String projectId, String clientId) {
+    private void validateProjectBelongsToClient(String projectId, String clientId, String action) {
         String trimmedProjectId = projectId != null ? projectId.trim() : null;
         String trimmedClientId = clientId != null ? clientId.trim() : null;
         ProjectResponse project = projectService.getProjectById(trimmedProjectId);
@@ -90,11 +90,11 @@ public class InvoiceValidator {
         }
 
         if (project.getStatus() == com.viraj.dmabackend.project.enums.ProjectStatus.CANCELLED) {
-            throw new BadRequestException("Cannot create an invoice for a cancelled project.");
+            throw new BadRequestException("Cannot " + action + " an invoice for a cancelled project.");
         }
 
         if (project.getStatus() == com.viraj.dmabackend.project.enums.ProjectStatus.ARCHIVED) {
-            throw new BadRequestException("Cannot create an invoice for an archived project.");
+            throw new BadRequestException("Cannot " + action + " an invoice for an archived project.");
         }
     }
 

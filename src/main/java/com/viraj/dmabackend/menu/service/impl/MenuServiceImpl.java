@@ -115,11 +115,11 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public List<MenuTreeResponse> getMenuTree() {
 
-        List<Menu> menus = menuRepository.findByActiveTrueOrderByOrderIndexAsc();
+        List<Menu> allActiveMenus = menuRepository.findByActiveTrueOrderByOrderIndexAsc();
 
-        menus = filterMenusByPermission(menus);
+        List<Menu> menus = filterMenusByPermission(allActiveMenus);
 
-        return buildMenuTree(menus);
+        return buildMenuTree(menus, allActiveMenus);
     }
 
     public static String resolveMenuTreeCacheKey() {
@@ -231,11 +231,23 @@ public class MenuServiceImpl implements MenuService {
     }
 
     private List<MenuTreeResponse> buildMenuTree(List<Menu> menus) {
+        return buildMenuTree(menus, menus);
+    }
+
+    private List<MenuTreeResponse> buildMenuTree(List<Menu> menus, List<Menu> allActiveMenus) {
 
         Map<String, MenuTreeResponse> menuMap = new HashMap<>();
         Map<String, Menu> menuById = new HashMap<>();
 
         List<MenuTreeResponse> rootMenus = new ArrayList<>();
+
+        // Identify container menu IDs (menus that have at least one active child configured in the system)
+        Set<String> containerMenuIds = (allActiveMenus != null ? allActiveMenus.stream() : java.util.stream.Stream.<Menu>empty())
+                .map(Menu::getParentId)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
 
         // Convert every Menu into MenuTreeResponse
         for (Menu menu : menus) {
@@ -265,7 +277,26 @@ public class MenuServiceImpl implements MenuService {
                 }
             }
         }
-        return rootMenus;
+        return pruneEmptyContainers(rootMenus, containerMenuIds);
+    }
+
+    private List<MenuTreeResponse> pruneEmptyContainers(List<MenuTreeResponse> menuTree, Set<String> containerMenuIds) {
+        List<MenuTreeResponse> result = new ArrayList<>();
+        for (MenuTreeResponse node : menuTree) {
+            if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+                List<MenuTreeResponse> prunedChildren = pruneEmptyContainers(node.getChildren(), containerMenuIds);
+                node.setChildren(prunedChildren);
+            }
+            boolean isConfiguredContainer = containerMenuIds.contains(node.getId());
+            boolean hasChildren = node.getChildren() != null && !node.getChildren().isEmpty();
+            if (isConfiguredContainer && !hasChildren) {
+                log.debug("Suppressing empty container menu [{}] (id: {}) with 0 accessible children.",
+                        node.getTitle(), node.getId());
+                continue;
+            }
+            result.add(node);
+        }
+        return result;
     }
 
     private boolean createsCycle(String childId, String parentId, Map<String, Menu> menuById) {

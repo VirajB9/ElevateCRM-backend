@@ -79,4 +79,35 @@ class PaginationUtilsTest {
     void clampKeyword_StripsBackslashes() {
         assertEquals("foobar", PaginationUtils.clampKeyword("foo\\bar"));
     }
+
+    @Test
+    void clampPageable_StripsSensitivePasswordSortProperty() {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("password").ascending());
+        Pageable result = PaginationUtils.clampPageable(pageable);
+
+        assertTrue(result.getSort().isUnsorted());
+    }
+
+    @Test
+    void clampPageable_WithAllowedPropertiesWhitelist_OnlyKeepsWhitelistedProperties() {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(
+                Sort.Order.asc("email"),
+                Sort.Order.desc("password"),
+                Sort.Order.asc("unindexedField")
+        ));
+        java.util.Set<String> allowed = java.util.Set.of("email", "createdAt");
+
+        Pageable result = PaginationUtils.clampPageable(pageable, allowed);
+
+        assertEquals(1, result.getSort().stream().count());
+        assertEquals("email", result.getSort().iterator().next().getProperty());
+    }
+
+    @Test
+    void clampAndValidateSort_DelegatesAndSanitizesSort() {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("tokensRevokedAt").ascending());
+        Pageable result = PaginationUtils.clampAndValidateSort(pageable, java.util.Set.of("id", "name"));
+
+        assertTrue(result.getSort().isUnsorted());
+    }
 }

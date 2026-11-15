@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -132,6 +133,33 @@ public class ProjectServiceImplTest {
     }
 
     @Test
+    void updateProject_whenClientInactiveOnPlanningOrOnHoldUpdate_throwsBadRequestException() {
+        Project project = Project.builder()
+                .id("proj-1")
+                .clientId("client-inactive")
+                .projectName("Planning Project")
+                .status(ProjectStatus.PLANNING)
+                .startDate(LocalDate.now())
+                .build();
+
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+        doThrow(new BadRequestException("Cannot update a project for an inactive client."))
+                .when(projectValidator).validateClientActiveForProjectUpdate("client-inactive");
+
+        UpdateProjectRequest req = new UpdateProjectRequest();
+        req.setProjectName("Planning Project Renamed");
+        req.setPriority(ProjectPriority.MEDIUM);
+        req.setStatus(ProjectStatus.ON_HOLD);
+        req.setStartDate(LocalDate.now());
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> projectService.updateProject("proj-1", req));
+        assertEquals("Cannot update a project for an inactive client.", ex.getMessage());
+        verify(projectValidator).validateClientActiveForProjectUpdate("client-inactive");
+        verify(projectRepository, never()).save(any());
+    }
+
+    @Test
     void createProject_NormalizesTrimProjectName() {
         com.viraj.dmabackend.project.dto.CreateProjectRequest req = new com.viraj.dmabackend.project.dto.CreateProjectRequest();
         req.setClientId(" client-1 ");
@@ -242,5 +270,35 @@ public class ProjectServiceImplTest {
 
         assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
                 () -> projectService.updateProject("proj-1", request));
+    }
+
+    @Test
+    void updateProject_whenPartialDateUpdateViolatesExistingChronology_throwsInvalidProjectDateException() {
+        Project project = Project.builder()
+                .id("proj-1")
+                .clientId("client-1")
+                .projectName("Active Project")
+                .status(ProjectStatus.ACTIVE)
+                .startDate(LocalDate.of(2026, 1, 1))
+                .endDate(LocalDate.of(2026, 6, 30))
+                .build();
+
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+
+        UpdateProjectRequest request = new UpdateProjectRequest();
+        request.setProjectName("Active Project");
+        request.setPriority(ProjectPriority.HIGH);
+        request.setStatus(ProjectStatus.ACTIVE);
+        request.setStartDate(LocalDate.of(2026, 7, 1));
+        request.setEndDate(null);
+
+        doThrow(new com.viraj.dmabackend.project.exception.InvalidProjectDateException())
+                .when(projectValidator).validateProjectDatesForUpdate(project, request.getStartDate(), request.getEndDate());
+
+        assertThrows(com.viraj.dmabackend.project.exception.InvalidProjectDateException.class,
+                () -> projectService.updateProject("proj-1", request));
+        verify(projectValidator).validateProjectDatesForUpdate(project, request.getStartDate(), request.getEndDate());
+        verify(projectRepository, never()).save(any());
     }
 }

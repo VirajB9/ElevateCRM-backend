@@ -322,7 +322,7 @@ public class LeadValidatorTest {
     }
 
     @Test
-    void validateLeadAccess_whenLeadUnassigned_passesForEmployee() {
+    void validateLeadAccess_whenLeadUnassigned_throwsAccessDeniedExceptionForEmployee() {
         org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                         "emp@agency.com", "pass",
@@ -332,7 +332,33 @@ public class LeadValidatorTest {
                 .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
 
         Lead unassignedLead = Lead.builder().id("lead-1").assignedUserId(null).build();
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> leadValidator.validateLeadAccess(unassignedLead));
+    }
+
+    @Test
+    void validateLeadAccess_whenLeadUnassigned_passesForManager() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "manager@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_MANAGER"))));
+
+        Lead unassignedLead = Lead.builder().id("lead-1").assignedUserId(null).build();
         assertDoesNotThrow(() -> leadValidator.validateLeadAccess(unassignedLead));
+    }
+
+    @Test
+    void validateLeadAccess_whenLeadAssignedToSelf_passesForEmployee() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "emp@agency.com", "pass",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_EMPLOYEE"))));
+
+        when(userService.getUserByEmail("emp@agency.com"))
+                .thenReturn(UserResponse.builder().id("emp-user-123").email("emp@agency.com").build());
+
+        Lead ownLead = Lead.builder().id("lead-1").assignedUserId("emp-user-123").build();
+        assertDoesNotThrow(() -> leadValidator.validateLeadAccess(ownLead));
     }
 
     @Test

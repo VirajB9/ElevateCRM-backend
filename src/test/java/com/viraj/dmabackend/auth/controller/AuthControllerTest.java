@@ -45,6 +45,9 @@ public class AuthControllerTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -55,7 +58,7 @@ public class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        refreshTokenRepository.deleteAll();
+        mongoTemplate.dropCollection(RefreshToken.class);
         userRepository.deleteAll();
         roleRepository.deleteAll();
 
@@ -101,9 +104,10 @@ public class AuthControllerTest {
     @Test
     void refresh_WithValidToken_ReturnsNewToken() throws Exception {
         String tokenValue = UUID.randomUUID().toString();
+        String tokenHash = RefreshToken.hashToken(tokenValue);
         
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(tokenValue)
+                .tokenHash(tokenHash)
                 .userId(testUser.getId())
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .revoked(false)
@@ -116,16 +120,17 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.refreshToken").exists());
 
-        RefreshToken oldToken = refreshTokenRepository.findByToken(tokenValue).orElseThrow();
+        RefreshToken oldToken = refreshTokenRepository.findByTokenHash(tokenHash).orElseThrow();
         org.junit.jupiter.api.Assertions.assertTrue(oldToken.isRevoked());
     }
 
     @Test
     void refresh_WithRevokedToken_ReturnsUnauthorized() throws Exception {
         String tokenValue = UUID.randomUUID().toString();
+        String tokenHash = RefreshToken.hashToken(tokenValue);
         
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(tokenValue)
+                .tokenHash(tokenHash)
                 .userId(testUser.getId())
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .revoked(true) // Revoked!
@@ -135,5 +140,30 @@ public class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"refreshToken\": \"" + tokenValue + "\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void login_PersistsHashedRefreshTokenAndNeverStoresPlaintext() throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("admin@example.com");
+        loginRequest.setPassword("password123");
+
+        String responseContent = mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(responseContent);
+        String rawRefreshToken = root.get("refreshToken").asText();
+        org.junit.jupiter.api.Assertions.assertNotNull(rawRefreshToken);
+
+        String expectedHash = RefreshToken.hashToken(rawRefreshToken);
+        org.junit.jupiter.api.Assertions.assertEquals(64, expectedHash.length());
+
+        // Token must be found by SHA-256 hash
+        java.util.Optional<RefreshToken> stored = refreshTokenRepository.findByTokenHash(expectedHash);
+        org.junit.jupiter.api.Assertions.assertTrue(stored.isPresent());
+        org.junit.jupiter.api.Assertions.assertEquals(expectedHash, stored.get().getTokenHash());
     }
 }

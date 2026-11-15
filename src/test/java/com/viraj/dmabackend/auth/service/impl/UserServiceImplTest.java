@@ -217,6 +217,18 @@ public class UserServiceImplTest {
     }
 
     @Test
+    void updateUserStatus_whenLockingUserWithActiveLeads_throwsBadRequestException() {
+        UpdateUserStatusRequest request = new UpdateUserStatusRequest();
+        request.setStatus(UserStatus.LOCKED);
+
+        doThrow(new BadRequestException("Cannot deactivate user with active assigned leads. Please reassign the leads first."))
+                .when(userValidator).validateStatusUpdate(UserStatus.LOCKED, "user-employee");
+
+        assertThrows(BadRequestException.class, () -> userService.updateUserStatus("user-employee", request));
+        verify(userValidator).validateStatusUpdate(UserStatus.LOCKED, "user-employee");
+    }
+
+    @Test
     void updateUserStatus_activatesUserAndClearsLockout() {
         authenticateAs(ownerUser);
         managerUser.setStatus(UserStatus.LOCKED);

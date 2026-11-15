@@ -52,6 +52,7 @@ public class JwtUtil {
                 .claim("role", role)
                 .claim("permissions", permissions)
                 .claim("passwordChangeRequired", passwordChangeRequired)
+                .claim("iat_ms", issuedAt.getTime())
                 .issuedAt(issuedAt)
                 .expiration(
                         new Date(issuedAt.getTime() + expiration)
@@ -69,7 +70,12 @@ public class JwtUtil {
     }
 
     public Date extractIssuedAt(String token) {
-        return extractClaims(token).getIssuedAt();
+        Claims claims = extractClaims(token);
+        Object iatMs = claims.get("iat_ms");
+        if (iatMs instanceof Number number) {
+            return new Date(number.longValue());
+        }
+        return claims.getIssuedAt();
     }
 
     public String extractRole(String token) {

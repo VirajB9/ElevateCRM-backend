@@ -175,9 +175,11 @@ public class LeadValidator {
 
     public void validateLeadAccess(Lead lead) {
         String restrictedUserId = getAssignedUserScopeIfRestricted();
-        if (restrictedUserId != null && lead.getAssignedUserId() != null && !restrictedUserId.equals(lead.getAssignedUserId())) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "Access denied: You are not authorized to view leads assigned to another user");
+        if (restrictedUserId != null) {
+            if (lead.getAssignedUserId() == null || !restrictedUserId.equals(lead.getAssignedUserId())) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Access denied: You are not authorized to access unassigned leads or leads assigned to another user");
+            }
         }
     }
 

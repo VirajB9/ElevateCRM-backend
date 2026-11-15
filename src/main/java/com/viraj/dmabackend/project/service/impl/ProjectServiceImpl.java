@@ -50,6 +50,10 @@ public class ProjectServiceImpl implements ProjectService {
         return projectMapper.toProjectResponse(project);
     }
 
+    private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
+            "id", "clientId", "projectName", "priority", "status", "startDate", "endDate", "budget", "createdAt", "updatedAt"
+    );
+
     @Override
     public Page<ProjectResponse> getProjectsByStatus(ProjectStatus status, Pageable pageable) {
 
@@ -57,7 +61,7 @@ public class ProjectServiceImpl implements ProjectService {
             throw new BadRequestException("Querying archived projects is not permitted");
         }
 
-        return projectRepository.findByStatus(status, PaginationUtils.clampPageable(pageable))
+        return projectRepository.findByStatus(status, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(projectMapper::toProjectResponse);
     }
 
@@ -67,21 +71,21 @@ public class ProjectServiceImpl implements ProjectService {
         String trimmedClientId = clientId != null ? clientId.trim() : null;
         projectValidator.validateClientExists(trimmedClientId);
 
-        return projectRepository.findByClientIdAndStatusNot(trimmedClientId, ProjectStatus.ARCHIVED, PaginationUtils.clampPageable(pageable))
+        return projectRepository.findByClientIdAndStatusNot(trimmedClientId, ProjectStatus.ARCHIVED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(projectMapper::toProjectResponse);
     }
 
     @Override
     public Page<ProjectResponse> getAllProjects(Pageable pageable) {
 
-        return projectRepository.findByStatusNot(ProjectStatus.ARCHIVED, PaginationUtils.clampPageable(pageable))
+        return projectRepository.findByStatusNot(ProjectStatus.ARCHIVED, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(projectMapper::toProjectResponse);
     }
 
     @Override
     public Page<ProjectResponse> searchProjects(String keyword, Pageable pageable) {
 
-        Page<Project> projects = projectRepository.searchProjects(keyword, PaginationUtils.clampPageable(pageable));
+        Page<Project> projects = projectRepository.searchProjects(keyword, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES));
         return projects.map(projectMapper::toProjectResponse);
     }
 
@@ -100,8 +104,8 @@ public class ProjectServiceImpl implements ProjectService {
         projectValidator.validateProjectEditable(project.getStatus());
         projectValidator.validateProjectStatusForUpdate(request.getStatus());
         projectValidator.validateProjectStatusTransition(project.getStatus(), request.getStatus());
+        projectValidator.validateClientActiveForProjectUpdate(project.getClientId());
         if (request.getStatus() == ProjectStatus.ACTIVE) {
-            projectValidator.validateClientActiveForProjectUpdate(project.getClientId());
             projectValidator.validateActiveProjectDates(request.getStatus(), request.getStartDate(), request.getEndDate());
         }
         if (request.getStatus() == ProjectStatus.COMPLETED) {
@@ -115,7 +119,7 @@ public class ProjectServiceImpl implements ProjectService {
                 request.getProjectName() != null ? request.getProjectName().trim() : null,
                 project.getClientId(),
                 projectId);
-        projectValidator.validateProjectDates(request.getStartDate(), request.getEndDate());
+        projectValidator.validateProjectDatesForUpdate(project, request.getStartDate(), request.getEndDate());
 
         updateProjectFields(project, request);
 
@@ -166,8 +170,10 @@ public class ProjectServiceImpl implements ProjectService {
         project.setDescription(normalizeTrim(request.getDescription()));
         project.setPriority(request.getPriority());
         project.setStatus(request.getStatus());
-        project.setStartDate(request.getStartDate());
-        project.setEndDate(request.getEndDate());
+        project.setStartDate(request.getStartDate() != null ? request.getStartDate() : project.getStartDate());
+        if (request.getEndDate() != null) {
+            project.setEndDate(request.getEndDate());
+        }
         project.setBudget(normalizeBudget(request.getBudget()));
         project.setNotes(normalizeTrim(request.getNotes()));
     }

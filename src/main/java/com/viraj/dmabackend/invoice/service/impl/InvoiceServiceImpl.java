@@ -77,6 +77,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoiceMapper.toResponse(invoice);
     }
 
+    private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
+            "id", "invoiceNumber", "clientId", "projectId", "issueDate", "dueDate", "totalAmount", "status", "invoiceVersion", "createdAt", "updatedAt"
+    );
+
     @Override
     public Page<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId, Pageable pageable) {
 
@@ -86,21 +90,21 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
 
         return invoiceHistoryRepository
-                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId, PaginationUtils.clampPageable(pageable))
+                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(invoiceMapper::toHistoryResponse);
     }
 
     @Override
     public Page<InvoiceResponse> getAllInvoices(Pageable pageable) {
 
-        return invoiceRepository.findByActiveTrue(PaginationUtils.clampPageable(pageable))
+        return invoiceRepository.findByActiveTrue(PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(invoiceMapper::toResponse);
     }
 
     @Override
     public Page<InvoiceResponse> getInvoicesByStatus(InvoiceStatus status, Pageable pageable) {
 
-        return invoiceRepository.findByActiveTrueAndStatus(status, PaginationUtils.clampPageable(pageable))
+        return invoiceRepository.findByActiveTrueAndStatus(status, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(invoiceMapper::toResponse);
     }
 
@@ -110,7 +114,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         String trimmedClientId = clientId != null ? clientId.trim() : null;
         invoiceValidator.validateClientExists(trimmedClientId);
 
-        return invoiceRepository.findByActiveTrueAndClientId(trimmedClientId, PaginationUtils.clampPageable(pageable))
+        return invoiceRepository.findByActiveTrueAndClientId(trimmedClientId, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(invoiceMapper::toResponse);
     }
 
@@ -120,7 +124,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         String trimmedProjectId = projectId != null ? projectId.trim() : null;
         invoiceValidator.validateProjectExists(trimmedProjectId);
 
-        return invoiceRepository.findByActiveTrueAndProjectId(trimmedProjectId, PaginationUtils.clampPageable(pageable))
+        return invoiceRepository.findByActiveTrueAndProjectId(trimmedProjectId, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
                 .map(invoiceMapper::toResponse);
     }
 
