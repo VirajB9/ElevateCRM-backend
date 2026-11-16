@@ -125,7 +125,24 @@ public class InvoiceServiceImplTest {
         doThrow(new BadRequestException("Invalid client")).when(invoiceValidator).validateCreateInvoice(request);
 
         assertThrows(BadRequestException.class, () -> invoiceService.createInvoice(request));
+        verify(invoiceNumberGenerator, never()).generate(any());
         verify(invoiceNumberGenerator, never()).generate();
+    }
+
+    @Test
+    void createInvoice_SuccessfulCreation_CallsInvoiceNumberGeneratorWithIssueDate() {
+        com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest request = new com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest();
+        request.setIssueDate(LocalDate.of(2027, 2, 1));
+        Invoice invoice = new Invoice();
+        invoice.setIssueDate(request.getIssueDate());
+        when(invoiceMapper.toEntity(request)).thenReturn(invoice);
+        when(invoiceNumberGenerator.generate(request.getIssueDate())).thenReturn("INV-2027-00001");
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(invoiceMapper.toResponse(any(Invoice.class))).thenReturn(new com.viraj.dmabackend.invoice.dto.InvoiceResponse());
+
+        invoiceService.createInvoice(request);
+
+        verify(invoiceNumberGenerator).generate(LocalDate.of(2027, 2, 1));
     }
 
     @Test
@@ -310,6 +327,24 @@ public class InvoiceServiceImplTest {
 
         assertThrows(com.viraj.dmabackend.invoice.exception.InvoiceNotFoundException.class,
                 () -> invoiceService.getInvoiceHistory("inv-missing", org.springframework.data.domain.PageRequest.of(0, 10)));
+    }
+
+    @Test
+    void getInvoiceHistory_AllowsSortingByChangedAt() {
+        when(invoiceRepository.existsById("inv-123")).thenReturn(true);
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> pageableCaptor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+
+        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc(eq("inv-123"), pageableCaptor.capture()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
+
+        org.springframework.data.domain.PageRequest pageRequest =
+                org.springframework.data.domain.PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "changedAt"));
+
+        invoiceService.getInvoiceHistory("inv-123", pageRequest);
+
+        org.springframework.data.domain.Pageable captured = pageableCaptor.getValue();
+        assertNotNull(captured.getSort().getOrderFor("changedAt"));
     }
 
     @Test

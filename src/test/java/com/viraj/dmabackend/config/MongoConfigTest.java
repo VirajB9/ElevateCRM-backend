@@ -21,6 +21,22 @@ import static org.mockito.Mockito.mock;
 class MongoConfigTest {
 
     @Test
+    void auditingDateTimeProvider_ReturnsUtcLocalDateTime() {
+        MongoConfig mongoConfig = new MongoConfig();
+        org.springframework.data.auditing.DateTimeProvider provider = mongoConfig.auditingDateTimeProvider();
+
+        assertNotNull(provider);
+        java.util.Optional<java.time.temporal.TemporalAccessor> result = provider.getNow();
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof java.time.LocalDateTime);
+
+        java.time.LocalDateTime nowUtc = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDateTime providerTime = (java.time.LocalDateTime) result.get();
+        long diffSeconds = java.time.Duration.between(providerTime, nowUtc).abs().getSeconds();
+        assertTrue(diffSeconds < 5, "Provider time should be close to current UTC time");
+    }
+
+    @Test
     void mongoConnectionCustomizer_AppliesPoolAndSocketSettings() {
         MongoConfig mongoConfig = new MongoConfig();
         MongoClientSettingsBuilderCustomizer customizer = mongoConfig.mongoConnectionCustomizer();

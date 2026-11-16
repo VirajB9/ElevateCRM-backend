@@ -4,6 +4,7 @@ import com.viraj.dmabackend.common.counter.CounterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.Year;
 import java.time.ZoneOffset;
 
@@ -17,16 +18,19 @@ public class InvoiceNumberGenerator {
     private final CounterRepository counterRepository;
 
     public String generate() {
+        return generate(null);
+    }
 
-        int currentYear = Year.now(ZoneOffset.UTC).getValue();
-        String counterKey = INVOICE_COUNTER + "_" + currentYear;
+    public String generate(LocalDate issueDate) {
+        int year = (issueDate != null) ? issueDate.getYear() : Year.now(ZoneOffset.UTC).getValue();
+        String counterKey = INVOICE_COUNTER + "_" + year;
 
         long sequence = counterRepository.getNextSequence(counterKey);
 
         return String.format(
                 "%s-%d-%05d",
                 INVOICE_PREFIX,
-                currentYear,
+                year,
                 sequence);
     }
 

@@ -6,10 +6,10 @@ import com.viraj.dmabackend.invoice.enums.InvoiceStatus;
 public class InvalidInvoiceStatusException extends BadRequestException {
 
     public InvalidInvoiceStatusException(String message) {
-        super(message);
+        super("INVALID_INVOICE_STATUS", message);
     }
 
     public InvalidInvoiceStatusException(InvoiceStatus currentStatus, InvoiceStatus newStatus) {
-        super(String.format("Cannot transition invoice status from %s to %s", currentStatus, newStatus));
+        super("INVALID_INVOICE_STATUS", String.format("Cannot transition invoice status from %s to %s", currentStatus, newStatus));
     }
 }

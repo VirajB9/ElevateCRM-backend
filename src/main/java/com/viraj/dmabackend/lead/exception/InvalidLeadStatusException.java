@@ -6,6 +6,6 @@ import com.viraj.dmabackend.lead.enums.LeadStatus;
 public class InvalidLeadStatusException extends BadRequestException {
 
     public InvalidLeadStatusException(LeadStatus currentStatus, LeadStatus targetStatus) {
-        super("Cannot change lead status from '" + currentStatus + "' to '" + targetStatus + "'.");
+        super("INVALID_LEAD_STATUS", "Cannot change lead status from '" + currentStatus + "' to '" + targetStatus + "'.");
     }
 }

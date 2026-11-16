@@ -20,7 +20,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
@@ -46,7 +45,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "Validation failed",
-                errors);
+                errors,
+                "VALIDATION_FAILED",
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -60,7 +61,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null);
+                null,
+                "NOT_FOUND",
+                HttpStatus.NOT_FOUND.value());
 
         return new ResponseEntity<>(
                 response,
@@ -71,10 +74,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleBadRequest(
             BadRequestException ex) {
 
+        String errorCode = ex.getErrorCode() != null ? ex.getErrorCode() : "BAD_REQUEST";
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null);
+                null,
+                errorCode,
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -88,7 +94,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null);
+                null,
+                "BAD_REQUEST",
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -102,7 +110,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "Required request header '" + ex.getHeaderName() + "' is not present",
-                null);
+                null,
+                "MISSING_HEADER",
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -116,7 +126,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null);
+                null,
+                "UNAUTHORIZED",
+                HttpStatus.UNAUTHORIZED.value());
 
         return new ResponseEntity<>(
                 response,
@@ -130,7 +142,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null);
+                null,
+                "UNAUTHORIZED",
+                HttpStatus.UNAUTHORIZED.value());
 
         return new ResponseEntity<>(
                 response,
@@ -138,12 +152,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)
-    public ResponseEntity<ApiResponse<Object>> handleOptimisticLockingFailure(org.springframework.dao.OptimisticLockingFailureException ex) {
+    public ResponseEntity<ApiResponse<Object>> handleOptimisticLockingFailure(
+            OptimisticLockingFailureException ex) {
 
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "The record was modified by another user while you were editing it. Please refresh and try again.",
-                null);
+                null,
+                "OPTIMISTIC_LOCKING_FAILURE",
+                HttpStatus.CONFLICT.value());
 
         return new ResponseEntity<>(
                 response,
@@ -152,12 +169,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(
-            org.springframework.security.access.AccessDeniedException ex) {
+            AccessDeniedException ex) {
 
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "Access denied: You do not have permission to perform this action.",
-                null);
+                null,
+                "FORBIDDEN",
+                HttpStatus.FORBIDDEN.value());
 
         return new ResponseEntity<>(
                 response,
@@ -171,7 +190,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null);
+                null,
+                "CONFLICT",
+                HttpStatus.CONFLICT.value());
 
         return new ResponseEntity<>(
                 response,
@@ -185,7 +206,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "A record with this value already exists.",
-                null);
+                null,
+                "DUPLICATE_RESOURCE",
+                HttpStatus.CONFLICT.value());
 
         return new ResponseEntity<>(
                 response,
@@ -199,7 +222,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "Malformed request body or invalid data format",
-                null);
+                null,
+                "MALFORMED_REQUEST",
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -213,7 +238,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 String.format("Required request parameter '%s' is missing", ex.getParameterName()),
-                null);
+                null,
+                "MISSING_PARAMETER",
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -227,7 +254,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 String.format("Invalid parameter value for '%s'", ex.getName()),
-                null);
+                null,
+                "TYPE_MISMATCH",
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -241,7 +270,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 String.format("HTTP method '%s' is not supported for this endpoint", ex.getMethod()),
-                null);
+                null,
+                "METHOD_NOT_ALLOWED",
+                HttpStatus.METHOD_NOT_ALLOWED.value());
 
         return new ResponseEntity<>(
                 response,
@@ -255,7 +286,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
-                null);
+                null,
+                "NOT_FOUND",
+                HttpStatus.NOT_FOUND.value());
 
         return new ResponseEntity<>(
                 response,
@@ -269,7 +302,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 String.format("Content type '%s' is not supported", ex.getContentType()),
-                null);
+                null,
+                "UNSUPPORTED_MEDIA_TYPE",
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE.value());
 
         return new ResponseEntity<>(
                 response,
@@ -287,7 +322,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "Validation failed",
-                errors);
+                errors,
+                "VALIDATION_FAILED",
+                HttpStatus.BAD_REQUEST.value());
 
         return new ResponseEntity<>(
                 response,
@@ -303,7 +340,9 @@ public class GlobalExceptionHandler {
             ApiResponse<Object> response = new ApiResponse<>(
                     false,
                     "Invalid search query syntax",
-                    null);
+                    null,
+                    "INVALID_QUERY",
+                    HttpStatus.BAD_REQUEST.value());
             return new ResponseEntity<>(
                     response,
                     HttpStatus.BAD_REQUEST);
@@ -313,7 +352,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "An unexpected database error occurred",
-                null);
+                null,
+                "DATABASE_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(
                 response,
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -330,7 +371,9 @@ public class GlobalExceptionHandler {
                 ApiResponse<Object> response = new ApiResponse<>(
                         false,
                         "Invalid search query syntax",
-                        null);
+                        null,
+                        "INVALID_QUERY",
+                        HttpStatus.BAD_REQUEST.value());
                 return new ResponseEntity<>(
                         response,
                         HttpStatus.BAD_REQUEST);
@@ -341,17 +384,21 @@ public class GlobalExceptionHandler {
             ApiResponse<Object> response = new ApiResponse<>(
                     false,
                     "Invalid search query syntax",
-                    null);
-            return new ResponseEntity<>(
-                    response,
-                    HttpStatus.BAD_REQUEST);
+                    null,
+                    "INVALID_QUERY",
+                    HttpStatus.BAD_REQUEST.value());
+                return new ResponseEntity<>(
+                        response,
+                        HttpStatus.BAD_REQUEST);
         }
 
         log.error("Unhandled UncategorizedMongoDbException occurred", ex);
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "An unexpected database error occurred",
-                null);
+                null,
+                "DATABASE_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(
                 response,
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -366,7 +413,9 @@ public class GlobalExceptionHandler {
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 "An unexpected error occurred",
-                null);
+                null,
+                "INTERNAL_SERVER_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR.value());
 
         return new ResponseEntity<>(
                 response,

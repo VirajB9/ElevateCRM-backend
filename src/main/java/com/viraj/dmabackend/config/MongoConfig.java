@@ -7,17 +7,26 @@ import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCu
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Configuration
-@EnableMongoAuditing(auditorAwareRef = "auditorAware")
+@EnableMongoAuditing(auditorAwareRef = "auditorAware", dateTimeProviderRef = "auditingDateTimeProvider")
 public class MongoConfig {
+
+    @Bean
+    public DateTimeProvider auditingDateTimeProvider() {
+        return () -> Optional.of(LocalDateTime.now(ZoneOffset.UTC));
+    }
 
     @Bean
     @ConditionalOnProperty(name = "spring.data.mongodb.transaction.enabled", havingValue = "true")

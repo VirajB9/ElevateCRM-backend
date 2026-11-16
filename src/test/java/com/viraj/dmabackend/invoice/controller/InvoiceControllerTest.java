@@ -105,13 +105,30 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
     }
 
     @Test
-    @WithMockUser(authorities = "invoice:read")
-    void getInvoiceHistory_whenAuthorized_returnsOk() throws Exception {
+    @WithMockUser(authorities = "invoice:update")
+    void getInvoiceHistory_whenAuthorizedWithInvoiceUpdate_returnsOk() throws Exception {
         when(invoiceService.getInvoiceHistory(eq("inv-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/invoices/inv-1/history"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void getInvoiceHistory_whenAuthorizedWithRoleManager_returnsOk() throws Exception {
+        when(invoiceService.getInvoiceHistory(eq("inv-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/v1/invoices/inv-1/history"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+    }
+
+    @Test
+    @WithMockUser(authorities = "invoice:read")
+    void getInvoiceHistory_whenOnlyInvoiceRead_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/invoices/inv-1/history"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

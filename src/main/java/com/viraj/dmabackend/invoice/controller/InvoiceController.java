@@ -63,10 +63,10 @@ public class InvoiceController {
         return invoiceService.getInvoiceById(invoiceId);
     }
 
-    @PreAuthorize("hasAuthority('invoice:read')")
+    @PreAuthorize("hasAuthority('invoice:update') or hasAnyRole('OWNER', 'MANAGER')")
     @GetMapping("/{invoiceId}/history")
     @ResponseStatus(HttpStatus.OK)
-    @Operation(summary = "Get Invoice History", description = "Retrieves the versioned audit history of an invoice. Requires 'invoice:read' authority.")
+    @Operation(summary = "Get Invoice History", description = "Retrieves the versioned audit history of an invoice. Requires 'invoice:update' authority or 'OWNER'/'MANAGER' role.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Invoice history retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Invoice not found"),

@@ -60,7 +60,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         calculateInvoiceTotals(invoice);
 
-        String generatedInvoiceNumber = invoiceNumberGenerator.generate();
+        String generatedInvoiceNumber = invoiceNumberGenerator.generate(request.getIssueDate());
         invoice.setInvoiceNumber(generatedInvoiceNumber);
 
         Invoice savedInvoice;
@@ -103,6 +103,10 @@ public class InvoiceServiceImpl implements InvoiceService {
             "id", "invoiceNumber", "clientId", "projectId", "issueDate", "dueDate", "totalAmount", "status", "invoiceVersion", "createdAt", "updatedAt"
     );
 
+    private static final java.util.Set<String> ALLOWED_INVOICE_HISTORY_SORT_PROPERTIES = java.util.Set.of(
+            "id", "invoiceId", "invoiceNumber", "invoiceVersion", "changedAt", "changedBy", "totalAmount", "status"
+    );
+
     @Override
     public Page<InvoiceHistoryResponse> getInvoiceHistory(String invoiceId, Pageable pageable) {
 
@@ -112,7 +116,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
 
         return invoiceHistoryRepository
-                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId, PaginationUtils.clampPageable(pageable, ALLOWED_SORT_PROPERTIES))
+                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId, PaginationUtils.clampPageable(pageable, ALLOWED_INVOICE_HISTORY_SORT_PROPERTIES))
                 .map(invoiceMapper::toHistoryResponse);
     }
 

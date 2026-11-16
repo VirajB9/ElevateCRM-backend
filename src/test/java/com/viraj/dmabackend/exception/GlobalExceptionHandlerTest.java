@@ -190,4 +190,37 @@ public class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().isSuccess());
         assertEquals("Invalid search query syntax", response.getBody().getMessage());
     }
+
+    @Test
+    void handleBadRequest_WithCustomErrorCode_ReturnsCustomErrorCodeAndStatus() {
+        BadRequestException ex = new BadRequestException("INVALID_CUSTOM_CODE", "Custom bad request");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleBadRequest(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("INVALID_CUSTOM_CODE", response.getBody().getErrorCode());
+        assertEquals("Custom bad request", response.getBody().getMessage());
+    }
+
+    @Test
+    void handleAccessDenied_ReturnsForbiddenErrorCodeAndStatus() {
+        org.springframework.security.access.AccessDeniedException ex =
+                new org.springframework.security.access.AccessDeniedException("Denied");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleAccessDeniedException(ex);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertEquals(403, response.getBody().getStatus());
+        assertEquals("FORBIDDEN", response.getBody().getErrorCode());
+    }
+
+    @Test
+    void handleOptimisticLockingFailure_ReturnsOptimisticLockingFailureErrorCode() {
+        org.springframework.dao.OptimisticLockingFailureException ex =
+                new org.springframework.dao.OptimisticLockingFailureException("Version mismatch");
+        ResponseEntity<ApiResponse<Object>> response = handler.handleOptimisticLockingFailure(ex);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals(409, response.getBody().getStatus());
+        assertEquals("OPTIMISTIC_LOCKING_FAILURE", response.getBody().getErrorCode());
+    }
 }

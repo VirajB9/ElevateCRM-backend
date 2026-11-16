@@ -156,7 +156,7 @@ public class ClientServiceImplTest {
     }
 
     @Test
-    void createClientFromLead_ClampsContactPersonToMax100Characters() {
+    void createClientFromLead_DoesNotTruncateContactPerson() {
         String longFirst = "A".repeat(50);
         String longLast = "B".repeat(50);
 
@@ -176,7 +176,8 @@ public class ClientServiceImplTest {
         ArgumentCaptor<Client> captor = ArgumentCaptor.forClass(Client.class);
         verify(clientRepository, atLeastOnce()).save(captor.capture());
         Client saved = captor.getValue();
-        assertEquals(100, saved.getContactPerson().length());
+        assertEquals(longFirst + " " + longLast, saved.getContactPerson());
+        assertEquals(101, saved.getContactPerson().length());
         assertTrue(saved.getContactPerson().startsWith(longFirst + " "));
     }
 
@@ -350,5 +351,31 @@ public class ClientServiceImplTest {
 
         assertThrows(com.viraj.dmabackend.exception.BadRequestException.class,
                 () -> clientService.updateClient("client-1", request));
+    }
+
+    @Test
+    void createClientFromLead_WithLongNameOver100Chars_DoesNotTruncateContactPerson() {
+        String longFirst = "Alexandrina".repeat(5); // 55 chars
+        String longLast = "Montgomery".repeat(5); // 50 chars
+        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
+                .firstName(longFirst)
+                .lastName(longLast)
+                .companyName("Enterprise Ltd")
+                .email("alex@example.com")
+                .phoneNumber("1234567890")
+                .build();
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class)))
+                .thenAnswer(invocation -> {
+                    Client c = invocation.getArgument(0);
+                    return ClientResponse.builder().contactPerson(c.getContactPerson()).build();
+                });
+
+        ClientResponse saved = clientService.createClientFromLead(data);
+
+        String expected = longFirst + " " + longLast;
+        assertEquals(expected, saved.getContactPerson());
+        org.junit.jupiter.api.Assertions.assertTrue(saved.getContactPerson().length() > 100);
     }
 }

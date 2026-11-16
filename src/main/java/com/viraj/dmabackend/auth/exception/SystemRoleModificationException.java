@@ -5,6 +5,6 @@ import com.viraj.dmabackend.exception.BadRequestException;
 public class SystemRoleModificationException extends BadRequestException {
 
     public SystemRoleModificationException(String roleName) {
-        super("System role cannot be modified: " + roleName);
+        super("SYSTEM_ROLE_MODIFICATION_NOT_ALLOWED", "System role cannot be modified: " + roleName);
     }
 }
