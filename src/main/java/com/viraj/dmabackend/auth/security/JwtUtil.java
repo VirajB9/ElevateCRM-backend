@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.auth.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -97,6 +98,8 @@ public class JwtUtil {
         try {
             extractClaims(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            throw e;
         } catch (Exception e) {
             return false;
         }

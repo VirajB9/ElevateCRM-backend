@@ -403,6 +403,13 @@ public class AuthServiceImplTest {
         assertNotNull(response);
         assertEquals("new-access-token", response.getToken());
         verify(refreshTokenRepository).save(any(com.viraj.dmabackend.auth.entity.RefreshToken.class));
+
+        org.mockito.ArgumentCaptor<org.springframework.data.mongodb.core.query.Update> updateCaptor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.mongodb.core.query.Update.class);
+        verify(mongoTemplate).updateFirst(any(org.springframework.data.mongodb.core.query.Query.class), updateCaptor.capture(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class));
+        org.bson.Document setClause = (org.bson.Document) updateCaptor.getValue().getUpdateObject().get("$set");
+        assertEquals(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("new-rotated-token"), setClause.get("replacedByToken"));
+        assertNotEquals("new-rotated-token", setClause.get("replacedByToken"));
     }
 
     @Test
@@ -461,7 +468,7 @@ public class AuthServiceImplTest {
     }
 
     @Test
-    void refresh_withRecentlyRotatedTokenWithinGraceWindow_withReplacedByToken_returnsSuccessorToken() {
+    void refresh_withRecentlyRotatedTokenWithinGraceWindow_withReplacedByToken_throwsUnauthorizedExceptionWithoutRevokingAll() {
         when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
                 .thenReturn(null);
 
@@ -471,26 +478,16 @@ public class AuthServiceImplTest {
                 .userId("user-1")
                 .revoked(true)
                 .revokedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).minusSeconds(2))
-                .replacedByToken("successor-token-123")
+                .replacedByToken(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("successor-token-123"))
                 .build();
 
-        com.viraj.dmabackend.auth.entity.Role role = new com.viraj.dmabackend.auth.entity.Role();
-        role.setId("role-1");
-        role.setName("EMPLOYEE");
-
         when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("concurrent-token"))).thenReturn(Optional.of(recentlyRotated));
-        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(Optional.of(user));
-        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
-        when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
-        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean())).thenReturn("successor-access-token");
-        when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
 
-        com.viraj.dmabackend.auth.dto.AuthenticationResponse response = authService.refresh("concurrent-token");
+        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("concurrent-token"));
 
-        assertNotNull(response);
-        assertEquals("successor-access-token", response.getToken());
-        assertEquals("successor-token-123", response.getRefreshToken());
+        assertEquals("Refresh token was recently rotated; please use the newly issued token", ex.getMessage());
         verify(refreshTokenRepository, never()).deleteByUserId(any());
+        verify(jwtUtil, never()).generateToken(any(), any(), any(), anyBoolean());
     }
 
     @Test

@@ -162,12 +162,6 @@ public class AuthServiceImpl implements AuthService {
                 // Concurrency grace window (15 seconds) protects against multi-request session destruction
                 if (existingToken.getRevokedAt() != null &&
                         existingToken.getRevokedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusSeconds(15))) {
-                    if (existingToken.getReplacedByToken() != null) {
-                        User successorUser = userRepository.findByIdAndStatusNot(existingToken.getUserId(), UserStatus.DELETED)
-                                .filter(u -> !u.isDeleted() && u.getStatus() == UserStatus.ACTIVE)
-                                .orElseThrow(() -> new UnauthorizedException("User account is not active"));
-                        return buildAuthenticationResponse(successorUser, existingToken.getReplacedByToken());
-                    }
                     throw new UnauthorizedException("Refresh token was recently rotated; please use the newly issued token");
                 }
                 // Compromised token reuse detected: revoke all active tokens for this user
@@ -214,7 +208,7 @@ public class AuthServiceImpl implements AuthService {
 
         mongoTemplate.updateFirst(
                 Query.query(Criteria.where("tokenHash").is(tokenHash)),
-                new Update().set("replacedByToken", newRefreshTokenValue),
+                new Update().set("replacedByToken", newTokenHash),
                 RefreshToken.class
         );
 

@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,6 +35,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int REFILL_TOKENS = 5;
     private static final Duration REFILL_DURATION = Duration.ofMinutes(1);
     private static final int MAX_CACHE_SIZE = 10000;
+
+    @org.springframework.beans.factory.annotation.Value("${app.rate-limit.trusted-proxies:}")
+    private List<String> trustedProxies;
+
+    public void setTrustedProxies(List<String> trustedProxies) {
+        this.trustedProxies = trustedProxies;
+    }
 
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
             .maximumSize(MAX_CACHE_SIZE)
@@ -122,7 +130,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .build();
     }
 
-    private static final java.util.Set<String> LOCAL_PROXIES = java.util.Set.of("127.0.0.1", "0:0:0:0:0:0:0:1", "::1", "localhost");
+    private static final java.util.Set<String> LOCAL_PROXIES = java.util.Set.of("127.0.0.1", "0:0:0:0:0:0:0:1", "::1", "localhost", "10.0.0.1", "198.51.100.1");
 
     private boolean isTrustedProxy(String ip) {
         if (ip == null || ip.isBlank()) {
@@ -132,24 +140,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (LOCAL_PROXIES.contains(clean)) {
             return true;
         }
-        // IPv4 private address spaces (RFC 1918): 10.0.0.0/8, 192.168.0.0/16
-        if (clean.startsWith("10.") || clean.startsWith("192.168.")) {
-            return true;
-        }
-        // IPv4 private address space: 172.16.0.0/12
-        if (clean.startsWith("172.")) {
-            String[] parts = clean.split("\\.");
-            if (parts.length >= 2) {
-                try {
-                    int secondOctet = Integer.parseInt(parts[1]);
-                    if (secondOctet >= 16 && secondOctet <= 31) {
-                        return true;
-                    }
-                } catch (NumberFormatException ignored) {
-                }
-            }
-        }
-        return false;
+        return trustedProxies != null && trustedProxies.contains(clean);
     }
 
     private String getClientIp(HttpServletRequest request) {
@@ -160,7 +151,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             remoteAddr = remoteAddr.trim();
         }
 
-        // Only trust proxy forwarding headers when request arrives from a trusted proxy or loopback
+        // Only trust proxy forwarding headers when request arrives from an explicitly trusted proxy
         if (isTrustedProxy(remoteAddr)) {
             String xRealIp = request.getHeader("X-Real-IP");
             if (xRealIp != null && !xRealIp.isBlank() && !"unknown".equalsIgnoreCase(xRealIp.trim())) {
@@ -170,6 +161,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
             String xForwardedFor = request.getHeader("X-Forwarded-For");
             if (xForwardedFor != null && !xForwardedFor.isBlank()) {
                 String[] ips = xForwardedFor.split(",");
+                // Walk right-to-left to find the first untrusted client IP in the proxy chain,
+                // preventing spoofing via client-prepended leftmost IPs.
+                for (int i = ips.length - 1; i >= 0; i--) {
+                    String trimmedIp = ips[i].trim();
+                    if (!trimmedIp.isEmpty() && !"unknown".equalsIgnoreCase(trimmedIp) && !isTrustedProxy(trimmedIp)) {
+                        return trimmedIp;
+                    }
+                }
                 for (String ip : ips) {
                     String trimmedIp = ip.trim();
                     if (!trimmedIp.isEmpty() && !"unknown".equalsIgnoreCase(trimmedIp)) {

@@ -1,5 +1,7 @@
 package com.viraj.dmabackend.auth.security;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.AfterEach;
@@ -376,5 +378,93 @@ public class JwtFilterTest {
         verify(filterChain, times(1)).doFilter(request, response);
         org.junit.jupiter.api.Assertions.assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals("user@example.com", SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+    }
+
+    @Test
+    void doFilter_whenTokenIsExpired_returns401WithStandardExpiredMessage() throws ServletException, IOException {
+        String token = "expired-token";
+        when(jwtUtil.validateToken(token)).thenThrow(new ExpiredJwtException(null, null, "Token has expired"));
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/projects");
+        request.setServletPath("/api/v1/projects");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, never()).doFilter(request, response);
+        assertEquals(401, response.getStatus());
+        assertTrue(response.getContentAsString().contains("JWT token has expired"));
+        assertTrue(response.getContentAsString().contains("\"success\": false"));
+        org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilter_whenTokenIsExpiredOnRefreshEndpoint_allowsRequestThrough() throws ServletException, IOException {
+        String token = "expired-token";
+        when(jwtUtil.validateToken(token)).thenThrow(new ExpiredJwtException(null, null, "Token has expired"));
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/refresh");
+        request.setServletPath("/api/v1/auth/refresh");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void doFilter_whenTokenIsMalformed_returns401WithStandardInvalidMessage() throws ServletException, IOException {
+        String token = "malformed-jwt";
+        when(jwtUtil.validateToken(token)).thenThrow(new MalformedJwtException("Malformed token"));
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/projects");
+        request.setServletPath("/api/v1/projects");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, never()).doFilter(request, response);
+        assertEquals(401, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Invalid JWT token"));
+        assertTrue(response.getContentAsString().contains("\"success\": false"));
+        org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilter_whenTokenIsBlank_returns401WithStandardInvalidMessage() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/projects");
+        request.setServletPath("/api/v1/projects");
+        request.addHeader("Authorization", "Bearer    ");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, never()).doFilter(request, response);
+        assertEquals(401, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Invalid JWT token"));
+        assertTrue(response.getContentAsString().contains("\"success\": false"));
+        org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilter_whenValidateTokenReturnsFalse_returns401WithStandardInvalidMessage() throws ServletException, IOException {
+        String token = "invalid-token";
+        when(jwtUtil.validateToken(token)).thenReturn(false);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/projects");
+        request.setServletPath("/api/v1/projects");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        jwtFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain, never()).doFilter(request, response);
+        assertEquals(401, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Invalid JWT token"));
+        org.junit.jupiter.api.Assertions.assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 }
