@@ -10,9 +10,12 @@ import org.springframework.data.domain.Pageable;
 
 public interface LeadService {
     LeadResponse createLead(CreateLeadRequest request);
-    LeadResponse convertLeadToClient(String leadId, Long version);
+    LeadResponse convertLeadToClient(String leadId, String existingClientId, Long version);
+    default LeadResponse convertLeadToClient(String leadId, Long version) {
+        return convertLeadToClient(leadId, null, version);
+    }
     default LeadResponse convertLeadToClient(String leadId) {
-        return convertLeadToClient(leadId, null);
+        return convertLeadToClient(leadId, null, null);
     }
     LeadResponse getLeadById(String leadId);
     Page<LeadResponse> getAllLeads(Pageable pageable);

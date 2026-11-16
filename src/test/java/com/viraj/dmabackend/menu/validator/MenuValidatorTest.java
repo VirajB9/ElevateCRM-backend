@@ -183,4 +183,30 @@ class MenuValidatorTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Cannot deactivate menu with active submenus");
     }
+
+    @Test
+    void normalizeAndValidateRequiredPermission_whenNullOrBlank_returnsNull() {
+        org.junit.jupiter.api.Assertions.assertNull(menuValidator.normalizeAndValidateRequiredPermission(null));
+        org.junit.jupiter.api.Assertions.assertNull(menuValidator.normalizeAndValidateRequiredPermission("   "));
+    }
+
+    @Test
+    void normalizeAndValidateRequiredPermission_whenRole_returnsUppercaseRole() {
+        org.junit.jupiter.api.Assertions.assertEquals("ROLE_ADMIN", menuValidator.normalizeAndValidateRequiredPermission("role_admin"));
+        org.junit.jupiter.api.Assertions.assertEquals("ROLE_OWNER", menuValidator.normalizeAndValidateRequiredPermission("  ROLE_OWNER  "));
+    }
+
+    @Test
+    void normalizeAndValidateRequiredPermission_whenValidPermission_normalizesToLowercaseColon() {
+        org.junit.jupiter.api.Assertions.assertEquals("user:read", menuValidator.normalizeAndValidateRequiredPermission("USER_READ"));
+        org.junit.jupiter.api.Assertions.assertEquals("user:read", menuValidator.normalizeAndValidateRequiredPermission("user:read"));
+        org.junit.jupiter.api.Assertions.assertEquals("menu:create", menuValidator.normalizeAndValidateRequiredPermission("menu_create"));
+    }
+
+    @Test
+    void normalizeAndValidateRequiredPermission_whenInvalidPermission_throwsBadRequest() {
+        assertThatThrownBy(() -> menuValidator.normalizeAndValidateRequiredPermission("INVALID_PERMISSION_NAME"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invalid requiredPermission");
+    }
 }

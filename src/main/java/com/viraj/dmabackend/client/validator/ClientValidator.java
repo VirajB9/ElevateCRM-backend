@@ -80,6 +80,12 @@ public class ClientValidator {
         }
     }
 
+    public void validateClientNotDeleted(com.viraj.dmabackend.client.entity.Client client) {
+        if (client != null && (client.isDeleted() || client.getStatus() == com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+            throw new BadRequestException("Cannot update status of a deleted client. Please restore the client first.");
+        }
+    }
+
     public void validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus status) {
         validateClientStatusForUpdate(status, null);
     }

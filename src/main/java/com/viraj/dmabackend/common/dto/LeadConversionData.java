@@ -3,6 +3,8 @@ package com.viraj.dmabackend.common.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Builder(toBuilder = true)
 public class LeadConversionData {
@@ -16,5 +18,7 @@ public class LeadConversionData {
     private final String website;
     private final String industry;
     private final String notes;
+    private final String requirements;
+    private final BigDecimal estimatedBudget;
     private final String assignedUserId;
 }

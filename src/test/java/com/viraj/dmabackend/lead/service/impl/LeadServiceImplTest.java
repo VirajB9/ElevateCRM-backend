@@ -517,4 +517,66 @@ public class LeadServiceImplTest {
 
         verify(leadRepository, never()).save(any());
     }
+
+    @Test
+    void deleteLead_SetsStatusDeletedAndSoftDeletes() {
+        Lead lead = Lead.builder().id("lead-1").status(LeadStatus.NEW).activePipeline(true).build();
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+
+        leadService.deleteLead("lead-1");
+
+        org.junit.jupiter.api.Assertions.assertEquals(LeadStatus.DELETED, lead.getStatus());
+        org.junit.jupiter.api.Assertions.assertTrue(lead.isDeleted());
+        org.junit.jupiter.api.Assertions.assertFalse(lead.getActivePipeline());
+        verify(leadRepository).save(lead);
+    }
+
+    @Test
+    void convertLeadToClient_PreservesRequirementsAndEstimatedBudget() {
+        Lead lead = Lead.builder()
+                .id("lead-1")
+                .firstName("Jane")
+                .lastName("Doe")
+                .companyName("Acme")
+                .email("jane@acme.com")
+                .phoneNumber("9876543210")
+                .requirements("SEO campaign and rebranding")
+                .estimatedBudget(new java.math.BigDecimal("25000.00"))
+                .status(LeadStatus.QUALIFIED)
+                .build();
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED)).thenReturn(java.util.Optional.of(lead));
+        when(clientService.createClientFromLead(any())).thenReturn(
+                com.viraj.dmabackend.client.dto.ClientResponse.builder().id("client-1").build()
+        );
+        when(leadRepository.save(any(Lead.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        leadService.convertLeadToClient("lead-1");
+
+        org.mockito.ArgumentCaptor<com.viraj.dmabackend.common.dto.LeadConversionData> captor =
+                org.mockito.ArgumentCaptor.forClass(com.viraj.dmabackend.common.dto.LeadConversionData.class);
+        verify(clientService).createClientFromLead(captor.capture());
+        org.junit.jupiter.api.Assertions.assertEquals("SEO campaign and rebranding", captor.getValue().getRequirements());
+        org.junit.jupiter.api.Assertions.assertEquals(new java.math.BigDecimal("25000.00"), captor.getValue().getEstimatedBudget());
+    }
+
+    @Test
+    void convertLeadToClient_WithExistingClientId_LinksDirectlyWithoutCreatingClient() {
+        Lead lead = Lead.builder().id("lead-1").status(LeadStatus.QUALIFIED).build();
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED)).thenReturn(java.util.Optional.of(lead));
+        when(clientService.getClientById("client-existing")).thenReturn(
+                com.viraj.dmabackend.client.dto.ClientResponse.builder()
+                        .id("client-existing")
+                        .status(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE)
+                        .build()
+        );
+        when(leadRepository.save(any(Lead.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        leadService.convertLeadToClient("lead-1", "client-existing", null);
+
+        verify(clientService, never()).createClientFromLead(any());
+        org.junit.jupiter.api.Assertions.assertEquals(LeadStatus.CONVERTED, lead.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("client-existing", lead.getConvertedClientId());
+        org.junit.jupiter.api.Assertions.assertFalse(lead.getActivePipeline());
+    }
 }

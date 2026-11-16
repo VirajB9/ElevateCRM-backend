@@ -1,6 +1,7 @@
 package com.viraj.dmabackend.invoice.validator;
 
 import com.viraj.dmabackend.client.exception.ClientNotFoundException;
+import com.viraj.dmabackend.client.repository.ClientRepository;
 import com.viraj.dmabackend.client.service.ClientService;
 import com.viraj.dmabackend.exception.BadRequestException;
 import com.viraj.dmabackend.invoice.dto.CreateInvoiceRequest;
@@ -10,6 +11,7 @@ import com.viraj.dmabackend.invoice.entity.Invoice;
 import com.viraj.dmabackend.invoice.exception.InvalidInvoiceDateException;
 import com.viraj.dmabackend.project.dto.ProjectResponse;
 import com.viraj.dmabackend.project.exception.ProjectNotFoundException;
+import com.viraj.dmabackend.project.repository.ProjectRepository;
 import com.viraj.dmabackend.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,8 @@ public class InvoiceValidator {
 
     private final ClientService clientService;
     private final ProjectService projectService;
+    private final ClientRepository clientRepository;
+    private final ProjectRepository projectRepository;
 
     public void validateCreateInvoice(CreateInvoiceRequest request) {
 
@@ -59,16 +63,27 @@ public class InvoiceValidator {
         if (items != null && !items.isEmpty() && items.stream().noneMatch(java.util.Objects::nonNull)) {
             throw new BadRequestException("Invoice must contain at least one valid line item");
         }
+        if (items != null) {
+            for (InvoiceItemRequest item : items) {
+                if (item != null && item.getUnitPrice() != null && item.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new BadRequestException("Line item unit price must be greater than zero");
+                }
+            }
+        }
     }
 
     public void validateClientExists(String clientId) {
         String trimmedClientId = clientId != null ? clientId.trim() : null;
-        clientService.getClientById(trimmedClientId);
+        if (trimmedClientId == null || !clientRepository.existsById(trimmedClientId)) {
+            throw new ClientNotFoundException(clientId);
+        }
     }
 
     public void validateProjectExists(String projectId) {
         String trimmedProjectId = projectId != null ? projectId.trim() : null;
-        projectService.getProjectById(trimmedProjectId);
+        if (trimmedProjectId == null || !projectRepository.existsById(trimmedProjectId)) {
+            throw new ProjectNotFoundException(projectId);
+        }
     }
 
     private void validateClientActiveForInvoice(String clientId, String errorMessage) {
@@ -129,12 +144,9 @@ public class InvoiceValidator {
 
         BigDecimal subtotal = items.stream()
                 .filter(item -> item != null && item.getQuantity() != null && item.getUnitPrice() != null)
-                .map(item -> {
-                    BigDecimal unitPrice = item.getUnitPrice().setScale(2, java.math.RoundingMode.HALF_UP);
-                    return item.getQuantity()
-                            .multiply(unitPrice)
-                            .setScale(2, java.math.RoundingMode.HALF_UP);
-                })
+                .map(item -> item.getQuantity()
+                        .multiply(item.getUnitPrice())
+                        .setScale(2, java.math.RoundingMode.HALF_UP))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (discount.compareTo(subtotal) > 0) {

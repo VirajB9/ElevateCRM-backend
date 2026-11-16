@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
@@ -45,7 +46,9 @@ class UserControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.id").value("u-1"))
+                .andExpect(jsonPath("$.temporaryPassword").value("TempPass123!"));
     }
 
     @Test
@@ -97,7 +100,8 @@ class UserControllerTest extends BaseControllerWebMvcTest {
         when(userService.getAllUsers(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/users"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -110,10 +114,12 @@ class UserControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "user:read")
     void getUserById_whenAuthorized_returnsOk() throws Exception {
-        when(userService.getUserById("u-1")).thenReturn(UserResponse.builder().id("u-1").build());
+        when(userService.getUserById("u-1")).thenReturn(UserResponse.builder().id("u-1").email("user1@example.com").build());
 
         mockMvc.perform(get("/api/v1/users/u-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("u-1"))
+                .andExpect(jsonPath("$.email").value("user1@example.com"));
     }
 
     @Test
@@ -126,12 +132,14 @@ class UserControllerTest extends BaseControllerWebMvcTest {
         request.setRoleId("role-2");
         request.setVersion(1L);
 
-        when(userService.updateUser(eq("u-1"), any())).thenReturn(UserResponse.builder().id("u-1").build());
+        when(userService.updateUser(eq("u-1"), any())).thenReturn(UserResponse.builder().id("u-1").firstName("John").lastName("Smith").build());
 
         mockMvc.perform(put("/api/v1/users/u-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("u-1"))
+                .andExpect(jsonPath("$.firstName").value("John"));
     }
 
     @Test
@@ -245,5 +253,17 @@ class UserControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(get("/api/v1/users/search")
                         .param("keyword", "   "))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "current@example.com")
+    void getCurrentUser_whenAuthenticated_returnsCurrentUser() throws Exception {
+        UserResponse response = UserResponse.builder().id("u-me").email("current@example.com").build();
+        when(userService.getUserByEmail("current@example.com")).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/users/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("u-me"))
+                .andExpect(jsonPath("$.email").value("current@example.com"));
     }
 }

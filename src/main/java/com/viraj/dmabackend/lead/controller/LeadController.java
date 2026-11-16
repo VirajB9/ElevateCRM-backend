@@ -172,8 +172,13 @@ public class LeadController {
             @Parameter(description = "Unique ID of the lead", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String leadId,
+            @Parameter(description = "Existing client ID to link instead of creating a new client")
+            @RequestParam(required = false) String existingClientId,
             @Parameter(description = "Expected version for optimistic locking")
             @RequestParam(required = false) Long version) {
+        if (existingClientId != null && !existingClientId.isBlank()) {
+            return leadService.convertLeadToClient(leadId, existingClientId.trim(), version);
+        }
         return version != null ? leadService.convertLeadToClient(leadId, version) : leadService.convertLeadToClient(leadId);
     }
 

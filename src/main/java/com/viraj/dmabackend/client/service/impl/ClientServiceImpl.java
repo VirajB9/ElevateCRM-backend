@@ -48,6 +48,8 @@ public class ClientServiceImpl implements ClientService {
         clientValidator.validateDuplicateEmail(data.getEmail());
         clientValidator.validateDuplicatePhone(data.getPhoneNumber());
 
+        String notes = buildLeadConversionNotes(data.getNotes(), data.getRequirements(), data.getEstimatedBudget());
+
         Client client = Client.builder()
                 .companyName(normalizeTrim(data.getCompanyName()))
                 .contactPerson(buildContactPerson(data.getFirstName(), data.getLastName()))
@@ -55,7 +57,7 @@ public class ClientServiceImpl implements ClientService {
                 .phoneNumber(normalizeTrim(data.getPhoneNumber()))
                 .website(normalizeTrim(data.getWebsite()))
                 .industry(normalizeTrim(data.getIndustry()))
-                .notes(normalizeTrim(data.getNotes()))
+                .notes(notes)
                 .build();
 
         Client savedClient = clientRepository.save(client);
@@ -103,6 +105,7 @@ public class ClientServiceImpl implements ClientService {
     public ClientResponse updateClient(String clientId, UpdateClientRequest request) {
 
         Client client = findClientById(clientId);
+        clientValidator.validateClientNotDeleted(client);
 
         if ((client.getVersion() != null && request.getVersion() == null) ||
                 (request.getVersion() != null && !request.getVersion().equals(client.getVersion()))) {
@@ -201,6 +204,22 @@ public class ClientServiceImpl implements ClientService {
             return null;
         }
         return gstNumber.trim().toUpperCase();
+    }
+
+    private String buildLeadConversionNotes(String notes, String requirements, java.math.BigDecimal estimatedBudget) {
+        StringBuilder sb = new StringBuilder();
+        if (notes != null && !notes.isBlank()) {
+            sb.append(notes.trim());
+        }
+        if (requirements != null && !requirements.isBlank()) {
+            if (!sb.isEmpty()) sb.append("\n");
+            sb.append("Requirements: ").append(requirements.trim());
+        }
+        if (estimatedBudget != null) {
+            if (!sb.isEmpty()) sb.append("\n");
+            sb.append("Estimated Budget: $").append(estimatedBudget.setScale(2, java.math.RoundingMode.HALF_UP));
+        }
+        return sb.isEmpty() ? null : sb.toString();
     }
 
     private String normalizeEmail(String email) {

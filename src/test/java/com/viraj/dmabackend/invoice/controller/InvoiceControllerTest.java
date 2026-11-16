@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(InvoiceController.class)
@@ -45,12 +46,14 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
                         .build()))
                 .build();
 
-        when(invoiceService.createInvoice(any())).thenReturn(InvoiceResponse.builder().id("inv-1").build());
+        when(invoiceService.createInvoice(any())).thenReturn(InvoiceResponse.builder().id("inv-1").invoiceNumber("INV-2026-0001").build());
 
         mockMvc.perform(post("/api/v1/invoices")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("inv-1"))
+                .andExpect(jsonPath("$.invoiceNumber").value("INV-2026-0001"));
     }
 
     @Test
@@ -93,10 +96,12 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "invoice:read")
     void getInvoiceById_whenAuthorized_returnsOk() throws Exception {
-        when(invoiceService.getInvoiceById("inv-1")).thenReturn(InvoiceResponse.builder().id("inv-1").build());
+        when(invoiceService.getInvoiceById("inv-1")).thenReturn(InvoiceResponse.builder().id("inv-1").invoiceNumber("INV-2026-0001").build());
 
         mockMvc.perform(get("/api/v1/invoices/inv-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("inv-1"))
+                .andExpect(jsonPath("$.invoiceNumber").value("INV-2026-0001"));
     }
 
     @Test
@@ -105,7 +110,8 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
         when(invoiceService.getInvoiceHistory(eq("inv-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/invoices/inv-1/history"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -114,7 +120,8 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
         when(invoiceService.getAllInvoices(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/invoices"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -123,7 +130,8 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
         when(invoiceService.getInvoicesByStatus(eq(InvoiceStatus.DRAFT), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/invoices/status/DRAFT"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -133,7 +141,8 @@ class InvoiceControllerTest extends BaseControllerWebMvcTest {
 
         mockMvc.perform(get("/api/v1/invoices/status")
                         .param("status", "DRAFT"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test

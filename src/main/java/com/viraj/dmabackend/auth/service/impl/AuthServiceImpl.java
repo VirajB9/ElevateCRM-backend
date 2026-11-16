@@ -79,8 +79,8 @@ public class AuthServiceImpl implements AuthService {
             boolean wasLockedExpired = user.getLockoutUntil() != null && !user.getLockoutUntil().isAfter(now);
 
             Update update = wasLockedExpired
-                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil")
-                    : new Update().inc("failedLoginAttempts", 1);
+                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil").set("updatedAt", now).set("updatedBy", "SYSTEM")
+                    : new Update().inc("failedLoginAttempts", 1).set("updatedAt", now).set("updatedBy", "SYSTEM");
 
             User updatedUser = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("id").is(user.getId())),
@@ -102,7 +102,10 @@ public class AuthServiceImpl implements AuthService {
                 user.setTokensRevokedAt(revocationTime);
                 mongoTemplate.updateFirst(
                         Query.query(Criteria.where("id").is(user.getId())),
-                        new Update().set("lockoutUntil", lockoutUntil).set("tokensRevokedAt", revocationTime),
+                        new Update().set("lockoutUntil", lockoutUntil)
+                                .set("tokensRevokedAt", revocationTime)
+                                .set("updatedAt", now)
+                                .set("updatedBy", "SYSTEM"),
                         User.class
                 );
             }
@@ -114,7 +117,10 @@ public class AuthServiceImpl implements AuthService {
             user.setLockoutUntil(null);
             mongoTemplate.updateFirst(
                     Query.query(Criteria.where("id").is(user.getId())),
-                    new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
+                    new Update().set("failedLoginAttempts", 0)
+                            .unset("lockoutUntil")
+                            .set("updatedAt", LocalDateTime.now(ZoneOffset.UTC))
+                            .set("updatedBy", "SYSTEM"),
                     User.class
             );
         }
@@ -282,8 +288,8 @@ public class AuthServiceImpl implements AuthService {
             boolean wasLockedExpired = user.getLockoutUntil() != null && !user.getLockoutUntil().isAfter(now);
 
             Update update = wasLockedExpired
-                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil")
-                    : new Update().inc("failedLoginAttempts", 1);
+                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil").set("updatedAt", now).set("updatedBy", "SYSTEM")
+                    : new Update().inc("failedLoginAttempts", 1).set("updatedAt", now).set("updatedBy", "SYSTEM");
 
             User updatedUser = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("id").is(user.getId())),
@@ -305,7 +311,10 @@ public class AuthServiceImpl implements AuthService {
                 user.setTokensRevokedAt(revocationTime);
                 mongoTemplate.updateFirst(
                         Query.query(Criteria.where("id").is(user.getId())),
-                        new Update().set("lockoutUntil", lockoutUntil).set("tokensRevokedAt", revocationTime),
+                        new Update().set("lockoutUntil", lockoutUntil)
+                                .set("tokensRevokedAt", revocationTime)
+                                .set("updatedAt", now)
+                                .set("updatedBy", "SYSTEM"),
                         User.class
                 );
             }
@@ -317,7 +326,10 @@ public class AuthServiceImpl implements AuthService {
             user.setLockoutUntil(null);
             mongoTemplate.updateFirst(
                     Query.query(Criteria.where("id").is(user.getId())),
-                    new Update().set("failedLoginAttempts", 0).unset("lockoutUntil"),
+                    new Update().set("failedLoginAttempts", 0)
+                            .unset("lockoutUntil")
+                            .set("updatedAt", LocalDateTime.now(ZoneOffset.UTC))
+                            .set("updatedBy", "SYSTEM"),
                     User.class
             );
         }

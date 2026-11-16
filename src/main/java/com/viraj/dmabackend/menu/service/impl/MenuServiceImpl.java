@@ -230,9 +230,7 @@ public class MenuServiceImpl implements MenuService {
                 .icon(request.getIcon() != null ? request.getIcon().trim() : null)
                 .parentId(normalizeParentId(request.getParentId()))
                 .orderIndex(request.getOrderIndex())
-                .requiredPermission(request.getRequiredPermission() != null && !request.getRequiredPermission().isBlank()
-                        ? request.getRequiredPermission().trim()
-                        : null)
+                .requiredPermission(menuValidator.normalizeAndValidateRequiredPermission(request.getRequiredPermission()))
                 .active(true)
                 .build();
     }
@@ -244,9 +242,7 @@ public class MenuServiceImpl implements MenuService {
         menu.setIcon(request.getIcon() != null ? request.getIcon().trim() : null);
         menu.setParentId(normalizeParentId(request.getParentId()));
         menu.setOrderIndex(request.getOrderIndex());
-        menu.setRequiredPermission(request.getRequiredPermission() != null && !request.getRequiredPermission().isBlank()
-                ? request.getRequiredPermission().trim()
-                : null);
+        menu.setRequiredPermission(menuValidator.normalizeAndValidateRequiredPermission(request.getRequiredPermission()));
         menu.setActive(request.getActive());
 
     }

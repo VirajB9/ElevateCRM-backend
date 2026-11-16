@@ -160,8 +160,8 @@ public class InvoiceServiceImplTest {
         invoiceService.calculateInvoiceTotals(invoice);
 
         assertEquals(new BigDecimal("18.56"), invoice.getTaxPercentage());
-        assertEquals(new BigDecimal("100.12"), item.getUnitPrice());
-        assertEquals(new BigDecimal("200.24"), item.getLineTotal());
+        assertEquals(new BigDecimal("100.1234"), item.getUnitPrice());
+        assertEquals(new BigDecimal("200.25"), item.getLineTotal());
     }
 
     @Test
@@ -177,9 +177,42 @@ public class InvoiceServiceImplTest {
 
         invoiceService.calculateInvoiceTotals(invoice);
 
-        assertEquals(new BigDecimal("3.33"), item.getQuantity());
-        assertEquals(new BigDecimal("33.30"), item.getLineTotal());
-        assertEquals(new BigDecimal("33.30"), invoice.getSubtotal());
+        assertEquals(new BigDecimal("3.33333"), item.getQuantity());
+        assertEquals(new BigDecimal("33.33"), item.getLineTotal());
+        assertEquals(new BigDecimal("33.33"), invoice.getSubtotal());
+    }
+
+    @Test
+    void calculateInvoiceTotals_PreservesSubCentMicroRatesWithoutPrematureRounding() {
+        Invoice invoice = new Invoice();
+        invoice.setTaxPercentage(BigDecimal.ZERO);
+        invoice.setDiscount(BigDecimal.ZERO);
+
+        InvoiceItem item = new InvoiceItem();
+        item.setQuantity(new BigDecimal("100000"));
+        item.setUnitPrice(new BigDecimal("0.004"));
+        invoice.setItems(List.of(item));
+
+        invoiceService.calculateInvoiceTotals(invoice);
+
+        assertEquals(new BigDecimal("0.004"), item.getUnitPrice());
+        assertEquals(new BigDecimal("400.00"), item.getLineTotal());
+        assertEquals(new BigDecimal("400.00"), invoice.getSubtotal());
+        assertEquals(new BigDecimal("400.00"), invoice.getTotalAmount());
+    }
+
+    @Test
+    void calculateInvoiceTotals_ThrowsWhenDiscountIsNegative() {
+        Invoice invoice = new Invoice();
+        invoice.setTaxPercentage(BigDecimal.ZERO);
+        invoice.setDiscount(new BigDecimal("-10.00"));
+
+        InvoiceItem item = new InvoiceItem();
+        item.setQuantity(new BigDecimal("1"));
+        item.setUnitPrice(new BigDecimal("50.00"));
+        invoice.setItems(List.of(item));
+
+        assertThrows(BadRequestException.class, () -> invoiceService.calculateInvoiceTotals(invoice));
     }
 
     @Test

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
 
 import com.viraj.dmabackend.client.exception.ClientNotFoundException;
 import com.viraj.dmabackend.project.exception.ProjectNotFoundException;
@@ -34,6 +35,12 @@ class InvoiceValidatorTest {
 
     @Mock
     private ProjectService projectService;
+
+    @Mock
+    private com.viraj.dmabackend.client.repository.ClientRepository clientRepository;
+
+    @Mock
+    private com.viraj.dmabackend.project.repository.ProjectRepository projectRepository;
 
     @InjectMocks
     private InvoiceValidator invoiceValidator;
@@ -71,6 +78,28 @@ class InvoiceValidatorTest {
         assertThatThrownBy(() -> invoiceValidator.validateCreateInvoice(request))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Invoice must contain at least one valid line item");
+    }
+
+    @Test
+    void validateCreateInvoice_whenUnitPriceZero_throwsBadRequestException() {
+        com.viraj.dmabackend.invoice.dto.InvoiceItemRequest item = com.viraj.dmabackend.invoice.dto.InvoiceItemRequest.builder()
+                .description("SEO Audit")
+                .quantity(BigDecimal.ONE)
+                .unitPrice(BigDecimal.ZERO)
+                .build();
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(10))
+                .items(List.of(item))
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        assertThatThrownBy(() -> invoiceValidator.validateCreateInvoice(request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Line item unit price must be greater than zero");
     }
 
     @Test
@@ -182,29 +211,29 @@ class InvoiceValidatorTest {
     }
 
     @Test
-    void validateClientExists_delegatesToClientService() {
-        when(clientService.getClientById("client-123")).thenReturn(ClientResponse.builder().id("client-123").build());
+    void validateClientExists_delegatesToClientRepository() {
+        when(clientRepository.existsById("client-123")).thenReturn(true);
         assertThatCode(() -> invoiceValidator.validateClientExists("client-123")).doesNotThrowAnyException();
-        verify(clientService).getClientById("client-123");
+        verify(clientRepository).existsById("client-123");
     }
 
     @Test
     void validateClientExists_whenNotFound_throwsClientNotFoundException() {
-        when(clientService.getClientById("client-missing")).thenThrow(new ClientNotFoundException("client-missing"));
+        when(clientRepository.existsById("client-missing")).thenReturn(false);
         assertThatThrownBy(() -> invoiceValidator.validateClientExists("client-missing"))
                 .isInstanceOf(ClientNotFoundException.class);
     }
 
     @Test
-    void validateProjectExists_delegatesToProjectService() {
-        when(projectService.getProjectById("proj-123")).thenReturn(ProjectResponse.builder().id("proj-123").build());
+    void validateProjectExists_delegatesToProjectRepository() {
+        when(projectRepository.existsById("proj-123")).thenReturn(true);
         assertThatCode(() -> invoiceValidator.validateProjectExists("proj-123")).doesNotThrowAnyException();
-        verify(projectService).getProjectById("proj-123");
+        verify(projectRepository).existsById("proj-123");
     }
 
     @Test
     void validateProjectExists_whenNotFound_throwsProjectNotFoundException() {
-        when(projectService.getProjectById("proj-missing")).thenThrow(new ProjectNotFoundException("proj-missing"));
+        when(projectRepository.existsById("proj-missing")).thenReturn(false);
         assertThatThrownBy(() -> invoiceValidator.validateProjectExists("proj-missing"))
                 .isInstanceOf(ProjectNotFoundException.class);
     }

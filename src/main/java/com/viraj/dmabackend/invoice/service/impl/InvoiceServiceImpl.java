@@ -64,12 +64,28 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setInvoiceNumber(generatedInvoiceNumber);
 
         Invoice savedInvoice;
-        try {
-            savedInvoice = invoiceRepository.save(invoice);
-            saveInvoiceHistory(savedInvoice);
-        } catch (Exception ex) {
-            invoiceNumberGenerator.compensate(generatedInvoiceNumber);
-            throw ex;
+        int maxAttempts = 3;
+        for (int attempt = 1; ; attempt++) {
+            try {
+                savedInvoice = invoiceRepository.save(invoice);
+                saveInvoiceHistory(savedInvoice);
+                break;
+            } catch (org.springframework.dao.TransientDataAccessException | com.mongodb.MongoCommandException ex) {
+                if (attempt >= maxAttempts) {
+                    invoiceNumberGenerator.compensate(generatedInvoiceNumber);
+                    throw ex;
+                }
+                try {
+                    Thread.sleep(50L * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    invoiceNumberGenerator.compensate(generatedInvoiceNumber);
+                    throw ex;
+                }
+            } catch (Exception ex) {
+                invoiceNumberGenerator.compensate(generatedInvoiceNumber);
+                throw ex;
+            }
         }
 
         return invoiceMapper.toResponse(savedInvoice);
@@ -247,13 +263,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
 
                 BigDecimal quantity = Optional.ofNullable(item.getQuantity())
-                        .orElse(BigDecimal.ZERO)
-                        .setScale(2, RoundingMode.HALF_UP);
+                        .orElse(BigDecimal.ZERO);
                 item.setQuantity(quantity);
 
                 BigDecimal unitPrice = Optional.ofNullable(item.getUnitPrice())
-                        .orElse(BigDecimal.ZERO)
-                        .setScale(2, RoundingMode.HALF_UP);
+                        .orElse(BigDecimal.ZERO);
                 item.setUnitPrice(unitPrice);
 
                 BigDecimal lineTotal = quantity
@@ -276,6 +290,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         BigDecimal discount = Optional.ofNullable(invoice.getDiscount())
                 .orElse(BigDecimal.ZERO)
                 .setScale(2, RoundingMode.HALF_UP);
+
+        if (discount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BadRequestException("Discount cannot be negative");
+        }
 
         if (discount.compareTo(subtotal) > 0) {
             throw new BadRequestException("Discount cannot be greater than subtotal");

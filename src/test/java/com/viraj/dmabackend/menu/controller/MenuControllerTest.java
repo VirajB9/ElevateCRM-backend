@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MenuController.class)
@@ -35,12 +36,14 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         request.setIcon("dashboard-icon");
         request.setOrderIndex(1);
 
-        when(menuService.createMenu(any())).thenReturn(MenuResponse.builder().id("m-1").build());
+        when(menuService.createMenu(any())).thenReturn(MenuResponse.builder().id("m-1").title("Dashboard").build());
 
         mockMvc.perform(post("/api/v1/menus")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("m-1"))
+                .andExpect(jsonPath("$.title").value("Dashboard"));
     }
 
     @Test
@@ -73,10 +76,12 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "menu:read")
     void getMenuById_whenAuthorized_returnsOk() throws Exception {
-        when(menuService.getMenuById("m-1")).thenReturn(MenuResponse.builder().id("m-1").build());
+        when(menuService.getMenuById("m-1")).thenReturn(MenuResponse.builder().id("m-1").title("Dashboard").build());
 
         mockMvc.perform(get("/api/v1/menus/m-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("m-1"))
+                .andExpect(jsonPath("$.title").value("Dashboard"));
     }
 
     @Test
@@ -85,7 +90,8 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         when(menuService.getAllMenus()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/v1/menus"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test
@@ -99,12 +105,14 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         request.setActive(true);
         request.setVersion(1L);
 
-        when(menuService.updateMenu(eq("m-1"), any())).thenReturn(MenuResponse.builder().id("m-1").build());
+        when(menuService.updateMenu(eq("m-1"), any())).thenReturn(MenuResponse.builder().id("m-1").title("New Dashboard").build());
 
         mockMvc.perform(put("/api/v1/menus/m-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("m-1"))
+                .andExpect(jsonPath("$.title").value("New Dashboard"));
     }
 
     @Test
@@ -123,7 +131,9 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(patch("/api/v1/menus/m-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("m-1"))
+                .andExpect(jsonPath("$.title").value("Patched Title"));
     }
 
     @Test
@@ -157,7 +167,8 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
         when(menuService.getMenuTree()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/v1/menus/tree"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test

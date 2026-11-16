@@ -13,6 +13,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PermissionController.class)
@@ -24,10 +25,14 @@ class PermissionControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "role:read")
     void getAllPermissions_whenAuthorized_returnsOk() throws Exception {
-        when(permissionService.getAllPermissions()).thenReturn(Collections.emptyList());
+        when(permissionService.getAllPermissions()).thenReturn(List.of(
+                PermissionResponse.builder().id("p-1").name("USER_READ").description("Read users").build()
+        ));
 
         mockMvc.perform(get("/api/v1/permissions"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("p-1"))
+                .andExpect(jsonPath("$[0].name").value("USER_READ"));
     }
 
     @Test

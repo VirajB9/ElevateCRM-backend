@@ -309,4 +309,46 @@ public class ClientServiceImplTest {
         assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
                 () -> clientService.updateClient("client-1", request));
     }
+
+    @Test
+    void createClientFromLead_PreservesRequirementsAndEstimatedBudgetInNotes() {
+        com.viraj.dmabackend.common.dto.LeadConversionData data = com.viraj.dmabackend.common.dto.LeadConversionData.builder()
+                .companyName("Acme")
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@acme.com")
+                .phoneNumber("1234567890")
+                .notes("Initial notes")
+                .requirements("Full redesign")
+                .estimatedBudget(new java.math.BigDecimal("15000.00"))
+                .build();
+
+        when(clientRepository.save(any(Client.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(clientMapper.toClientResponse(any(Client.class)))
+                .thenAnswer(invocation -> {
+                    Client c = invocation.getArgument(0);
+                    return ClientResponse.builder().notes(c.getNotes()).build();
+                });
+
+        ClientResponse saved = clientService.createClientFromLead(data);
+
+        org.junit.jupiter.api.Assertions.assertTrue(saved.getNotes().contains("Initial notes"));
+        org.junit.jupiter.api.Assertions.assertTrue(saved.getNotes().contains("Requirements: Full redesign"));
+        org.junit.jupiter.api.Assertions.assertTrue(saved.getNotes().contains("Estimated Budget: $15000.00"));
+    }
+
+    @Test
+    void updateClient_ThrowsWhenClientIsDeleted() {
+        Client client = Client.builder().id("client-1").companyName("Acme").build();
+        client.setDeleted(true);
+        when(clientRepository.findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED))
+                .thenReturn(Optional.of(client));
+        org.mockito.Mockito.doThrow(new com.viraj.dmabackend.exception.BadRequestException("Cannot update status of a deleted client"))
+                .when(clientValidator).validateClientNotDeleted(client);
+
+        UpdateClientRequest request = new UpdateClientRequest();
+
+        assertThrows(com.viraj.dmabackend.exception.BadRequestException.class,
+                () -> clientService.updateClient("client-1", request));
+    }
 }

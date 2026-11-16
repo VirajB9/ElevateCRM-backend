@@ -124,4 +124,23 @@ public class MenuValidator {
             throw new DuplicateMenuPathException(trimmedPath);
         }
     }
+
+    public String normalizeAndValidateRequiredPermission(String requiredPermission) {
+        if (requiredPermission == null || requiredPermission.isBlank()) {
+            return null;
+        }
+        String trimmed = requiredPermission.trim();
+        if (trimmed.toUpperCase().startsWith("ROLE_")) {
+            return trimmed.toUpperCase();
+        }
+        String normalized = trimmed.toLowerCase().replace('_', ':');
+        for (com.viraj.dmabackend.auth.enums.PermissionType pt : com.viraj.dmabackend.auth.enums.PermissionType.values()) {
+            String ptNormalized = pt.name().toLowerCase().replace('_', ':');
+            if (ptNormalized.equals(normalized) || pt.name().equalsIgnoreCase(trimmed)) {
+                return ptNormalized;
+            }
+        }
+        throw new BadRequestException("Invalid requiredPermission: '" + requiredPermission +
+                "'. Must match a recognized permission (e.g. 'user:read') or role (e.g. 'ROLE_OWNER').");
+    }
 }

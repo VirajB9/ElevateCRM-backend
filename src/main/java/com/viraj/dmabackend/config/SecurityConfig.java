@@ -30,6 +30,7 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
     private final RateLimitFilter rateLimitFilter;
     private final CorsProperties corsProperties;
+    private final org.springframework.core.env.Environment environment;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -76,20 +77,33 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
 
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/auth/logout",
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(
+                            "/api/v1/auth/login",
+                            "/api/v1/auth/refresh",
+                            "/api/v1/auth/logout",
+                            "/actuator/health",
+                            "/actuator/health/**"
+                    ).permitAll();
+
+                    boolean isProd = java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod");
+                    if (!isProd) {
+                        auth.requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/actuator/health",
-                                "/actuator/health/**"
-                        ).permitAll()
-                        .requestMatchers("/actuator/**").hasRole("OWNER")
-                        .anyRequest().authenticated()
-                )
+                                "/swagger-ui.html"
+                        ).permitAll();
+                    } else {
+                        auth.requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).hasRole("OWNER");
+                    }
+
+                    auth.requestMatchers("/actuator/**").hasRole("OWNER");
+                    auth.anyRequest().authenticated();
+                })
 
                 .addFilterBefore(
                         jwtFilter,
@@ -107,7 +121,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
+        List<String> rawOrigins = corsProperties.getAllowedOrigins();
+        List<String> explicitOrigins = rawOrigins != null
+                ? rawOrigins.stream()
+                        .filter(origin -> origin != null && !origin.isBlank() && !origin.trim().equals("*"))
+                        .map(String::trim)
+                        .toList()
+                : List.of();
+
+        if (!explicitOrigins.isEmpty()) {
+            configuration.setAllowedOrigins(explicitOrigins);
+        } else {
+            configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
+        }
         configuration.setAllowedMethods(Arrays.asList(
                 "GET",
                 "POST",

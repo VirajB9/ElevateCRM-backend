@@ -58,6 +58,19 @@ public class UserController {
         return userService.getAllUsers(pageable);
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Get Current User Profile", description = "Retrieves the currently authenticated user's profile details. Requires any authenticated user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Current user profile returned"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - unauthenticated user"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public UserResponse getCurrentUser(org.springframework.security.core.Authentication authentication) {
+        return userService.getUserByEmail(authentication.getName());
+    }
+
     @PreAuthorize("hasAuthority('user:read')")
     @GetMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)

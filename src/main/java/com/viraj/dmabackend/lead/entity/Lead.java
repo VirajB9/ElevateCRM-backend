@@ -76,6 +76,7 @@ public class Lead extends BaseEntity {
     /**
      * Populated after successful lead conversion.
      */
+    @Indexed
     private String convertedClientId;
 
     /**

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(LeadController.class)
@@ -41,12 +42,14 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
         request.setPhoneNumber("9876543210");
         request.setSource(LeadSource.WEBSITE);
 
-        when(leadService.createLead(any())).thenReturn(LeadResponse.builder().id("lead-1").build());
+        when(leadService.createLead(any())).thenReturn(LeadResponse.builder().id("lead-1").firstName("Peter").lastName("Parker").build());
 
         mockMvc.perform(post("/api/v1/leads")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("lead-1"))
+                .andExpect(jsonPath("$.firstName").value("Peter"));
     }
 
     @Test
@@ -81,10 +84,12 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "lead:read")
     void getLeadById_whenAuthorized_returnsOk() throws Exception {
-        when(leadService.getLeadById("lead-1")).thenReturn(LeadResponse.builder().id("lead-1").build());
+        when(leadService.getLeadById("lead-1")).thenReturn(LeadResponse.builder().id("lead-1").firstName("Peter").build());
 
         mockMvc.perform(get("/api/v1/leads/lead-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("lead-1"))
+                .andExpect(jsonPath("$.firstName").value("Peter"));
     }
 
     @Test
@@ -93,7 +98,8 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
         when(leadService.getAllLeads(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/leads"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -103,7 +109,8 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
 
         mockMvc.perform(get("/api/v1/leads/search")
                         .param("keyword", "test"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -113,7 +120,8 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
 
         mockMvc.perform(get("/api/v1/leads/status")
                         .param("status", "QUALIFIED"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -129,21 +137,25 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
         request.setStatus(LeadStatus.CONTACTED);
         request.setVersion(1L);
 
-        when(leadService.updateLead(eq("lead-1"), any())).thenReturn(LeadResponse.builder().id("lead-1").build());
+        when(leadService.updateLead(eq("lead-1"), any())).thenReturn(LeadResponse.builder().id("lead-1").firstName("Peter Updated").build());
 
         mockMvc.perform(put("/api/v1/leads/lead-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("lead-1"))
+                .andExpect(jsonPath("$.firstName").value("Peter Updated"));
     }
 
     @Test
     @WithMockUser(authorities = "lead:convert")
     void convertLeadToClient_whenAuthorized_returnsOk() throws Exception {
-        when(leadService.convertLeadToClient("lead-1")).thenReturn(LeadResponse.builder().id("lead-1").build());
+        when(leadService.convertLeadToClient("lead-1")).thenReturn(LeadResponse.builder().id("lead-1").status(LeadStatus.CONVERTED).build());
 
         mockMvc.perform(post("/api/v1/leads/lead-1/convert"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("lead-1"))
+                .andExpect(jsonPath("$.status").value("CONVERTED"));
     }
 
     @Test

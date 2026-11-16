@@ -15,6 +15,7 @@ public class CounterRepositoryImpl implements CounterRepository {
     private final MongoTemplate mongoTemplate;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public long getNextSequence(String sequenceName) {
 
         Query query = new Query(Criteria.where("_id").is(sequenceName));
@@ -36,6 +37,7 @@ public class CounterRepositoryImpl implements CounterRepository {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public boolean decrementSequenceIfCurrent(String sequenceName, long expectedCurrentValue) {
         Query query = new Query(Criteria.where("_id").is(sequenceName).and("sequence").is(expectedCurrentValue));
         Update update = new Update().inc("sequence", -1);

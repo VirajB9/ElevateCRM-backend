@@ -61,6 +61,12 @@ public class LeadServiceImpl implements LeadService {
     @Transactional
     @Override
     public LeadResponse convertLeadToClient(String leadId, Long version) {
+        return convertLeadToClient(leadId, null, version);
+    }
+
+    @Transactional
+    @Override
+    public LeadResponse convertLeadToClient(String leadId, String existingClientId, Long version) {
 
         Lead lead = findLeadById(leadId);
 
@@ -83,6 +89,8 @@ public class LeadServiceImpl implements LeadService {
                 .website(lead.getWebsite())
                 .industry(lead.getIndustry())
                 .notes(lead.getNotes())
+                .requirements(lead.getRequirements())
+                .estimatedBudget(lead.getEstimatedBudget())
                 .assignedUserId(lead.getAssignedUserId())
                 .build();
 
@@ -94,7 +102,15 @@ public class LeadServiceImpl implements LeadService {
         ClientResponse client = null;
         Lead savedLead;
         try {
-            client = clientService.createClientFromLead(data);
+            if (existingClientId != null && !existingClientId.isBlank()) {
+                ClientResponse existingClient = clientService.getClientById(existingClientId.trim());
+                if (existingClient.getStatus() != com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE) {
+                    throw new BadRequestException("Cannot associate lead with non-active client: " + existingClientId);
+                }
+                client = existingClient;
+            } else {
+                client = clientService.createClientFromLead(data);
+            }
 
             lead.setStatus(LeadStatus.CONVERTED);
             lead.setActivePipeline(false);
@@ -103,7 +119,7 @@ public class LeadServiceImpl implements LeadService {
 
             savedLead = leadRepository.save(lead);
         } catch (Exception ex) {
-            if (client != null && client.getId() != null) {
+            if (existingClientId == null && client != null && client.getId() != null) {
                 try {
                     log.warn("Compensating rollback: purging orphaned client [{}] after lead conversion error", client.getId());
                     clientService.purgeOrphanedClient(client.getId());

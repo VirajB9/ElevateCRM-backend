@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ClientController.class)
@@ -37,12 +38,14 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
         request.setEmail("alice@alpha.com");
         request.setPhoneNumber("9876543210");
 
-        when(clientService.createClient(any())).thenReturn(ClientResponse.builder().id("c-1").build());
+        when(clientService.createClient(any())).thenReturn(ClientResponse.builder().id("c-1").companyName("Alpha Corp").build());
 
         mockMvc.perform(post("/api/v1/clients")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("c-1"))
+                .andExpect(jsonPath("$.companyName").value("Alpha Corp"));
     }
 
     @Test
@@ -80,16 +83,19 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
         when(clientService.getAllClients(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/clients"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
     @WithMockUser(authorities = "client:read")
     void getClientById_whenAuthorized_returnsOk() throws Exception {
-        when(clientService.getClientById("c-1")).thenReturn(ClientResponse.builder().id("c-1").build());
+        when(clientService.getClientById("c-1")).thenReturn(ClientResponse.builder().id("c-1").companyName("Alpha Corp").build());
 
         mockMvc.perform(get("/api/v1/clients/c-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("c-1"))
+                .andExpect(jsonPath("$.companyName").value("Alpha Corp"));
     }
 
     @Test
@@ -99,7 +105,8 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
 
         mockMvc.perform(get("/api/v1/clients/search")
                         .param("keyword", "alpha"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -109,7 +116,8 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
 
         mockMvc.perform(get("/api/v1/clients/status")
                         .param("status", "ACTIVE"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -123,12 +131,14 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
         request.setStatus(com.viraj.dmabackend.client.enums.ClientStatus.ACTIVE);
         request.setVersion(1L);
 
-        when(clientService.updateClient(eq("c-1"), any())).thenReturn(ClientResponse.builder().id("c-1").build());
+        when(clientService.updateClient(eq("c-1"), any())).thenReturn(ClientResponse.builder().id("c-1").companyName("Updated Corp").build());
 
         mockMvc.perform(put("/api/v1/clients/c-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("c-1"))
+                .andExpect(jsonPath("$.companyName").value("Updated Corp"));
     }
 
     @Test

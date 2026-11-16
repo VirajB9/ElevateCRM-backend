@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(RoleController.class)
@@ -28,10 +29,12 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "role:read")
     void getAllRoles_whenAuthorized_returnsOk() throws Exception {
-        when(roleService.getAllRoles()).thenReturn(Collections.emptyList());
+        when(roleService.getAllRoles()).thenReturn(List.of(RoleResponse.builder().id("r-1").name("ADMIN").build()));
 
         mockMvc.perform(get("/api/v1/roles"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("r-1"))
+                .andExpect(jsonPath("$[0].name").value("ADMIN"));
     }
 
     @Test
@@ -53,7 +56,9 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         when(roleService.getRoleById("r-1")).thenReturn(RoleResponse.builder().id("r-1").name("MANAGER").build());
 
         mockMvc.perform(get("/api/v1/roles/r-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r-1"))
+                .andExpect(jsonPath("$.name").value("MANAGER"));
     }
 
     @Test
@@ -68,7 +73,9 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(put("/api/v1/roles/r-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r-1"))
+                .andExpect(jsonPath("$.name").value("SENIOR_MANAGER"));
     }
 
     @Test
@@ -96,7 +103,8 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(patch("/api/v1/roles/r-1/permissions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r-1"));
     }
 
     @Test
@@ -111,7 +119,8 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(post("/api/v1/roles/r-1/permissions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r-1"));
     }
 
     @Test
@@ -126,7 +135,8 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(delete("/api/v1/roles/r-1/permissions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r-1"));
     }
 
     @Test
@@ -141,7 +151,8 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         mockMvc.perform(post("/api/v1/roles/r-1/permissions/remove")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r-1"));
     }
 
     @Test
@@ -150,7 +161,8 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         when(roleService.removePermissions(eq("r-1"), any())).thenReturn(RoleResponse.builder().id("r-1").build());
 
         mockMvc.perform(delete("/api/v1/roles/r-1/permissions/perm-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("r-1"));
     }
 
     @Test
@@ -159,7 +171,8 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
         when(roleService.getUsersByRole(eq("r-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/roles/r-1/users"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test

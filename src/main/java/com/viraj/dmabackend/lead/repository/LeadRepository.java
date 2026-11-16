@@ -24,6 +24,9 @@ public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepos
     @Query(value = "{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
 
+    @Query(value = "{ 'convertedClientId': ?0, 'deleted': false }", exists = true)
+    boolean existsByConvertedClientIdAndDeletedFalse(String convertedClientId);
+
     @Query(value = "{ 'email': ?0, 'status': { $nin: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByEmailAndStatusNotIn(String email, java.util.Collection<LeadStatus> statuses);
 

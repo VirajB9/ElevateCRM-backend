@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ProjectController.class)
@@ -39,12 +40,14 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
         request.setPriority(ProjectPriority.HIGH);
         request.setStartDate(LocalDate.now());
 
-        when(projectService.createProject(any())).thenReturn(ProjectResponse.builder().id("p-1").build());
+        when(projectService.createProject(any())).thenReturn(ProjectResponse.builder().id("p-1").projectName("SEO Campaign").build());
 
         mockMvc.perform(post("/api/v1/projects")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("p-1"))
+                .andExpect(jsonPath("$.projectName").value("SEO Campaign"));
     }
 
     @Test
@@ -77,10 +80,12 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
     @Test
     @WithMockUser(authorities = "project:read")
     void getProjectById_whenAuthorized_returnsOk() throws Exception {
-        when(projectService.getProjectById("p-1")).thenReturn(ProjectResponse.builder().id("p-1").build());
+        when(projectService.getProjectById("p-1")).thenReturn(ProjectResponse.builder().id("p-1").projectName("SEO Campaign").build());
 
         mockMvc.perform(get("/api/v1/projects/p-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("p-1"))
+                .andExpect(jsonPath("$.projectName").value("SEO Campaign"));
     }
 
     @Test
@@ -89,7 +94,8 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
         when(projectService.getAllProjects(any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/projects"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -98,7 +104,8 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
         when(projectService.getProjectsByClient(eq("client-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/projects/client/client-1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -108,7 +115,8 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
 
         mockMvc.perform(get("/api/v1/projects/search")
                         .param("keyword", "seo"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -118,7 +126,8 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
 
         mockMvc.perform(get("/api/v1/projects/status")
                         .param("status", "ACTIVE"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -131,12 +140,14 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
         request.setStartDate(LocalDate.now());
         request.setVersion(1L);
 
-        when(projectService.updateProject(eq("p-1"), any())).thenReturn(ProjectResponse.builder().id("p-1").build());
+        when(projectService.updateProject(eq("p-1"), any())).thenReturn(ProjectResponse.builder().id("p-1").projectName("SEO Optimization 2026").build());
 
         mockMvc.perform(put("/api/v1/projects/p-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("p-1"))
+                .andExpect(jsonPath("$.projectName").value("SEO Optimization 2026"));
     }
 
     @Test
