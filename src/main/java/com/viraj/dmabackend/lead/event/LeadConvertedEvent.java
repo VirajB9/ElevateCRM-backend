@@ -19,4 +19,8 @@ public class LeadConvertedEvent {
     public String getLeadId() {
         return data != null ? data.getLeadId() : null;
     }
+
+    public String getAssignedUserId() {
+        return data != null ? data.getAssignedUserId() : null;
+    }
 }

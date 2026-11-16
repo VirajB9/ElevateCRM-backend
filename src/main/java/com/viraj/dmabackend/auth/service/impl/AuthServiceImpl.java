@@ -75,19 +75,29 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+            boolean wasLockedExpired = user.getLockoutUntil() != null && !user.getLockoutUntil().isAfter(now);
+
+            Update update = wasLockedExpired
+                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil")
+                    : new Update().inc("failedLoginAttempts", 1);
+
             User updatedUser = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("id").is(user.getId())),
-                    new Update().inc("failedLoginAttempts", 1),
+                    update,
                     FindAndModifyOptions.options().returnNew(true),
                     User.class
             );
 
-            int attempts = (updatedUser != null) ? updatedUser.getFailedLoginAttempts() : (user.getFailedLoginAttempts() + 1);
+            int attempts = (updatedUser != null) ? updatedUser.getFailedLoginAttempts() : (wasLockedExpired ? 1 : user.getFailedLoginAttempts() + 1);
             user.setFailedLoginAttempts(attempts);
+            if (wasLockedExpired) {
+                user.setLockoutUntil(null);
+            }
 
             if (attempts >= MAX_FAILED_ATTEMPTS) {
-                LocalDateTime lockoutUntil = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES);
-                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC);
+                LocalDateTime lockoutUntil = now.plusMinutes(LOCKOUT_MINUTES);
+                LocalDateTime revocationTime = now;
                 user.setLockoutUntil(lockoutUntil);
                 user.setTokensRevokedAt(revocationTime);
                 mongoTemplate.updateFirst(
@@ -268,19 +278,29 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+            boolean wasLockedExpired = user.getLockoutUntil() != null && !user.getLockoutUntil().isAfter(now);
+
+            Update update = wasLockedExpired
+                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil")
+                    : new Update().inc("failedLoginAttempts", 1);
+
             User updatedUser = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("id").is(user.getId())),
-                    new Update().inc("failedLoginAttempts", 1),
+                    update,
                     FindAndModifyOptions.options().returnNew(true),
                     User.class
             );
 
-            int attempts = (updatedUser != null) ? updatedUser.getFailedLoginAttempts() : (user.getFailedLoginAttempts() + 1);
+            int attempts = (updatedUser != null) ? updatedUser.getFailedLoginAttempts() : (wasLockedExpired ? 1 : user.getFailedLoginAttempts() + 1);
             user.setFailedLoginAttempts(attempts);
+            if (wasLockedExpired) {
+                user.setLockoutUntil(null);
+            }
 
             if (attempts >= MAX_FAILED_ATTEMPTS) {
-                LocalDateTime lockoutUntil = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(LOCKOUT_MINUTES);
-                LocalDateTime revocationTime = LocalDateTime.now(ZoneOffset.UTC);
+                LocalDateTime lockoutUntil = now.plusMinutes(LOCKOUT_MINUTES);
+                LocalDateTime revocationTime = now;
                 user.setLockoutUntil(lockoutUntil);
                 user.setTokensRevokedAt(revocationTime);
                 mongoTemplate.updateFirst(
@@ -353,10 +373,10 @@ public class AuthServiceImpl implements AuthService {
 
         String token;
         if (user.getTokensRevokedAt() != null) {
-            long revokedEpochSecond = user.getTokensRevokedAt().toEpochSecond(ZoneOffset.UTC);
-            long nowEpochSecond = System.currentTimeMillis() / 1000;
-            if (nowEpochSecond <= revokedEpochSecond) {
-                java.util.Date issuedAt = new java.util.Date((revokedEpochSecond + 1) * 1000L);
+            long revokedEpochMilli = user.getTokensRevokedAt().toInstant(ZoneOffset.UTC).toEpochMilli();
+            long nowEpochMilli = System.currentTimeMillis();
+            if (nowEpochMilli <= revokedEpochMilli) {
+                java.util.Date issuedAt = new java.util.Date(revokedEpochMilli + 1L);
                 token = jwtUtil.generateToken(
                         user.getEmail(),
                         role.getName(),

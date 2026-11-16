@@ -10,7 +10,10 @@ import org.springframework.data.domain.Pageable;
 
 public interface LeadService {
     LeadResponse createLead(CreateLeadRequest request);
-    LeadResponse convertLeadToClient(String leadId);
+    LeadResponse convertLeadToClient(String leadId, Long version);
+    default LeadResponse convertLeadToClient(String leadId) {
+        return convertLeadToClient(leadId, null);
+    }
     LeadResponse getLeadById(String leadId);
     Page<LeadResponse> getAllLeads(Pageable pageable);
     Page<LeadResponse> searchLeads(String keyword, Pageable pageable);
@@ -18,5 +21,8 @@ public interface LeadService {
     Page<LeadResponse> filterBySource(LeadSource source, Pageable pageable);
     Page<LeadResponse> filterByAssignedUser(String userId, Pageable pageable);
     LeadResponse updateLead(String leadId, UpdateLeadRequest request);
-    void deleteLead(String leadId);
+    void deleteLead(String leadId, Long version);
+    default void deleteLead(String leadId) {
+        deleteLead(leadId, null);
+    }
 }

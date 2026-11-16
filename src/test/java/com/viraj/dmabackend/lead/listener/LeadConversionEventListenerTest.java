@@ -5,6 +5,7 @@ import com.viraj.dmabackend.lead.event.LeadConvertedEvent;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LeadConversionEventListenerTest {
 
@@ -31,5 +32,21 @@ class LeadConversionEventListenerTest {
     void handleLeadConverted_handlesNullGracefully() {
         assertDoesNotThrow(() -> listener.handleLeadConverted(null));
         assertDoesNotThrow(() -> listener.handleLeadConverted(new LeadConvertedEvent(null)));
+    }
+
+    @Test
+    void handleLeadConverted_preservesAssignedUserId() {
+        LeadConversionData data = LeadConversionData.builder()
+                .leadId("lead-123")
+                .clientId("client-456")
+                .assignedUserId("rep-007")
+                .companyName("Acme Corp")
+                .build();
+
+        LeadConvertedEvent event = new LeadConvertedEvent(data);
+
+        assertEquals("rep-007", event.getAssignedUserId());
+        assertEquals("client-456", event.getClientId());
+        assertEquals("lead-123", event.getLeadId());
     }
 }

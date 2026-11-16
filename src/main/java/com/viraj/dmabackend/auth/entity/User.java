@@ -23,6 +23,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "users")
 @TypeAlias("User")
 @CompoundIndex(name = "idx_role_status", def = "{'roleId': 1, 'status': 1}")
+@CompoundIndex(name = "idx_user_deleted_created", def = "{'deleted': 1, 'createdAt': -1}")
 public class User extends BaseEntity {
 
     @Id
@@ -38,7 +39,7 @@ public class User extends BaseEntity {
     @TextIndexed
     private String email;
 
-    @Indexed(unique = true, partialFilter = "{'deleted': false}")
+    @Indexed(unique = true, partialFilter = "{'deleted': false, 'phoneNumber': {'$type': 'string'}}")
     private String phoneNumber;
 
     /**

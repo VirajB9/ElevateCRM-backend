@@ -27,5 +27,8 @@ public interface InvoiceService {
 
     InvoiceResponse updateInvoiceStatus(String id, UpdateInvoiceStatusRequest request);
 
-    void deleteInvoice(String id);
+    void deleteInvoice(String id, Long version);
+    default void deleteInvoice(String id) {
+        deleteInvoice(id, null);
+    }
 }

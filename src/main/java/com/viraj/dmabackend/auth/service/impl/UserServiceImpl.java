@@ -128,7 +128,8 @@ public class UserServiceImpl implements UserService {
 
         User user = findUserById(userId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(user.getVersion())) {
+        if ((user.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(user.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "User has been modified by another operation. Please refresh and try again."
             );
@@ -155,10 +156,11 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Users cannot change their own role");
         }
 
-        userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
-
-        if (!isSelf || !targetRole.getId().equals(newRole.getId())) {
-            userValidator.validateRoleAssignment(currentUser, currentUserRole, newRole);
+        if (!isSelf) {
+            userValidator.validateUserManagement(currentUser, currentUserRole, user, targetRole);
+            if (!targetRole.getId().equals(newRole.getId())) {
+                userValidator.validateRoleAssignment(currentUser, currentUserRole, newRole);
+            }
         }
 
         boolean roleChanged = !targetRole.getId().equals(newRole.getId());
@@ -181,7 +183,8 @@ public class UserServiceImpl implements UserService {
 
         User user = findUserById(userId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(user.getVersion())) {
+        if ((user.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(user.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "User has been modified by another operation. Please refresh and try again."
             );
@@ -216,9 +219,16 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public UserResponse softDeleteUser(String userId) {
+    public UserResponse softDeleteUser(String userId, Long version) {
 
         User user = findUserById(userId);
+
+        if (version != null && !version.equals(user.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "User has been modified by another operation prior to deletion. Please refresh and try again."
+            );
+        }
+
         Role targetRole = findRoleById(user.getRoleId());
         if ("OWNER".equals(targetRole.getName())) {
             throw new BadRequestException("The system Owner account cannot be deleted");

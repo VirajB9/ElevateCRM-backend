@@ -487,6 +487,27 @@ public class InvoiceServiceImplTest {
     }
 
     @Test
+    void updateInvoiceStatus_ThrowsWhenProjectValidationFails() {
+        Invoice invoice = new Invoice();
+        invoice.setId("inv-123");
+        invoice.setStatus(InvoiceStatus.SENT);
+        invoice.setClientId("client-1");
+        invoice.setProjectId("proj-1");
+        invoice.setActive(true);
+
+        when(invoiceRepository.findByIdAndActiveTrue("inv-123")).thenReturn(Optional.of(invoice));
+        doThrow(new BadRequestException("Cannot update invoice status to PAID an invoice for a cancelled project."))
+                .when(invoiceValidator).validateProjectBelongsToClient(eq("proj-1"), eq("client-1"), eq("update invoice status to PAID"));
+
+        com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest req =
+                new com.viraj.dmabackend.invoice.dto.UpdateInvoiceStatusRequest();
+        req.setStatus(InvoiceStatus.PAID);
+
+        assertThrows(BadRequestException.class, () -> invoiceService.updateInvoiceStatus("inv-123", req));
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
     void deleteInvoice_SucceedsWhenStatusIsDraft() {
         Invoice draftInvoice = new Invoice();
         draftInvoice.setId("inv-draft");

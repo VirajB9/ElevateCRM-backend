@@ -38,7 +38,7 @@ public class Client extends BaseEntity {
     @Indexed(unique = true, partialFilter = "{'deleted': false}")
     private String email;
 
-    @Indexed(unique = true, partialFilter = "{'deleted': false}")
+    @Indexed(unique = true, partialFilter = "{'deleted': false, 'phoneNumber': {'$type': 'string'}}")
     private String phoneNumber;
 
     private String website;

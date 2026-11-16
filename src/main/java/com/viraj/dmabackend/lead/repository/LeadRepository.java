@@ -12,52 +12,58 @@ import java.util.Optional;
 
 public interface LeadRepository extends MongoRepository<Lead, String>, LeadRepositoryCustom {
 
-    @Query(value = "{ 'email': ?0, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'email': ?0, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByEmail(String email);
 
-    @Query(value = "{ 'phoneNumber': ?0, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'phoneNumber': ?0, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByPhoneNumber(String phoneNumber);
 
-    @Query(value = "{ 'email': ?0, 'status': { $ne: ?1 }, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByEmailAndStatusNot(String email, LeadStatus status);
 
-    @Query(value = "{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
 
-    @Query(value = "{ 'email': ?0, 'status': { $nin: ?1 }, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'email': ?0, 'status': { $nin: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByEmailAndStatusNotIn(String email, java.util.Collection<LeadStatus> statuses);
 
-    @Query(value = "{ 'phoneNumber': ?0, 'status': { $nin: ?1 }, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'phoneNumber': ?0, 'status': { $nin: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByPhoneNumberAndStatusNotIn(String phoneNumber, java.util.Collection<LeadStatus> statuses);
 
-    @Query(value = "{ 'email': ?0, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'email': ?0, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByEmailAndActivePipelineTrue(String email);
 
-    @Query(value = "{ 'phoneNumber': ?0, 'activePipeline': true }", exists = true)
+    @Query(value = "{ 'phoneNumber': ?0, 'deleted': false, 'activePipeline': true }", exists = true)
     boolean existsByPhoneNumberAndActivePipelineTrue(String phoneNumber);
 
-    @Query("{ 'email': ?0, 'activePipeline': true }")
+    @Query(value = "{ 'email': ?0, '_id': { $ne: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
+    boolean existsByEmailAndActivePipelineTrueAndIdNot(String email, String id);
+
+    @Query(value = "{ 'phoneNumber': ?0, '_id': { $ne: ?1 }, 'deleted': false, 'activePipeline': true }", exists = true)
+    boolean existsByPhoneNumberAndActivePipelineTrueAndIdNot(String phoneNumber, String id);
+
+    @Query("{ 'email': ?0, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByEmail(String email);
 
-    @Query("{ 'phoneNumber': ?0, 'activePipeline': true }")
+    @Query("{ 'phoneNumber': ?0, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByPhoneNumber(String phoneNumber);
 
-    @Query("{ 'email': ?0, 'status': { $ne: ?1 }, 'activePipeline': true }")
+    @Query("{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByEmailAndStatusNot(String email, LeadStatus status);
 
-    @Query("{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'activePipeline': true }")
+    @Query("{ 'phoneNumber': ?0, 'status': { $ne: ?1 }, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByPhoneNumberAndStatusNot(String phoneNumber, LeadStatus status);
 
-    @Query("{ 'email': ?0, 'status': { $nin: ?1 }, 'activePipeline': true }")
+    @Query("{ 'email': ?0, 'status': { $nin: ?1 }, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByEmailAndStatusNotIn(String email, java.util.Collection<LeadStatus> statuses);
 
-    @Query("{ 'phoneNumber': ?0, 'status': { $nin: ?1 }, 'activePipeline': true }")
+    @Query("{ 'phoneNumber': ?0, 'status': { $nin: ?1 }, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByPhoneNumberAndStatusNotIn(String phoneNumber, java.util.Collection<LeadStatus> statuses);
 
-    @Query("{ 'email': ?0, 'activePipeline': true }")
+    @Query("{ 'email': ?0, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByEmailAndActivePipelineTrue(String email);
 
-    @Query("{ 'phoneNumber': ?0, 'activePipeline': true }")
+    @Query("{ 'phoneNumber': ?0, 'deleted': false, 'activePipeline': true }")
     Optional<Lead> findByPhoneNumberAndActivePipelineTrue(String phoneNumber);
 
     @Query("{ 'status': ?0, 'deleted': false }")

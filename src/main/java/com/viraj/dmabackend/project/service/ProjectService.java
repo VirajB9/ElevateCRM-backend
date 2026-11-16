@@ -23,5 +23,8 @@ public interface ProjectService {
 
     ProjectResponse updateProject(String projectId, UpdateProjectRequest request);
 
-    void deleteProject(String projectId);
+    void deleteProject(String projectId, Long version);
+    default void deleteProject(String projectId) {
+        deleteProject(projectId, null);
+    }
 }

@@ -16,4 +16,5 @@ public class LeadConversionData {
     private final String website;
     private final String industry;
     private final String notes;
+    private final String assignedUserId;
 }

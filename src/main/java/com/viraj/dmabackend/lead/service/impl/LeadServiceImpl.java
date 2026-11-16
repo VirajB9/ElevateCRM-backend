@@ -60,9 +60,15 @@ public class LeadServiceImpl implements LeadService {
 
     @Transactional
     @Override
-    public LeadResponse convertLeadToClient(String leadId) {
+    public LeadResponse convertLeadToClient(String leadId, Long version) {
 
         Lead lead = findLeadById(leadId);
+
+        if (version != null && !version.equals(lead.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Lead has been modified by another operation prior to conversion. Please refresh and try again."
+            );
+        }
 
         leadValidator.validateLeadAccess(lead);
         leadValidator.validateLeadConversion(lead);
@@ -77,6 +83,7 @@ public class LeadServiceImpl implements LeadService {
                 .website(lead.getWebsite())
                 .industry(lead.getIndustry())
                 .notes(lead.getNotes())
+                .assignedUserId(lead.getAssignedUserId())
                 .build();
 
         LeadStatus originalStatus = lead.getStatus();
@@ -209,7 +216,8 @@ public class LeadServiceImpl implements LeadService {
 
         Lead existingLead = findLeadById(leadId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(existingLead.getVersion())) {
+        if ((existingLead.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(existingLead.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Lead has been modified by another operation. Please refresh and try again."
             );
@@ -229,9 +237,16 @@ public class LeadServiceImpl implements LeadService {
     }
 
     @Override
-    public void deleteLead(String leadId) {
+    public void deleteLead(String leadId, Long version) {
 
         Lead lead = findLeadById(leadId);
+
+        if (version != null && !version.equals(lead.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Lead has been modified by another operation prior to deletion. Please refresh and try again."
+            );
+        }
+
         leadValidator.validateLeadAccess(lead);
         leadValidator.validateLeadNotConverted(lead);
         lead.setStatus(LeadStatus.DELETED);

@@ -108,6 +108,25 @@ class MenuControllerTest extends BaseControllerWebMvcTest {
     }
 
     @Test
+    @WithMockUser(authorities = "menu:update")
+    void updateMenu_viaPatch_whenAuthorized_returnsOk() throws Exception {
+        UpdateMenuRequest request = new UpdateMenuRequest();
+        request.setTitle("Patched Title");
+        request.setPath("/patched-path");
+        request.setIcon("patched-icon");
+        request.setOrderIndex(1);
+        request.setActive(true);
+        request.setVersion(1L);
+
+        when(menuService.updateMenu(eq("m-1"), any())).thenReturn(MenuResponse.builder().id("m-1").title("Patched Title").build());
+
+        mockMvc.perform(patch("/api/v1/menus/m-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @WithMockUser(authorities = "menu:delete")
     void deactivateMenu_whenAuthorized_returnsNoContent() throws Exception {
         doNothing().when(menuService).deactivateMenu("m-1");

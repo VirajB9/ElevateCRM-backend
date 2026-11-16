@@ -192,6 +192,7 @@ public class LeadServiceImplTest {
                 .lastName("Smith")
                 .companyName("Acme")
                 .email("alice@acme.com")
+                .assignedUserId("rep-007")
                 .status(LeadStatus.WON)
                 .build();
 
@@ -220,6 +221,7 @@ public class LeadServiceImplTest {
         verify(eventPublisher).publishEvent(eventCaptor.capture());
         assertEquals("client-123", eventCaptor.getValue().getClientId());
         assertEquals("lead-1", eventCaptor.getValue().getLeadId());
+        assertEquals("rep-007", eventCaptor.getValue().getAssignedUserId());
         assertEquals("client-123", eventCaptor.getValue().getData().getClientId());
     }
 
@@ -484,5 +486,35 @@ public class LeadServiceImplTest {
 
         verify(leadValidator).validateLeadAccess(lead);
         verify(clientService, never()).createClientFromLead(any());
+    }
+
+    @Test
+    void convertLeadToClient_WhenVersionMismatch_ThrowsOptimisticLockingFailureException() {
+        Lead lead = Lead.builder().id("lead-1").build();
+        lead.setVersion(2L);
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> leadService.convertLeadToClient("lead-1", 1L)
+        );
+
+        verify(clientService, never()).createClientFromLead(any());
+    }
+
+    @Test
+    void deleteLead_WhenVersionMismatch_ThrowsOptimisticLockingFailureException() {
+        Lead lead = Lead.builder().id("lead-1").build();
+        lead.setVersion(2L);
+        when(leadRepository.findByIdAndStatusNot("lead-1", LeadStatus.DELETED))
+                .thenReturn(java.util.Optional.of(lead));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> leadService.deleteLead("lead-1", 1L)
+        );
+
+        verify(leadRepository, never()).save(any());
     }
 }

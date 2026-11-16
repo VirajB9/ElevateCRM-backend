@@ -202,7 +202,13 @@ public class InvoiceController {
     public void deleteInvoice(
             @Parameter(description = "Unique ID of the invoice", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
-            @PathVariable String invoiceId) {
-        invoiceService.deleteInvoice(invoiceId);
+            @PathVariable String invoiceId,
+            @Parameter(description = "Expected version for optimistic locking")
+            @RequestParam(required = false) Long version) {
+        if (version != null) {
+            invoiceService.deleteInvoice(invoiceId, version);
+        } else {
+            invoiceService.deleteInvoice(invoiceId);
+        }
     }
 }

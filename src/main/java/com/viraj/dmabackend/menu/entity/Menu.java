@@ -27,10 +27,10 @@ public class Menu extends BaseEntity {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'active': true}")
     private String title;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'active': true, 'path': {'$type': 'string'}}")
     private String path;
 
     private String icon;

@@ -20,16 +20,16 @@ import java.util.List;
 @AllArgsConstructor
 @Document(collection = "invoices")
 @TypeAlias("Invoice")
-@CompoundIndex(name = "idx_client_active", def = "{'clientId': 1, 'active': 1}")
-@CompoundIndex(name = "idx_status_active", def = "{'status': 1, 'active': 1}")
-@CompoundIndex(name = "idx_project_active", def = "{'projectId': 1, 'active': 1}")
-@CompoundIndex(name = "idx_active_created_at", def = "{'active': 1, 'createdAt': -1}")
+@CompoundIndex(name = "idx_client_deleted", def = "{'clientId': 1, 'deleted': 1}")
+@CompoundIndex(name = "idx_status_deleted", def = "{'status': 1, 'deleted': 1}")
+@CompoundIndex(name = "idx_project_deleted", def = "{'projectId': 1, 'deleted': 1}")
+@CompoundIndex(name = "idx_deleted_created_at", def = "{'deleted': 1, 'createdAt': -1}")
 public class Invoice extends BaseEntity {
 
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    @Indexed(unique = true, partialFilter = "{'deleted': false}")
     private String invoiceNumber;
 
     @Indexed
@@ -61,6 +61,15 @@ public class Invoice extends BaseEntity {
 
     private LocalDate paidDate;
 
-    @Indexed
-    private Boolean active;
+    @Builder.Default
+    private Boolean active = true;
+
+    public Boolean getActive() {
+        return !isDeleted();
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+        setDeleted(active != null && !active);
+    }
 }

@@ -225,4 +225,12 @@ class LeadControllerTest extends BaseControllerWebMvcTest {
                         .param("keyword", "l".repeat(101)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser(authorities = "lead:read")
+    void searchLeads_withBlankKeyword_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/leads/search")
+                        .param("keyword", "   "))
+                .andExpect(status().isBadRequest());
+    }
 }

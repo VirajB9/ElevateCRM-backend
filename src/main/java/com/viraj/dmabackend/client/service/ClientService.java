@@ -16,6 +16,9 @@ public interface ClientService {
     Page<ClientResponse> searchClients(String keyword, Pageable pageable);
     Page<ClientResponse> filterClientsByStatus(ClientStatus status, Pageable pageable);
     ClientResponse updateClient(String clientId, UpdateClientRequest request);
-    void deleteClient(String clientId);
+    void deleteClient(String clientId, Long version);
+    default void deleteClient(String clientId) {
+        deleteClient(clientId, null);
+    }
     void purgeOrphanedClient(String clientId);
 }

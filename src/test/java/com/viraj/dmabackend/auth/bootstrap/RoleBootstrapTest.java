@@ -138,4 +138,27 @@ class RoleBootstrapTest {
         assertThat(customManager.getPermissionIds()).containsExactly("custom-perm-1", "custom-perm-2");
         verify(roleRepository, never()).save(customManager);
     }
+
+    @Test
+    void run_whenManagerRoleMissingBaselinePermissions_restoresMissingPermissionsWhilePreservingCustom() {
+        Permission pUserRead = Permission.builder().id("p-ur").permissionType(PermissionType.USER_READ).build();
+        when(permissionRepository.findAll()).thenReturn(List.of(pUserRead));
+        when(permissionRepository.findByPermissionType(PermissionType.USER_READ)).thenReturn(Optional.of(pUserRead));
+
+        Role strippedManager = Role.builder()
+                .name("MANAGER")
+                .permissionIds(new ArrayList<>(List.of("custom-perm-1")))
+                .build();
+
+        when(roleRepository.findByName("OWNER")).thenReturn(Optional.of(Role.builder().name("OWNER").permissionIds(List.of("p-ur")).build()));
+        when(roleRepository.findByName("MANAGER")).thenReturn(Optional.of(strippedManager));
+        when(roleRepository.findByName("EMPLOYEE")).thenReturn(Optional.of(Role.builder().name("EMPLOYEE").permissionIds(List.of("p-ur")).build()));
+        when(roleRepository.findByName("INTERN")).thenReturn(Optional.of(Role.builder().name("INTERN").permissionIds(List.of("p-ur")).build()));
+
+        roleBootstrap.run();
+
+        verify(roleRepository).save(strippedManager);
+        assertThat(strippedManager.getPermissionIds()).contains("p-ur", "custom-perm-1");
+        assertThat(strippedManager.isSystemRole()).isTrue();
+    }
 }

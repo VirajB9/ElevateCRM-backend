@@ -43,6 +43,9 @@ public class LeadValidator {
     public void validateDuplicateLeadForUpdate(Lead existingLead, UpdateLeadRequest request) {
         String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
         if (email != null) {
+            if (leadRepository.existsByEmailAndActivePipelineTrueAndIdNot(email, existingLead.getId())) {
+                throw new DuplicateLeadException("email", request.getEmail());
+            }
             leadRepository.findByEmailAndStatusNotIn(email, INACTIVE_LEAD_STATUSES)
                     .ifPresent(lead -> {
                         if (!lead.getId().equals(existingLead.getId())) {
@@ -53,12 +56,27 @@ public class LeadValidator {
 
         String phone = request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null;
         if (phone != null) {
+            if (leadRepository.existsByPhoneNumberAndActivePipelineTrueAndIdNot(phone, existingLead.getId())) {
+                throw new DuplicateLeadException("phone number", request.getPhoneNumber());
+            }
             leadRepository.findByPhoneNumberAndStatusNotIn(phone, INACTIVE_LEAD_STATUSES)
                     .ifPresent(lead -> {
                         if (!lead.getId().equals(existingLead.getId())) {
                             throw new DuplicateLeadException("phone number", request.getPhoneNumber());
                         }
                     });
+        }
+
+        if (existingLead.getStatus() == LeadStatus.LOST &&
+                (request.getStatus() == LeadStatus.NEW || request.getStatus() == LeadStatus.CONTACTED)) {
+            String checkEmail = email != null ? email : (existingLead.getEmail() != null ? existingLead.getEmail().trim().toLowerCase() : null);
+            if (checkEmail != null && leadRepository.existsByEmailAndActivePipelineTrueAndIdNot(checkEmail, existingLead.getId())) {
+                throw new DuplicateLeadException("email", checkEmail);
+            }
+            String checkPhone = phone != null ? phone : (existingLead.getPhoneNumber() != null ? existingLead.getPhoneNumber().trim() : null);
+            if (checkPhone != null && leadRepository.existsByPhoneNumberAndActivePipelineTrueAndIdNot(checkPhone, existingLead.getId())) {
+                throw new DuplicateLeadException("phone number", checkPhone);
+            }
         }
     }
 

@@ -110,13 +110,14 @@ public class RoleServiceImpl implements RoleService {
 
         Role role = findRoleById(roleId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(role.getVersion())) {
+        if ((role.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(role.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Role has been modified by another operation. Please refresh and try again."
             );
         }
 
-        preventOwnerModification(role);
+        preventSystemRoleModification(role);
 
         roleValidator.validateDescription(request.getDescription());
 
@@ -143,7 +144,8 @@ public class RoleServiceImpl implements RoleService {
 
         Role role = findRoleById(roleId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(role.getVersion())) {
+        if ((role.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(role.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Role has been modified by another operation. Please refresh and try again."
             );
@@ -176,7 +178,8 @@ public class RoleServiceImpl implements RoleService {
 
         Role role = findRoleById(roleId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(role.getVersion())) {
+        if ((role.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(role.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Role has been modified by another operation. Please refresh and try again."
             );
@@ -246,6 +249,13 @@ public class RoleServiceImpl implements RoleService {
     private void preventOwnerModification(Role role) {
 
         if ("OWNER".equals(role.getName())) {
+            throw new SystemRoleModificationException(role.getName());
+        }
+    }
+
+    private void preventSystemRoleModification(Role role) {
+
+        if (role.isSystemRole() || "OWNER".equalsIgnoreCase(role.getName())) {
             throw new SystemRoleModificationException(role.getName());
         }
     }

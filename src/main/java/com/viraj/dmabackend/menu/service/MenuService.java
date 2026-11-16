@@ -19,5 +19,8 @@ public interface MenuService {
 
     List<MenuTreeResponse> getMenuTree();
 
-    void deactivateMenu(String menuId);
+    void deactivateMenu(String menuId, Long version);
+    default void deactivateMenu(String menuId) {
+        deactivateMenu(menuId, null);
+    }
 }

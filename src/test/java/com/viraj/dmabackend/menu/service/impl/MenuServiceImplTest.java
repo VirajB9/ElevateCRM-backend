@@ -592,4 +592,47 @@ class MenuServiceImplTest {
         assertThat(key1).isEqualTo("ROLE_MANAGER,client:read,lead:read");
         assertThat(key1).isEqualTo(key2);
     }
+
+    @Test
+    void getAllMenus_whenLowPrivilegeUser_filtersOutRestrictedAndInactiveMenus() {
+        Menu publicMenu = Menu.builder().id("m1").title("Public").path("/public").active(true).build();
+        Menu clientMenu = Menu.builder().id("m2").title("Clients").path("/clients").active(true).requiredPermission("client:read").build();
+        Menu adminMenu = Menu.builder().id("m3").title("Admin").path("/admin").active(true).requiredPermission("user:read").build();
+        Menu inactiveMenu = Menu.builder().id("m4").title("Old").path("/old").active(false).build();
+
+        when(menuRepository.findAll(any(org.springframework.data.domain.Sort.class)))
+                .thenReturn(List.of(publicMenu, clientMenu, adminMenu, inactiveMenu));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "intern@agency.com", "pass",
+                        List.of(new SimpleGrantedAuthority("menu:read"),
+                                new SimpleGrantedAuthority("client:read"))));
+
+        List<com.viraj.dmabackend.menu.dto.MenuResponse> result = menuService.getAllMenus();
+
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting("id").containsExactly("m1", "m2");
+        assertThat(result).extracting("id").doesNotContain("m3", "m4");
+    }
+
+    @Test
+    void getAllMenus_whenOwner_returnsAllMenusIncludingInactiveAndRestricted() {
+        Menu publicMenu = Menu.builder().id("m1").title("Public").path("/public").active(true).build();
+        Menu adminMenu = Menu.builder().id("m2").title("Admin").path("/admin").active(true).requiredPermission("user:read").build();
+        Menu inactiveMenu = Menu.builder().id("m3").title("Old").path("/old").active(false).build();
+
+        when(menuRepository.findAll(any(org.springframework.data.domain.Sort.class)))
+                .thenReturn(List.of(publicMenu, adminMenu, inactiveMenu));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "owner@agency.com", "pass",
+                        List.of(new SimpleGrantedAuthority("ROLE_OWNER"))));
+
+        List<com.viraj.dmabackend.menu.dto.MenuResponse> result = menuService.getAllMenus();
+
+        assertThat(result).hasSize(3);
+        assertThat(result).extracting("id").containsExactly("m1", "m2", "m3");
+    }
 }

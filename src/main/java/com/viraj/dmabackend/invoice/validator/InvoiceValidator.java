@@ -79,7 +79,7 @@ public class InvoiceValidator {
         }
     }
 
-    private void validateProjectBelongsToClient(String projectId, String clientId, String action) {
+    public void validateProjectBelongsToClient(String projectId, String clientId, String action) {
         String trimmedProjectId = projectId != null ? projectId.trim() : null;
         String trimmedClientId = clientId != null ? clientId.trim() : null;
         ProjectResponse project = projectService.getProjectById(trimmedProjectId);
@@ -95,6 +95,10 @@ public class InvoiceValidator {
 
         if (project.getStatus() == com.viraj.dmabackend.project.enums.ProjectStatus.ARCHIVED) {
             throw new BadRequestException("Cannot " + action + " an invoice for an archived project.");
+        }
+
+        if (project.getStatus() == com.viraj.dmabackend.project.enums.ProjectStatus.COMPLETED) {
+            throw new BadRequestException("Cannot " + action + " an invoice for a completed project.");
         }
     }
 

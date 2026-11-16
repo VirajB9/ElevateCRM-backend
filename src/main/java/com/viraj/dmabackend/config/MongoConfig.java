@@ -28,7 +28,10 @@ public class MongoConfig {
 
     @Bean
     @ConditionalOnMissingBean(PlatformTransactionManager.class)
-    public PlatformTransactionManager noOpTransactionManager() {
+    public PlatformTransactionManager noOpTransactionManager(org.springframework.core.env.Environment environment) {
+        if (environment.matchesProfiles("prod")) {
+            throw new IllegalStateException("MongoDB Multi-Document Transactions must be enabled in production profile ('prod'). Set spring.data.mongodb.transaction.enabled=true.");
+        }
         log.warn("MongoDB Multi-Document Transactions disabled. Using NoOpTransactionManager fallback for standalone MongoDB compatibility.");
         return new NoOpTransactionManager();
     }

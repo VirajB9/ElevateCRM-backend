@@ -41,7 +41,10 @@ class MongoConfigTest {
     @Test
     void noOpTransactionManager_ExecutesTransactionsCleanlyWithoutExceptions() {
         MongoConfig mongoConfig = new MongoConfig();
-        PlatformTransactionManager txManager = mongoConfig.noOpTransactionManager();
+        org.springframework.core.env.Environment env = mock(org.springframework.core.env.Environment.class);
+        org.mockito.Mockito.when(env.matchesProfiles("prod")).thenReturn(false);
+
+        PlatformTransactionManager txManager = mongoConfig.noOpTransactionManager(env);
 
         assertNotNull(txManager);
         assertTrue(txManager instanceof NoOpTransactionManager);
@@ -54,6 +57,18 @@ class MongoConfigTest {
 
         TransactionStatus rollbackStatus = txManager.getTransaction(def);
         assertDoesNotThrow(() -> txManager.rollback(rollbackStatus));
+    }
+
+    @Test
+    void noOpTransactionManager_ThrowsInProductionProfile() {
+        MongoConfig mongoConfig = new MongoConfig();
+        org.springframework.core.env.Environment env = mock(org.springframework.core.env.Environment.class);
+        org.mockito.Mockito.when(env.matchesProfiles("prod")).thenReturn(true);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> mongoConfig.noOpTransactionManager(env)
+        );
     }
 
     @Test

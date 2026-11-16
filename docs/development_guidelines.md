@@ -1,32 +1,35 @@
 # 🛠️ Development Guidelines & Engineering Standards
 
-**Project**: Digital Marketing Agency ERP Backend  
-**Version**: 2.0 (Refactored & Aligned with Codebase)  
-**Tech Stack**: Java 17 • Spring Boot 3.5.15 • MongoDB • Gradle  
+**Project**: Digital Marketing Agency ERP Backend (ElevateCRM)  
+**Version**: 2.5 (Fully Integrated Invoicing, RBAC, Rate Limiting & Test Suite Baseline)  
+**Tech Stack**: Java 17 • Spring Boot 3.5.15 • MongoDB 7.0+ • Gradle 9.x • JJWT 0.12.6 • Bucket4j 8.10.1  
 **Base Package**: `com.viraj.dmabackend`  
 
 ---
 
 ## 1. Development Philosophy
-The objective is **NOT** just to complete the ERP. The objective is to learn how professional, portfolio-quality backend software is engineered.
+The objective is **NOT** just to complete the ERP. The objective is to build a robust, production-grade, portfolio-quality backend system following Domain-Driven Design (DDD) principles and defensive software engineering.
 
 Every implementation must be:
-- **Readable & Maintainable**
-- **Feature-Packaged & Scalable**
-- **Production Ready**
-- **Architecturally Sound**
+- **Readable & Maintainable**: Explicit naming, clear separation of concerns, and minimal cognitive load.
+- **Feature-Packaged & Scalable**: Modular structure organized by domain boundaries rather than horizontal layers.
+- **Production Ready**: Robust input validation, optimistic locking, idempotent operations, and secure perimeter defense.
+- **Architecturally Sound**: Strict unidirectional data flow (`Controller → Service → Repository → Database`), zero entity leakage via REST, and defensive error propagation.
 
-> ⚠️ **Golden Rule**: Understanding always comes before coding. Never write or copy code without understanding the "why" behind every annotation, method, and package.
+> ⚠️ **Golden Rule**: Understanding always comes before coding. Never write or copy code without understanding the "why" behind every annotation, method, query, and security filter.
 
 ---
 
 ## 2. General Architecture Rules
-1. **Feature-Based Packaging**: Code is organized by domain modules (`auth`, `lead`, `client`, `project`, `menu`, `invoice`), NOT by generic layers.
-2. **Thin Controllers**: Controllers handle only HTTP routing, `@PreAuthorize` security checks, `@Valid` body annotations, and delegation to services.
-3. **Services Own Logic**: All business logic, permission filtering, validation rules, and entity conversions reside strictly in the service layer.
-4. **Repositories Only Access DB**: Repositories only contain Spring Data Mongo query methods. Zero business logic.
-5. **Entities Are Encapsulated**: Never return `@Document` entity objects directly through REST APIs. Always communicate via DTOs.
-6. **Unified API Responses**: Every API returns a standardized `ApiResponse<T>` wrapper (`success`, `message`, `data`).
+1. **Feature-Based Packaging**: Code is organized into dedicated domain modules (`auth`, `lead`, `client`, `project`, `invoice`, `menu`, `permission`), not generic horizontal layers.
+2. **Thin Controllers**: Controllers handle only HTTP routing, OpenAPI documentation, `@PreAuthorize` security checks, `@Valid` request body validation, and immediate delegation to service interfaces.
+3. **Services Own Business Logic**: All business invariants, validation rules, state transitions, calculation logic, and entity mutations reside strictly in service implementation classes (`*ServiceImpl`).
+4. **Repositories Access Persistence**: Spring Data MongoDB repository interfaces and custom implementations (`*RepositoryCustomImpl`) only execute database queries and aggregations. Zero business logic belongs in repositories.
+5. **Strict DTO Encapsulation**: Never return `@Document` entity objects directly through REST APIs. Always communicate via typed Request/Response DTOs using dedicated mappers.
+6. **Unified API Envelopes**: Every API endpoint returns a standardized `ApiResponse<T>` wrapper (`success`, `message`, `data`).
+7. **Optimistic Concurrency Control (OCC)**: All mutable entities inherit `@Version private Long version;` from `BaseEntity` to prevent concurrent write conflicts and lost updates.
+8. **SPI Deletion & Status Guards**: Cross-module entity deletions and state transitions must be guarded by Service Provider Interface (SPI) beans (e.g., `ProjectClientDeletionGuard`, `InvoiceClientDeletionGuard`, `InvoiceProjectCancellationGuard`).
+9. **Universal Pagination Clamping**: All paginated endpoints clamp page size (`max-page-size: 100`) and sanitize sort parameters against explicit whitelists via `PaginationUtils.clampPageable()`.
 
 ---
 
@@ -34,69 +37,98 @@ Every implementation must be:
 
 ```
 com.viraj.dmabackend
-├── auth/                          # Authentication, User Management, Roles & Permissions
+├── auth/                          # Authentication, User Management, Roles & Token Lifecycle
 │   ├── bootstrap/                 # PermissionBootstrap (1), RoleBootstrap (2), OwnerBootstrap (3)
-│   ├── controller/                # AuthController, UserController, RoleController
-│   ├── dto/                       # LoginRequest, CreateUserRequest, UserResponse, RoleResponse, etc.
-│   ├── entity/                    # User, Role, Permission (@Document)
-│   ├── enums/                     # PermissionType, UserStatus
-│   ├── exception/                 # UserNotFoundException, DuplicateEmailException, etc.
+│   ├── controller/                # AuthController (/api/v1/auth), UserController (/api/v1/users), RoleController (/api/v1/roles)
+│   ├── dto/                       # LoginRequest, RefreshTokenRequest, LogoutRequest, CreateUserRequest, UserResponse, RoleResponse, etc.
+│   ├── entity/                    # User, Role, Permission, RefreshToken (@Document)
+│   ├── enums/                     # PermissionType (27 values), UserStatus (ACTIVE, INACTIVE, SUSPENDED, LOCKED, DELETED)
+│   ├── exception/                 # UserNotFoundException, DuplicateEmailException, AccountLockedException, etc.
 │   ├── mapper/                    # RoleMapper, UserMapper
-│   ├── repository/                # UserRepository, RoleRepository, PermissionRepository
+│   ├── repository/                # UserRepository, UserRepositoryCustom, RoleRepository, PermissionRepository, RefreshTokenRepository
 │   ├── security/                  # JwtFilter, JwtUtil, CustomUserDetails, CustomUserDetailsService
 │   ├── service/                   # AuthService, UserService, RoleService, PermissionService
-│   └── validator/                 # RoleValidator
+│   │   └── impl/                  # AuthServiceImpl, UserServiceImpl, RoleServiceImpl, PermissionServiceImpl
+│   └── validator/                 # UserValidator, RoleValidator
 │
-├── lead/                          # Lead CRM Module
-│   ├── controller/                # LeadController
+├── lead/                          # Lead CRM & Sales Pipeline Module
+│   ├── controller/                # LeadController (/api/v1/leads)
 │   ├── dto/                       # CreateLeadRequest, UpdateLeadRequest, LeadResponse
-│   ├── entity/                    # Lead
-│   ├── enums/                     # LeadStatus, LeadSource
-│   ├── exception/                 # LeadNotFoundException, DuplicateLeadException, etc.
-│   ├── repository/                # LeadRepository
-│   └── service/                   # LeadService
+│   ├── entity/                    # Lead (@Document)
+│   ├── enums/                     # LeadStatus (9 stages), LeadSource (11 channels)
+│   ├── event/                     # LeadConvertedEvent
+│   ├── exception/                 # LeadNotFoundException, DuplicateLeadException, InvalidLeadStatusException, etc.
+│   ├── listener/                  # LeadConversionEventListener
+│   ├── mapper/                    # LeadMapper
+│   ├── repository/                # LeadRepository, LeadRepositoryCustom, LeadRepositoryCustomImpl
+│   ├── service/                   # LeadService & LeadServiceImpl
+│   └── validator/                 # LeadValidator, LeadUserDeletionGuard
 │
-├── client/                        # Client Registry Module
-│   ├── controller/                # ClientController
+├── client/                        # Client Registry & Account Management Module
+│   ├── controller/                # ClientController (/api/v1/clients)
 │   ├── dto/                       # CreateClientRequest, UpdateClientRequest, ClientResponse
-│   ├── entity/                    # Client
-│   ├── enums/                     # ClientStatus
-│   ├── exception/                 # ClientNotFoundException, DuplicateClientEmailException, etc.
-│   ├── repository/                # ClientRepository
-│   └── service/                   # ClientService
+│   ├── entity/                    # Client (@Document)
+│   ├── enums/                     # ClientStatus (ACTIVE, INACTIVE, ARCHIVED)
+│   ├── exception/                 # ClientNotFoundException, DuplicateClientEmailException, DuplicateClientGstException, etc.
+│   ├── mapper/                    # ClientMapper
+│   ├── repository/                # ClientRepository, ClientRepositoryCustom, ClientRepositoryCustomImpl
+│   ├── service/                   # ClientService & ClientServiceImpl
+│   └── validator/                 # ClientValidator, ClientDeletionGuard
 │
-├── project/                       # Project Management Module
-│   ├── controller/                # ProjectController
+├── project/                       # Project Delivery & Campaign Management Module
+│   ├── controller/                # ProjectController (/api/v1/projects)
 │   ├── dto/                       # CreateProjectRequest, UpdateProjectRequest, ProjectResponse
-│   ├── entity/                    # Project
-│   ├── enums/                     # ProjectStatus, ProjectPriority
-│   ├── exception/                 # ProjectNotFoundException, DuplicateProjectException, etc.
-│   ├── repository/                # ProjectRepository
-│   └── service/                   # ProjectService & ProjectServiceImpl
+│   ├── entity/                    # Project (@Document)
+│   ├── enums/                     # ProjectStatus (6 states), ProjectPriority (LOW, MEDIUM, HIGH, URGENT)
+│   ├── exception/                 # ProjectNotFoundException, DuplicateProjectException, InvalidProjectDateException
+│   ├── mapper/                    # ProjectMapper
+│   ├── repository/                # ProjectRepository, ProjectRepositoryCustom, ProjectRepositoryCustomImpl
+│   ├── service/                   # ProjectService & ProjectServiceImpl
+│   └── validator/                 # ProjectValidator, ProjectClientDeletionGuard
+│
+├── invoice/                       # Financial Invoicing & Billing Module
+│   ├── controller/                # InvoiceController (/api/v1/invoices)
+│   ├── dto/                       # CreateInvoiceRequest, UpdateInvoiceRequest, InvoiceResponse, InvoiceItemRequest, InvoiceHistoryResponse
+│   ├── entity/                    # Invoice, InvoiceHistory (@Document)
+│   ├── enums/                     # InvoiceStatus (DRAFT, SENT, PAID, OVERDUE, CANCELLED)
+│   ├── exception/                 # InvoiceNotFoundException, DuplicateInvoiceNumberException, InvalidInvoiceStatusException
+│   ├── mapper/                    # InvoiceMapper
+│   ├── repository/                # InvoiceRepository, InvoiceHistoryRepository
+│   ├── service/                   # InvoiceService, InvoiceServiceImpl, InvoiceNumberGenerator
+│   └── validator/                 # InvoiceValidator, InvoiceClientDeletionGuard, InvoiceProjectDeletionGuard, InvoiceProjectCancellationGuard
 │
 ├── menu/                          # Dynamic Navigation Menu Module
 │   ├── bootstrap/                 # MenuBootstrap (4)
-│   ├── controller/                # MenuController
+│   ├── controller/                # MenuController (/api/v1/menus)
 │   ├── dto/                       # CreateMenuRequest, UpdateMenuRequest, MenuResponse, MenuTreeResponse
-│   ├── entity/                    # Menu
-│   ├── exception/                 # MenuNotFoundException, DuplicateMenuPathException, etc.
+│   ├── entity/                    # Menu (@Document)
+│   ├── exception/                 # MenuNotFoundException, ParentMenuNotFoundException, DuplicateMenuPathException, etc.
 │   ├── mapper/                    # MenuMapper
 │   ├── repository/                # MenuRepository
 │   ├── service/                   # MenuService & MenuServiceImpl
 │   └── validator/                 # MenuValidator
 │
-├── common/                        # Cross-Cutting Shared Components
-│   ├── entity/                    # BaseEntity (createdAt, updatedAt, createdBy, updatedBy)
+├── permission/                    # Permission Query Module
+│   └── controller/                # PermissionController (/api/v1/permissions)
+│
+├── common/                        # Shared Enterprise Infrastructure
+│   ├── counter/                   # Counter, CounterRepository, CounterRepositoryImpl (Atomic Sequence Generator)
+│   ├── dto/                       # LeadConversionData
+│   ├── entity/                    # BaseEntity (@Id, createdAt, updatedAt, createdBy, updatedBy, @Version version, active, deleted)
+│   ├── pagination/                # PaginationUtils (Pageable clamping, sorting whitelists)
 │   ├── response/                  # ApiResponse<T>
 │   └── util/                      # PasswordGenerator
 │
-├── config/                        # Spring Configuration
-│   ├── SecurityConfig.java        # SecurityFilterChain, CORS, PasswordEncoder, Method Security
-│   ├── OpenApiConfig.java         # Swagger OpenAPI docs setup
-│   └── MongoConfig.java           # @EnableMongoAuditing
+├── config/                        # Spring Framework & Infrastructure Configuration
+│   ├── AuditorAwareConfig.java    # Spring Data AuditorAware (SecurityContext principal injection)
+│   ├── CorsProperties.java        # Typed configuration properties (`cors.allowed-origins`)
+│   ├── MongoConfig.java           # @EnableMongoAuditing, MongoTransactionManager (Replica Set transactions)
+│   ├── OpenApiConfig.java         # Swagger OpenAPI 3.0 specification & security schemes
+│   ├── RateLimitFilter.java       # Bucket4j token bucket rate limiting on /api/v1/auth/**
+│   └── SecurityConfig.java        # SecurityFilterChain, BCrypt, Stateless Session, Route Rules
 │
 ├── exception/                     # Global Exception Infrastructure
-│   ├── GlobalExceptionHandler.java  # @RestControllerAdvice
+│   ├── GlobalExceptionHandler.java  # @RestControllerAdvice with RFC 7807 problem details
 │   ├── BadRequestException.java     # Base class for 400 Bad Request
 │   ├── ResourceNotFoundException.java # Base class for 404 Not Found
 │   └── UnauthorizedException.java   # Base class for 401 Unauthorized
@@ -109,19 +141,21 @@ com.viraj.dmabackend
 ## 4. Naming Conventions
 
 ### Packages
-- Lowercase only (e.g., `com.viraj.dmabackend.auth.controller`).
-- Never use camelCase or uppercase in package names.
+- Lowercase only (e.g., `com.viraj.dmabackend.invoice.controller`).
+- Never use camelCase, underscores, or uppercase in package names.
 
 ### Classes & Interfaces
-- Use **PascalCase** (e.g., `UserServiceImpl`, `ClientRepository`, `PermissionType`).
-- Domain entities live in `entity/` (e.g., `Lead`, `Client`, `Menu`).
+- Use **PascalCase** (e.g., `InvoiceServiceImpl`, `ClientRepository`, `PermissionType`).
+- Service interfaces omit prefixes; implementations carry the `Impl` suffix (e.g., `InvoiceService` → `InvoiceServiceImpl`).
+- Domain entities live in `entity/` (e.g., `Lead`, `Client`, `Invoice`, `InvoiceHistory`).
 
 ### Enums
-- Enum Class: **PascalCase** (`UserStatus`, `LeadStatus`, `ProjectPriority`).
-- Enum Constants: **UPPER_CASE** (`ACTIVE`, `PROPOSAL_SENT`, `LEAD_CONVERT`, `HIGH`).
+- Enum Class: **PascalCase** (`UserStatus`, `LeadStatus`, `ProjectStatus`, `InvoiceStatus`).
+- Enum Constants: **UPPER_SNAKE_CASE** (`ACTIVE`, `PROPOSAL_SENT`, `INVOICE_CREATE`, `OVERDUE`).
 
-### Methods & Variables
-- Use **camelCase** (e.g., `convertLeadToClient()`, `estimatedBudget`, `assignedUserId`).
+### REST API Endpoints
+- Plural nouns in lowercase kebab-case: `/api/v1/invoices`, `/api/v1/leads`, `/api/v1/projects`.
+- All endpoints must include the `/api/v1/` version prefix.
 
 ---
 
@@ -132,48 +166,50 @@ com.viraj.dmabackend
 
 All domain exceptions must inherit from one of the core base classes in `com.viraj.dmabackend.exception`:
 
-1. **`ResourceNotFoundException`** (returns HTTP `404 Not Found` JSON)
-   - Examples: `UserNotFoundException`, `ClientNotFoundException`, `LeadNotFoundException`, `ProjectNotFoundException`, `MenuNotFoundException`, `ParentMenuNotFoundException`.
-2. **`BadRequestException`** (returns HTTP `400 Bad Request` JSON)
-   - Examples: `DuplicateEmailException`, `DuplicateClientGstException`, `InvalidLeadStatusException`, `LeadAlreadyConvertedException`, `InvalidProjectDateException`, `SelfParentMenuException`.
-3. **`UnauthorizedException`** (returns HTTP `401 Unauthorized` JSON)
+1. **`ResourceNotFoundException`** (HTTP `404 Not Found`)
+   - `UserNotFoundException`, `ClientNotFoundException`, `LeadNotFoundException`, `ProjectNotFoundException`, `InvoiceNotFoundException`, `MenuNotFoundException`, `RoleNotFoundException`.
+2. **`BadRequestException`** (HTTP `400 Bad Request`)
+   - `DuplicateEmailException`, `DuplicateClientGstException`, `DuplicateInvoiceNumberException`, `InvalidInvoiceStatusException`, `InvalidLeadStatusException`, `InvalidProjectDateException`, `LeadAlreadyConvertedException`.
+3. **`UnauthorizedException`** (HTTP `401 Unauthorized`)
+   - `InvalidCredentialsException`, `TokenExpiredException`, `AccountLockedException`.
 
-### Global Exception Handler
-`GlobalExceptionHandler` (`@RestControllerAdvice`) intercepts all base exceptions and formats clean responses:
+### Standardized Error Envelope
+`GlobalExceptionHandler` (`@RestControllerAdvice`) catches all domain exceptions and formats clean responses:
 
 ```json
 {
   "success": false,
-  "message": "Client not found with id: 60d5ecf9b...",
+  "message": "Invoice not found with id: 6733b8a1c...",
   "data": null
 }
 ```
 
 ---
 
-## 6. RBAC & Security Architecture
+## 6. Security, Authentication & Rate Limiting
 
-1. **Single Role Per User**: Each user is assigned one `roleId` (`OWNER`, `MANAGER`, `EMPLOYEE`, `INTERN`).
-2. **Role Hierarchy**: `OWNER` > `MANAGER` > `EMPLOYEE` > `INTERN`.
-3. **Permission Format**: `module:action` string format (e.g., `lead:create`, `client:read`, `role:update`).
-4. **Authority Mapping**: `CustomUserDetailsService` automatically maps `PermissionType.LEAD_CREATE` → `lead:create` authority string.
-5. **Method Security**: Controllers enforce permissions via `@PreAuthorize("hasAuthority('lead:create')")`.
-6. **System Role Protection**: Roles with `systemRole = true` (`OWNER`, `MANAGER`, `EMPLOYEE`, `INTERN`) cannot be modified or deleted via API.
+1. **Stateless JWT**: Access tokens (15-minute validity) signed using HMAC-SHA256 via JJWT 0.12.6.
+2. **Refresh Token Rotation**: Refresh tokens (7-day validity) stored in `refresh_tokens` collection with SHA-256 `tokenHash`. Rotated on every use with revocation detection.
+3. **Rate Limiting**: `RateLimitFilter` (Bucket4j) enforces a 5 requests/minute token bucket per IP on `/api/v1/auth/**`.
+4. **4-Tier RBAC Hierarchy**: `OWNER` > `MANAGER` > `EMPLOYEE` > `INTERN`.
+5. **Authority Format**: Canonical `module:action` string format (e.g., `invoice:create`, `lead:convert`, `client:read`).
+6. **Method Security**: Enforced via `@PreAuthorize("hasAuthority('invoice:create')")` on all secured controller endpoints.
+7. **System Role Immutability**: System roles (`systemRole = true`) cannot be renamed, modified, or deleted via REST API.
 
 ---
 
 ## 7. Order-Based Bootstrap Chain
 
-Application data is seeded automatically on startup using `CommandLineRunner` beans with strict `@Order` execution:
+Application seed data is initialized deterministically on startup via `CommandLineRunner` beans with strict `@Order` execution:
 
 | Order | Class | Function |
-|-------|-------|----------|
-| `@Order(1)` | `PermissionBootstrap` | Seeds all `PermissionType` enum values into `permissions` collection |
-| `@Order(2)` | `RoleBootstrap` | Seeds system roles (`OWNER`, `MANAGER`, `EMPLOYEE`, `INTERN`) with default permission IDs |
-| `@Order(3)` | `OwnerBootstrap` | Seeds default System Owner user (`owner@agency.com` / `Owner@123`) |
-| `@Order(4)` | `MenuBootstrap` | Seeds default ERP navigation hierarchy with parent-child relationships |
+|---|---|---|
+| `@Order(1)` | `PermissionBootstrap` | Seeds all 27 `PermissionType` enum values into `permissions` collection |
+| `@Order(2)` | `RoleBootstrap` | Seeds default system roles (`OWNER`, `MANAGER`, `EMPLOYEE`, `INTERN`) with permission IDs |
+| `@Order(3)` | `OwnerBootstrap` | Seeds initial System Owner account (`owner@agency.com`) with BCrypt password |
+| `@Order(4)` | `MenuBootstrap` | Seeds hierarchical navigation menu tree with parent-child references |
 
-> 🔒 **Requirement**: All bootstraps must be idempotent (check if data exists before inserting).
+> 🔒 **Requirement**: All bootstraps must be idempotent (check existence before inserting).
 
 ---
 
@@ -184,57 +220,41 @@ Application data is seeded automatically on startup using `CommandLineRunner` be
 <type>: <short descriptive summary>
 ```
 
-Types allowed:
+Allowed types:
 - `feat:` New feature or endpoint
-- `fix:` Bug fix or security correction
+- `fix:` Bug fix or security remediation
 - `refactor:` Code refactoring without changing functionality
 - `docs:` Documentation or guideline updates
 - `test:` Unit or integration test additions
 - `chore:` Dependency or build configuration updates
 
-❌ **Prohibited commit messages**: `done`, `updated`, `working`, `changes`, `final`.
-
-### Golden Git Rule
-> **One Logical Change = One Commit**
-
-Commit checklist before every commit:
-- [ ] Project compiles with zero errors (`./gradlew test`)
-- [ ] Feature tested & verified via Swagger UI (`localhost:8080/swagger-ui.html`)
-- [ ] No debug statements or unused imports
-- [ ] Proper error handling implemented
+### Pre-Commit Checklist
+- [ ] All tests pass cleanly (`./gradlew test`) — 662/662 baseline verified
+- [ ] No application compiler warnings or broken imports
+- [ ] Verified against OpenAPI Swagger UI (`/swagger-ui.html`)
+- [ ] Zero hardcoded secrets, test credentials, or plaintext tokens
 
 ---
 
 ## 9. Standard 13-Step Module Development Order
 
-Every module follows this **exact 13-step sequence** without skipping steps:
+Every module follows this **exact 13-step sequence**:
 
-1. **Architecture Discussion** (Fields, business rules, security context)
-2. **Database Design** (Schema, indexes, references)
-3. **Entity Creation** (`entity/` package, `@Document`, `@Id`, `@Indexed`)
-4. **Repository** (`repository/` package, custom queries)
-5. **DTOs** (`dto/` package, Request & Response objects)
-6. **Mapper** (`mapper/` package, Entity ↔ DTO transformation)
-7. **Service** (`service/` package, interface + `impl/` implementation)
-8. **Controller** (`controller/` package, REST endpoints, `@PreAuthorize`, `@Valid`)
-9. **Validation** (`validator/` package, business validation rules)
-10. **Exception Handling** (`exception/` package, extending base exceptions)
-11. **Swagger / Postman Testing** (End-to-end endpoint verification)
-12. **Git Commit** (`git commit -m "feat: add <module> management"`)
-13. **Git Push** (`git push origin <branch>`)
-
----
-
-## 10. Instructor Mode & Learning Rules
-
-When pair programming in **Instructor Mode**:
-1. **Theory First**: Theory and architectural rationale are explained before any code is written.
-2. **Collaborative Coding**: Code is written on the student's behalf only when explicitly requested as a learning aid.
-3. **Partial Code Only**: Modifications focus strictly on the necessary changes, avoiding full copy-paste dumps.
-4. **Explicit Location Reporting**: Every change explicitly highlights **EXACTLY WHERE** lines were added or modified.
-5. **Progress Tracking**: `.gemini/progress.md` and `.gemini/concepts-learned.md` are updated to track learning milestones.
+1. **Architecture Discussion**: Define entities, invariants, relationships, and security permissions.
+2. **Database Design**: Collection schema, secondary indexes, compound indexes, and uniqueness constraints.
+3. **Entity Creation**: Declare `@Document`, `@Id`, `@Indexed`, `@Version`, and extend `BaseEntity`.
+4. **Repository**: Declare Spring Data interface and optional `*RepositoryCustom` for dynamic aggregations.
+5. **DTOs**: Typed Request and Response DTOs with Jakarta validation constraints (`@NotBlank`, `@NotNull`, etc.).
+6. **Mapper**: Dedicated mapper class transforming Entity ↔ DTO with null safety and string trimming.
+7. **Service Interface & Implementation**: Service contract in `service/` and logic in `service/impl/`.
+8. **SPI Guards & Validators**: Cross-domain deletion and status guards registered in Spring context.
+9. **Controller**: Thin REST endpoints with `@RequestMapping("/api/v1/...")`, `@PreAuthorize`, and `@Valid`.
+10. **Exception Handling**: Domain-specific exceptions inheriting from base classes with clean error messages.
+11. **Unit & WebMvc Testing**: Mockito service unit tests and MockMvc controller verification tests.
+12. **Integration Testing**: Testcontainers MongoDB (`mongo:7.0.5`) replica set integration tests.
+13. **Git Commit & Push**: Conventional commit referencing verified issue or task.
 
 ---
 
-**Last Updated**: 2026-08-01  
-**Status**: Active & Enforced Across Workspace
+**Last Updated**: November 2026  
+**Status**: Active, Verified & Enforced across ElevateCRM Codebase

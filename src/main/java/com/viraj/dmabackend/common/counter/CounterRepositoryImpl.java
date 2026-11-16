@@ -34,4 +34,12 @@ public class CounterRepositoryImpl implements CounterRepository {
         java.util.Objects.requireNonNull(counter, "Counter sequence returned null");
         return counter.getSequence();
     }
+
+    @Override
+    public boolean decrementSequenceIfCurrent(String sequenceName, long expectedCurrentValue) {
+        Query query = new Query(Criteria.where("_id").is(sequenceName).and("sequence").is(expectedCurrentValue));
+        Update update = new Update().inc("sequence", -1);
+        com.mongodb.client.result.UpdateResult result = mongoTemplate.updateFirst(query, update, Counter.class);
+        return result.getModifiedCount() > 0;
+    }
 }

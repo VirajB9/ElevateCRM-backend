@@ -68,6 +68,27 @@ public class MenuServiceImpl implements MenuService {
             log.warn("Menu count exceeds expected threshold: {}", menus.size());
         }
 
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+        boolean isElevated = auth != null && auth.getAuthorities().stream().anyMatch(a ->
+                "ROLE_OWNER".equals(a.getAuthority())
+                        || "menu:create".equals(a.getAuthority())
+                        || "menu:update".equals(a.getAuthority())
+                        || "menu:delete".equals(a.getAuthority())
+        );
+
+        if (!isElevated) {
+            java.util.Set<String> userPermissions = auth != null
+                    ? auth.getAuthorities().stream().map(org.springframework.security.core.GrantedAuthority::getAuthority).collect(java.util.stream.Collectors.toSet())
+                    : java.util.Collections.emptySet();
+
+            menus = menus.stream()
+                    .filter(m -> Boolean.TRUE.equals(m.getActive()))
+                    .filter(m -> m.getRequiredPermission() == null || m.getRequiredPermission().isBlank() || userPermissions.contains(m.getRequiredPermission()))
+                    .toList();
+        }
+
         return mapToMenuResponseList(menus);
     }
 
@@ -78,7 +99,8 @@ public class MenuServiceImpl implements MenuService {
         synchronized (MENU_HIERARCHY_LOCK) {
             Menu menu = findMenuById(menuId);
 
-            if (request.getVersion() != null && !request.getVersion().equals(menu.getVersion())) {
+            if ((menu.getVersion() != null && request.getVersion() == null) ||
+                    (request.getVersion() != null && !request.getVersion().equals(menu.getVersion()))) {
                 throw new org.springframework.dao.OptimisticLockingFailureException(
                         "Menu has been modified by another operation. Please refresh and try again."
                 );
@@ -100,9 +122,15 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     @CacheEvict(value = "menuTree", allEntries = true)
-    public void deactivateMenu(String menuId) {
+    public void deactivateMenu(String menuId, Long version) {
 
         Menu menu = findMenuById(menuId);
+
+        if (version != null && !version.equals(menu.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Menu has been modified by another operation prior to deletion. Please refresh and try again."
+            );
+        }
 
         menuValidator.validateMenuDeactivation(menuId);
 

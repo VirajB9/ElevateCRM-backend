@@ -444,4 +444,23 @@ public class LeadValidatorTest {
         assertThrows(InvalidLeadStatusException.class,
                 () -> leadValidator.validateLeadStatus(LeadStatus.DELETED, LeadStatus.NEW));
     }
+
+    @Test
+    void validateDuplicateLeadForUpdate_WhenReopeningLostLeadAndActiveDuplicateExists_ThrowsDuplicateLeadException() {
+        Lead existingLead = new Lead();
+        existingLead.setId("lead-1");
+        existingLead.setEmail("lost@acme.com");
+        existingLead.setPhoneNumber("1234567890");
+        existingLead.setStatus(LeadStatus.LOST);
+
+        UpdateLeadRequest request = new UpdateLeadRequest();
+        request.setEmail("lost@acme.com");
+        request.setPhoneNumber("1234567890");
+        request.setStatus(LeadStatus.NEW);
+
+        when(leadRepository.existsByEmailAndActivePipelineTrueAndIdNot("lost@acme.com", "lead-1")).thenReturn(true);
+
+        assertThrows(DuplicateLeadException.class,
+                () -> leadValidator.validateDuplicateLeadForUpdate(existingLead, request));
+    }
 }

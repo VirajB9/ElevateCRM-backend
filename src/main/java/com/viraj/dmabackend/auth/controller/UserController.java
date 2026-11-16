@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -120,8 +121,10 @@ public class UserController {
     public UserResponse softDeleteUser(
             @Parameter(description = "Unique identifier of the user", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
-            @PathVariable String userId) {
-        return userService.softDeleteUser(userId);
+            @PathVariable String userId,
+            @Parameter(description = "Expected version for optimistic locking")
+            @RequestParam(required = false) Long version) {
+        return version != null ? userService.softDeleteUser(userId, version) : userService.softDeleteUser(userId);
     }
 
     @PreAuthorize("hasAuthority('user:read')")
@@ -134,6 +137,7 @@ public class UserController {
     })
     public Page<UserResponse> searchUsers(
             @Parameter(description = "Keyword to search for in first name, last name, or email", required = true)
+            @NotBlank(message = "Search keyword cannot be blank")
             @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
             @RequestParam String keyword,
             @Parameter(description = "Pagination parameters") Pageable pageable) {

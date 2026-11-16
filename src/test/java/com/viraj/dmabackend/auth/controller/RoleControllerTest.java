@@ -130,6 +130,30 @@ class RoleControllerTest extends BaseControllerWebMvcTest {
     }
 
     @Test
+    @WithMockUser(authorities = "role:update")
+    void removePermissions_viaPostRemove_returnsOk() throws Exception {
+        RemovePermissionsRequest request = new RemovePermissionsRequest();
+        request.setPermissionIds(List.of("perm-1"));
+        request.setVersion(1L);
+
+        when(roleService.removePermissions(eq("r-1"), any())).thenReturn(RoleResponse.builder().id("r-1").build());
+
+        mockMvc.perform(post("/api/v1/roles/r-1/permissions/remove")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = "role:update")
+    void removeSinglePermission_viaDeletePath_returnsOk() throws Exception {
+        when(roleService.removePermissions(eq("r-1"), any())).thenReturn(RoleResponse.builder().id("r-1").build());
+
+        mockMvc.perform(delete("/api/v1/roles/r-1/permissions/perm-1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @WithMockUser(authorities = "role:read")
     void getUsersByRole_whenAuthorized_returnsOk() throws Exception {
         when(roleService.getUsersByRole(eq("r-1"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));

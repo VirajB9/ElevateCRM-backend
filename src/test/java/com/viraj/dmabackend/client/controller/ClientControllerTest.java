@@ -162,4 +162,12 @@ class ClientControllerTest extends BaseControllerWebMvcTest {
                         .param("keyword", longKeyword))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser(authorities = "client:read")
+    void searchClients_withBlankKeyword_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/clients/search")
+                        .param("keyword", "   "))
+                .andExpect(status().isBadRequest());
+    }
 }

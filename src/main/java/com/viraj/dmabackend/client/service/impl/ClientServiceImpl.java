@@ -104,7 +104,8 @@ public class ClientServiceImpl implements ClientService {
 
         Client client = findClientById(clientId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(client.getVersion())) {
+        if ((client.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(client.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Client has been modified by another operation. Please refresh and try again."
             );
@@ -123,9 +124,15 @@ public class ClientServiceImpl implements ClientService {
 
     @Transactional
     @Override
-    public void deleteClient(String clientId) {
+    public void deleteClient(String clientId, Long version) {
 
         Client client = findClientById(clientId);
+
+        if (version != null && !version.equals(client.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Client has been modified by another operation prior to deletion. Please refresh and try again."
+            );
+        }
 
         clientValidator.validateClientDeletable(clientId);
 

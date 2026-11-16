@@ -81,8 +81,12 @@ public class RoleBootstrap implements CommandLineRunner {
 
         Role existing = roleRepository.findByName("MANAGER").orElse(null);
         if (existing != null) {
-            if (existing.getPermissionIds() == null || existing.getPermissionIds().isEmpty()) {
-                existing.setPermissionIds(permissionIds);
+            if (existing.getPermissionIds() == null
+                    || !new java.util.HashSet<>(existing.getPermissionIds()).containsAll(permissionIds)) {
+                java.util.Set<String> merged = new java.util.HashSet<>(existing.getPermissionIds() != null ? existing.getPermissionIds() : java.util.Collections.emptyList());
+                merged.addAll(permissionIds);
+                existing.setPermissionIds(new java.util.ArrayList<>(merged));
+                existing.setSystemRole(true);
                 roleRepository.save(existing);
             }
             return;
@@ -110,8 +114,12 @@ public class RoleBootstrap implements CommandLineRunner {
 
         Role existing = roleRepository.findByName("EMPLOYEE").orElse(null);
         if (existing != null) {
-            if (existing.getPermissionIds() == null || existing.getPermissionIds().isEmpty()) {
-                existing.setPermissionIds(permissionIds);
+            if (existing.getPermissionIds() == null
+                    || !new java.util.HashSet<>(existing.getPermissionIds()).containsAll(permissionIds)) {
+                java.util.Set<String> merged = new java.util.HashSet<>(existing.getPermissionIds() != null ? existing.getPermissionIds() : java.util.Collections.emptyList());
+                merged.addAll(permissionIds);
+                existing.setPermissionIds(new java.util.ArrayList<>(merged));
+                existing.setSystemRole(true);
                 roleRepository.save(existing);
             }
             return;
@@ -137,8 +145,12 @@ public class RoleBootstrap implements CommandLineRunner {
 
         Role existing = roleRepository.findByName("INTERN").orElse(null);
         if (existing != null) {
-            if (existing.getPermissionIds() == null || existing.getPermissionIds().isEmpty()) {
-                existing.setPermissionIds(permissionIds);
+            if (existing.getPermissionIds() == null
+                    || !new java.util.HashSet<>(existing.getPermissionIds()).containsAll(permissionIds)) {
+                java.util.Set<String> merged = new java.util.HashSet<>(existing.getPermissionIds() != null ? existing.getPermissionIds() : java.util.Collections.emptyList());
+                merged.addAll(permissionIds);
+                existing.setPermissionIds(new java.util.ArrayList<>(merged));
+                existing.setSystemRole(true);
                 roleRepository.save(existing);
             }
             return;

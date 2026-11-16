@@ -295,4 +295,18 @@ public class ClientServiceImplTest {
         assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
                 () -> clientService.updateClient("client-1", request));
     }
+
+    @Test
+    void updateClient_ThrowsOptimisticLockingFailure_WhenRequestVersionIsNullAndEntityVersionExists() {
+        Client client = Client.builder().id("client-1").companyName("Acme").build();
+        client.setVersion(2L);
+        when(clientRepository.findByIdAndStatusNot("client-1", ClientStatus.ARCHIVED))
+                .thenReturn(Optional.of(client));
+
+        UpdateClientRequest request = new UpdateClientRequest();
+        request.setVersion(null);
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> clientService.updateClient("client-1", request));
+    }
 }

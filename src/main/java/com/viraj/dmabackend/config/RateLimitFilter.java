@@ -35,6 +35,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int REFILL_TOKENS = 5;
     private static final Duration REFILL_DURATION = Duration.ofMinutes(1);
     private static final int MAX_CACHE_SIZE = 10000;
+    private static final int MAX_BLOCKED_CACHE_SIZE = 100000;
 
     @org.springframework.beans.factory.annotation.Value("${app.rate-limit.trusted-proxies:}")
     private List<String> trustedProxies;
@@ -46,6 +47,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
             .maximumSize(MAX_CACHE_SIZE)
             .expireAfterAccess(10, TimeUnit.MINUTES)
+            .build();
+
+    private final Cache<String, Long> blockedUntil = Caffeine.newBuilder()
+            .maximumSize(MAX_BLOCKED_CACHE_SIZE)
+            .expireAfterWrite(1, TimeUnit.MINUTES)
             .build();
 
     @Override
@@ -78,6 +84,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String clientIp = getClientIp(request);
         String bucketKey = path + ":" + clientIp;
 
+        Long blockedUntilEpoch = blockedUntil.getIfPresent(bucketKey);
+        if (blockedUntilEpoch != null && System.currentTimeMillis() < blockedUntilEpoch) {
+            long remainingMillis = blockedUntilEpoch - System.currentTimeMillis();
+            long secondsToWait = Math.max(1, (remainingMillis + 999) / 1000);
+            sendRateLimitResponse(response, path, secondsToWait);
+            return;
+        }
+
         Bucket bucket = getBucket(bucketKey);
 
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
@@ -88,6 +102,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         long secondsToWait = Math.max(1, (probe.getNanosToWaitForRefill() + 999_999_999L) / 1_000_000_000L);
+        blockedUntil.put(bucketKey, System.currentTimeMillis() + (secondsToWait * 1000L));
+        sendRateLimitResponse(response, path, secondsToWait);
+    }
+
+    private void sendRateLimitResponse(HttpServletResponse response, String path, long secondsToWait) throws IOException {
         response.setStatus(429); // HTTP 429 Too Many Requests
         response.setHeader("Retry-After", String.valueOf(secondsToWait));
         response.setContentType("application/json");

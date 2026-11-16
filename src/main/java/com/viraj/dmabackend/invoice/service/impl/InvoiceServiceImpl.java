@@ -60,11 +60,17 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         calculateInvoiceTotals(invoice);
 
-        invoice.setInvoiceNumber(invoiceNumberGenerator.generate());
+        String generatedInvoiceNumber = invoiceNumberGenerator.generate();
+        invoice.setInvoiceNumber(generatedInvoiceNumber);
 
-        Invoice savedInvoice = invoiceRepository.save(invoice);
-
-        saveInvoiceHistory(savedInvoice);
+        Invoice savedInvoice;
+        try {
+            savedInvoice = invoiceRepository.save(invoice);
+            saveInvoiceHistory(savedInvoice);
+        } catch (Exception ex) {
+            invoiceNumberGenerator.compensate(generatedInvoiceNumber);
+            throw ex;
+        }
 
         return invoiceMapper.toResponse(savedInvoice);
     }
@@ -134,7 +140,8 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = findInvoiceById(invoiceId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(invoice.getVersion())) {
+        if ((invoice.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(invoice.getVersion()))) {
             throw new OptimisticLockingFailureException(
                     "Invoice has been modified by another user. Please refresh and try again."
             );
@@ -161,13 +168,22 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = findInvoiceById(invoiceId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(invoice.getVersion())) {
+        if ((invoice.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(invoice.getVersion()))) {
             throw new OptimisticLockingFailureException(
                     "Invoice has been modified by another user. Please refresh and try again."
             );
         }
 
         validateStatusTransition(invoice, request.getStatus());
+
+        if (invoice.getProjectId() != null && invoice.getClientId() != null && request.getStatus() != InvoiceStatus.CANCELLED) {
+            invoiceValidator.validateProjectBelongsToClient(
+                    invoice.getProjectId(),
+                    invoice.getClientId(),
+                    "update invoice status to " + request.getStatus()
+            );
+        }
 
         invoice.setStatus(request.getStatus());
 
@@ -184,9 +200,15 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     @Transactional
-    public void deleteInvoice(String invoiceId) {
+    public void deleteInvoice(String invoiceId, Long version) {
 
         Invoice invoice = findInvoiceById(invoiceId);
+
+        if (version != null && !version.equals(invoice.getVersion())) {
+            throw new OptimisticLockingFailureException(
+                    "Invoice has been modified by another user prior to deletion. Please refresh and try again."
+            );
+        }
 
         if (invoice.getStatus() != InvoiceStatus.DRAFT) {
             throw new InvalidInvoiceStatusException(

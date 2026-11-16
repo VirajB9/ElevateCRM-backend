@@ -74,7 +74,7 @@ public class MenuController {
     }
 
     @PreAuthorize("hasAuthority('menu:update')")
-    @PutMapping("/{menuId}")
+    @RequestMapping(value = "/{menuId}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Update Menu", description = "Updates an existing menu item. Requires 'menu:update' authority.")
     @ApiResponses({
@@ -92,9 +92,9 @@ public class MenuController {
     }
 
     @PreAuthorize("hasAuthority('menu:delete')")
-    @RequestMapping(value = {"/{menuId}", "/{menuId}/deactivate"}, method = {RequestMethod.DELETE, RequestMethod.PATCH})
+    @RequestMapping(value = "/{menuId}/deactivate", method = RequestMethod.PATCH)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Deactivate / Delete Menu", description = "Soft deletes a menu item by setting it to inactive. Requires 'menu:delete' authority.")
+    @Operation(summary = "Deactivate Menu", description = "Soft deletes a menu item by setting it to inactive. Requires 'menu:delete' authority.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Menu item deactivated successfully"),
             @ApiResponse(responseCode = "404", description = "Menu item not found"),
@@ -103,8 +103,32 @@ public class MenuController {
     public void deactivateMenu(
             @Parameter(description = "Unique ID of the menu item", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
-            @PathVariable String menuId) {
-        menuService.deactivateMenu(menuId);
+            @PathVariable String menuId,
+            @Parameter(description = "Expected version for optimistic locking")
+            @RequestParam(required = false) Long version) {
+        menuService.deactivateMenu(menuId, version);
+    }
+
+    @PreAuthorize("hasAuthority('menu:delete')")
+    @DeleteMapping("/{menuId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Delete Menu", description = "Soft deletes a menu item by setting it to inactive. Requires 'menu:delete' authority.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Menu item deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Menu item not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public void deleteMenu(
+            @Parameter(description = "Unique ID of the menu item", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String menuId,
+            @Parameter(description = "Expected version for optimistic locking")
+            @RequestParam(required = false) Long version) {
+        if (version != null) {
+            menuService.deactivateMenu(menuId, version);
+        } else {
+            menuService.deactivateMenu(menuId);
+        }
     }
 
     @PreAuthorize("hasAuthority('menu:read')")

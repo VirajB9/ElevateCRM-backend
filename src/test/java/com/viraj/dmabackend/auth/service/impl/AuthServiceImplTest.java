@@ -266,7 +266,7 @@ public class AuthServiceImplTest {
     }
 
     @Test
-    void login_WhenLockoutExpired_ReLocksOnWrongPassword() {
+    void login_WhenLockoutExpired_ResetsCounterToOneAndDoesNotReLockOnSingleFailure() {
         user.setFailedLoginAttempts(5);
         user.setLockoutUntil(LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(5));
 
@@ -275,7 +275,7 @@ public class AuthServiceImplTest {
         request.setPassword("wrong");
 
         User updatedUser = new User();
-        updatedUser.setFailedLoginAttempts(6);
+        updatedUser.setFailedLoginAttempts(1);
 
         when(userRepository.findByEmailAndStatusNot("test@agency.com", UserStatus.DELETED))
                 .thenReturn(Optional.of(user));
@@ -284,11 +284,10 @@ public class AuthServiceImplTest {
 
         assertThrows(UnauthorizedException.class, () -> authService.login(request));
 
-        assertEquals(6, user.getFailedLoginAttempts());
-        assertNotNull(user.getLockoutUntil());
-        assertTrue(user.getLockoutUntil().isAfter(LocalDateTime.now(java.time.ZoneOffset.UTC)));
+        assertEquals(1, user.getFailedLoginAttempts());
+        assertNull(user.getLockoutUntil());
         verify(mongoTemplate).findAndModify(any(), any(), any(), eq(User.class));
-        verify(mongoTemplate).updateFirst(any(), any(), eq(User.class));
+        verify(mongoTemplate, never()).updateFirst(any(), any(), eq(User.class));
         verify(userRepository, never()).save(user);
     }
 

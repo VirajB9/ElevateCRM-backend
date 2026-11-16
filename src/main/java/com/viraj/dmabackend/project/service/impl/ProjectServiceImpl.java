@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -95,7 +96,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = findProjectById(projectId);
 
-        if (request.getVersion() != null && !request.getVersion().equals(project.getVersion())) {
+        if ((project.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(project.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Project has been modified by another operation. Please refresh and try again."
             );
@@ -105,11 +107,13 @@ public class ProjectServiceImpl implements ProjectService {
         projectValidator.validateProjectStatusForUpdate(request.getStatus());
         projectValidator.validateProjectStatusTransition(project.getStatus(), request.getStatus());
         projectValidator.validateClientActiveForProjectUpdate(project.getClientId());
+        LocalDate effectiveStartDate = request.getStartDate() != null ? request.getStartDate() : project.getStartDate();
+        LocalDate effectiveEndDate = request.getEndDate() != null ? request.getEndDate() : project.getEndDate();
         if (request.getStatus() == ProjectStatus.ACTIVE) {
-            projectValidator.validateActiveProjectDates(request.getStatus(), request.getStartDate(), request.getEndDate());
+            projectValidator.validateActiveProjectDates(request.getStatus(), effectiveStartDate, effectiveEndDate);
         }
         if (request.getStatus() == ProjectStatus.COMPLETED) {
-            projectValidator.validateProjectCompletion(request.getEndDate());
+            projectValidator.validateProjectCompletion(effectiveEndDate);
             projectValidator.validateProjectCompletionGuards(projectId);
         }
         if (request.getStatus() == ProjectStatus.CANCELLED) {
@@ -130,9 +134,16 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Transactional
     @Override
-    public void deleteProject(String projectId) {
+    public void deleteProject(String projectId, Long version) {
 
         Project project = findProjectById(projectId);
+
+        if (version != null && !version.equals(project.getVersion())) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Project has been modified by another operation prior to deletion. Please refresh and try again."
+            );
+        }
+
         projectValidator.validateProjectDeletable(project);
         project.setStatus(ProjectStatus.ARCHIVED);
         project.setDeleted(true);

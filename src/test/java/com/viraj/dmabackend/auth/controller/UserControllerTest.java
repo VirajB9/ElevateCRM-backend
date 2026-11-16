@@ -238,4 +238,12 @@ class UserControllerTest extends BaseControllerWebMvcTest {
                         .param("keyword", "a".repeat(101)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser(authorities = "user:read")
+    void searchUsers_withBlankKeyword_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/users/search")
+                        .param("keyword", "   "))
+                .andExpect(status().isBadRequest());
+    }
 }

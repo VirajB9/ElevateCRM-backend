@@ -47,6 +47,18 @@ class InvoiceProjectCancellationGuardTest {
     }
 
     @Test
+    void validateCanCancelProject_whenPaidInvoicesExist_checksPaidInvoicesAndPasses() {
+        when(invoiceRepository.existsByProjectIdAndActiveTrueAndStatusIn(eq("proj-1"), eq(List.of(
+                InvoiceStatus.DRAFT, InvoiceStatus.SENT, InvoiceStatus.OVERDUE))))
+                .thenReturn(false);
+        when(invoiceRepository.existsByProjectIdAndActiveTrueAndStatus(eq("proj-1"), eq(InvoiceStatus.PAID)))
+                .thenReturn(true);
+
+        assertDoesNotThrow(() -> guard.validateCanCancelProject("proj-1"));
+        verify(invoiceRepository).existsByProjectIdAndActiveTrueAndStatus(eq("proj-1"), eq(InvoiceStatus.PAID));
+    }
+
+    @Test
     void validateCanCancelProject_whenProjectIdIsNull_passes() {
         assertDoesNotThrow(() -> guard.validateCanCancelProject(null));
     }

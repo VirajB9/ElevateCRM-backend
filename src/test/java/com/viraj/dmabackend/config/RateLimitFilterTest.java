@@ -341,4 +341,40 @@ public class RateLimitFilterTest {
         assertEquals(429, blockedResponse.getStatus());
         org.junit.jupiter.api.Assertions.assertTrue(blockedResponse.getContentAsString().contains("Too many password change attempts"));
     }
+
+    @Test
+    void doFilter_whenBucketEvictedWhileBlocked_remainsRateLimited() throws Exception {
+        String testIp = "192.168.1.55";
+        for (int i = 0; i < 5; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+            req.setServletPath("/api/v1/auth/login");
+            req.setRemoteAddr(testIp);
+            MockHttpServletResponse resp = new MockHttpServletResponse();
+            filter.doFilter(req, resp, filterChain);
+            assertEquals(200, resp.getStatus());
+        }
+
+        // 6th request triggers 429 and enters blockedUntil
+        MockHttpServletRequest req6 = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        req6.setServletPath("/api/v1/auth/login");
+        req6.setRemoteAddr(testIp);
+        MockHttpServletResponse resp6 = new MockHttpServletResponse();
+        filter.doFilter(req6, resp6, filterChain);
+        assertEquals(429, resp6.getStatus());
+
+        // Simulate bucket cache eviction via reflection
+        java.lang.reflect.Field bucketsField = RateLimitFilter.class.getDeclaredField("buckets");
+        bucketsField.setAccessible(true);
+        com.github.benmanes.caffeine.cache.Cache<?, ?> bucketsCache =
+                (com.github.benmanes.caffeine.cache.Cache<?, ?>) bucketsField.get(filter);
+        bucketsCache.invalidateAll();
+
+        // 7th request after eviction must still return 429 due to eviction-resistant blockedUntil cache
+        MockHttpServletRequest req7 = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        req7.setServletPath("/api/v1/auth/login");
+        req7.setRemoteAddr(testIp);
+        MockHttpServletResponse resp7 = new MockHttpServletResponse();
+        filter.doFilter(req7, resp7, filterChain);
+        assertEquals(429, resp7.getStatus());
+    }
 }

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -86,6 +87,7 @@ public class LeadController {
     })
     public Page<LeadResponse> searchLeads(
             @Parameter(description = "Keyword to search", required = true)
+            @NotBlank(message = "Search keyword cannot be blank")
             @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
             @RequestParam String keyword,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
@@ -169,8 +171,10 @@ public class LeadController {
     public LeadResponse convertLeadToClient(
             @Parameter(description = "Unique ID of the lead", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
-            @PathVariable String leadId) {
-        return leadService.convertLeadToClient(leadId);
+            @PathVariable String leadId,
+            @Parameter(description = "Expected version for optimistic locking")
+            @RequestParam(required = false) Long version) {
+        return version != null ? leadService.convertLeadToClient(leadId, version) : leadService.convertLeadToClient(leadId);
     }
 
     @PreAuthorize("hasAuthority('lead:delete')")
@@ -185,7 +189,13 @@ public class LeadController {
     public void deleteLead(
             @Parameter(description = "Unique ID of the lead", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
-            @PathVariable String leadId) {
-        leadService.deleteLead(leadId);
+            @PathVariable String leadId,
+            @Parameter(description = "Expected version for optimistic locking")
+            @RequestParam(required = false) Long version) {
+        if (version != null) {
+            leadService.deleteLead(leadId, version);
+        } else {
+            leadService.deleteLead(leadId);
+        }
     }
 }

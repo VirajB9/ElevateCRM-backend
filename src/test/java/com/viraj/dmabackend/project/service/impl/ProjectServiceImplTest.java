@@ -259,6 +259,18 @@ public class ProjectServiceImplTest {
     }
 
     @Test
+    void deleteProject_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
+        Project project = Project.builder().id("proj-1").status(ProjectStatus.COMPLETED).build();
+        project.setVersion(2L);
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED))
+                .thenReturn(Optional.of(project));
+
+        assertThrows(org.springframework.dao.OptimisticLockingFailureException.class,
+                () -> projectService.deleteProject("proj-1", 1L));
+        verify(projectRepository, never()).save(any());
+    }
+
+    @Test
     void updateProject_ThrowsOptimisticLockingFailure_WhenVersionMismatch() {
         Project project = Project.builder().id("proj-1").status(ProjectStatus.ACTIVE).build();
         project.setVersion(2L);
@@ -300,5 +312,29 @@ public class ProjectServiceImplTest {
                 () -> projectService.updateProject("proj-1", request));
         verify(projectValidator).validateProjectDatesForUpdate(project, request.getStartDate(), request.getEndDate());
         verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    void updateProject_WhenActivatingProjectWithOmittedEndDate_PassesEffectiveDatesToValidator() {
+        LocalDate existingEndDate = LocalDate.now(java.time.ZoneOffset.UTC).minusDays(5);
+        LocalDate existingStartDate = LocalDate.now(java.time.ZoneOffset.UTC).minusDays(20);
+        Project project = Project.builder()
+                .id("proj-1")
+                .clientId("client-1")
+                .status(ProjectStatus.PLANNING)
+                .startDate(existingStartDate)
+                .endDate(existingEndDate)
+                .build();
+
+        when(projectRepository.findByIdAndStatusNot("proj-1", ProjectStatus.ARCHIVED)).thenReturn(Optional.of(project));
+        when(projectRepository.save(any())).thenReturn(project);
+        when(projectMapper.toProjectResponse(any())).thenReturn(com.viraj.dmabackend.project.dto.ProjectResponse.builder().build());
+
+        UpdateProjectRequest request = new UpdateProjectRequest();
+        request.setStatus(ProjectStatus.ACTIVE);
+
+        projectService.updateProject("proj-1", request);
+
+        verify(projectValidator).validateActiveProjectDates(ProjectStatus.ACTIVE, existingStartDate, existingEndDate);
     }
 }

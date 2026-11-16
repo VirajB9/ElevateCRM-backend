@@ -169,4 +169,12 @@ class ProjectControllerTest extends BaseControllerWebMvcTest {
                         .param("keyword", "p".repeat(101)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser(authorities = "project:read")
+    void searchProjects_withBlankKeyword_returnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/projects/search")
+                        .param("keyword", "   "))
+                .andExpect(status().isBadRequest());
+    }
 }

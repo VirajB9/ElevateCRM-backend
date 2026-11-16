@@ -2,6 +2,7 @@ package com.viraj.dmabackend.auth.controller;
 
 import com.viraj.dmabackend.auth.dto.*;
 import com.viraj.dmabackend.auth.service.RoleService;
+import com.viraj.dmabackend.exception.BadRequestException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -97,7 +98,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority('role:update')")
     @DeleteMapping("/{roleId}/permissions")
     @ResponseStatus(HttpStatus.OK)
-    @Operation(summary = "Remove Permissions From Role", description = "Revokes specific permissions from a role. Requires 'role:update' authority.")
+    @Operation(summary = "Remove Permissions From Role", description = "Revokes specific permissions from a role via DELETE with payload. Requires 'role:update' authority.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Permissions removed successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid permission format or data"),
@@ -108,7 +109,49 @@ public class RoleController {
             @Parameter(description = "Unique identifier of the role", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String roleId,
+            @Valid @RequestBody(required = false) RemovePermissionsRequest request) {
+        if (request == null) {
+            throw new BadRequestException("Request body containing permissionIds is required");
+        }
+        return roleService.removePermissions(roleId, request);
+    }
+
+    @PreAuthorize("hasAuthority('role:update')")
+    @PostMapping("/{roleId}/permissions/remove")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Remove Permissions From Role via POST", description = "Revokes specific permissions from a role via POST /remove. Requires 'role:update' authority.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Permissions removed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid permission format or data"),
+            @ApiResponse(responseCode = "404", description = "Role not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public RoleResponse removePermissionsViaPost(
+            @Parameter(description = "Unique identifier of the role", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String roleId,
             @Valid @RequestBody RemovePermissionsRequest request) {
+        return roleService.removePermissions(roleId, request);
+    }
+
+    @PreAuthorize("hasAuthority('role:update')")
+    @DeleteMapping("/{roleId}/permissions/{permissionId}")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Remove Single Permission From Role", description = "Revokes a single permission from a role via URL path without request body. Requires 'role:update' authority.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Permission removed successfully"),
+            @ApiResponse(responseCode = "404", description = "Role or permission not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public RoleResponse removeSinglePermission(
+            @Parameter(description = "Unique identifier of the role", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String roleId,
+            @Parameter(description = "Unique identifier of the permission to revoke", required = true)
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
+            @PathVariable String permissionId) {
+        RemovePermissionsRequest request = new RemovePermissionsRequest();
+        request.setPermissionIds(List.of(permissionId));
         return roleService.removePermissions(roleId, request);
     }
 

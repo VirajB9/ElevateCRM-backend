@@ -22,5 +22,9 @@ public interface     UserService {
 
     UserResponse updateUserStatus(String userId, UpdateUserStatusRequest request);
 
-    UserResponse softDeleteUser(String userId);
+    UserResponse softDeleteUser(String userId, Long version);
+
+    default UserResponse softDeleteUser(String userId) {
+        return softDeleteUser(userId, null);
+    }
 }

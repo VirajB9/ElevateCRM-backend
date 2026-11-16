@@ -383,7 +383,7 @@ public class UserServiceImplTest {
 
         userService.updateUser("user-manager", request);
 
-        verify(userValidator).validateUserManagement(managerUser, managerRole, managerUser, managerRole);
+        verify(userValidator, never()).validateUserManagement(any(), any(), any(), any());
         verify(userValidator, never()).validateRoleAssignment(any(), any(), any());
         verify(userRepository).save(managerUser);
     }

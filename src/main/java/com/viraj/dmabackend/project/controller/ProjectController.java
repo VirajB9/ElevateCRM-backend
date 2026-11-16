@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -102,6 +103,7 @@ public class ProjectController {
     })
     public Page<ProjectResponse> searchProjects(
             @Parameter(description = "Keyword to search", required = true)
+            @NotBlank(message = "Search keyword cannot be blank")
             @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
             @RequestParam String keyword,
             @Parameter(description = "Pagination parameters") Pageable pageable) {
@@ -152,7 +154,13 @@ public class ProjectController {
     public void deleteProject(
             @Parameter(description = "Unique ID of the project", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
-            @PathVariable String projectId) {
-        projectService.deleteProject(projectId);
+            @PathVariable String projectId,
+            @Parameter(description = "Expected version for optimistic locking")
+            @RequestParam(required = false) Long version) {
+        if (version != null) {
+            projectService.deleteProject(projectId, version);
+        } else {
+            projectService.deleteProject(projectId);
+        }
     }
 }
