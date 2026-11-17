@@ -29,6 +29,7 @@ public class Client extends BaseEntity {
     private String id;
 
     @TextIndexed
+    @Indexed(unique = true, partialFilter = "{'deleted': false, 'companyName': {'$type': 'string'}}")
     private String companyName;
 
     @TextIndexed

@@ -12,6 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -162,6 +163,26 @@ public class ClientValidatorTest {
 
         assertThrows(BadRequestException.class,
                 () -> clientValidator.validateClientStatusForUpdate(com.viraj.dmabackend.client.enums.ClientStatus.INACTIVE, "  c-1  "));
+    }
+
+    @Test
+    void validateDuplicateCompanyName_ThrowsWhenExists() {
+        when(clientRepository.existsByCompanyNameAndStatusNot("Acme Corp", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> clientValidator.validateDuplicateCompanyName("  Acme Corp  "));
+        assertTrue(ex.getMessage().contains("already exists"));
+    }
+
+    @Test
+    void validateCompanyNameForUpdate_ThrowsWhenDuplicateOnOtherClient() {
+        when(clientRepository.existsByCompanyNameAndIdNotAndStatusNot("Acme Corp", "c-1", com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED))
+                .thenReturn(true);
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> clientValidator.validateCompanyNameForUpdate("  Acme Corp  ", "  c-1  "));
+        assertTrue(ex.getMessage().contains("already exists"));
     }
 
     @Test

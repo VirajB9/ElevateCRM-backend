@@ -173,6 +173,7 @@ public class LeadController {
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String leadId,
             @Parameter(description = "Existing client ID to link instead of creating a new client")
+            @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @RequestParam(required = false) String existingClientId,
             @Parameter(description = "Expected version for optimistic locking")
             @RequestParam(required = false) Long version) {

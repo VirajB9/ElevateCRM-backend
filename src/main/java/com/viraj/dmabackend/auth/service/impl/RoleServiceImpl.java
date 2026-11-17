@@ -197,6 +197,8 @@ public class RoleServiceImpl implements RoleService {
 
         Role updatedRole = roleRepository.save(role);
 
+        revokeSessionsForRoleUsers(role.getId());
+
         return mapRoleWithPermissions(updatedRole);
     }
 
@@ -335,5 +337,20 @@ public class RoleServiceImpl implements RoleService {
         role.setPermissionIds(
                 new ArrayList<>(updatedPermissions)
         );
+    }
+
+    private void revokeSessionsForRoleUsers(String roleId) {
+        try {
+            Page<User> usersPage = userRepository.findByRoleId(roleId, Pageable.unpaged());
+            List<User> users = (usersPage != null) ? usersPage.getContent() : java.util.Collections.emptyList();
+            if (users != null && !users.isEmpty()) {
+                java.time.LocalDateTime now = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC);
+                users.forEach(u -> u.setTokensRevokedAt(now));
+                userRepository.saveAll(users);
+                log.info("Revoked active sessions for {} users assigned to role {}", users.size(), roleId);
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to revoke user sessions for role {}: {}", roleId, ex.getMessage());
+        }
     }
 }

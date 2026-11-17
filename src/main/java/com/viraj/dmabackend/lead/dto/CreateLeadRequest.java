@@ -54,6 +54,7 @@ public class CreateLeadRequest {
 
     
     @jakarta.validation.constraints.Size(max = 50)
+    @jakarta.validation.constraints.Pattern(regexp = "^$|^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
     private String assignedUserId;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "Estimated budget cannot be negative.")

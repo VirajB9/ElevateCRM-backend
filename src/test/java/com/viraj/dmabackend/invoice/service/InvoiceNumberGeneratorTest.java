@@ -50,9 +50,9 @@ class InvoiceNumberGeneratorTest {
     }
 
     @Test
-    void compensate_DecrementsSequenceWhenInvoiceNumberValid() {
+    void compensate_NeverDecrementsMonotonicCounter() {
         invoiceNumberGenerator.compensate("INV-2027-00105");
 
-        verify(counterRepository).decrementSequenceIfCurrent("invoice_2027", 105L);
+        verify(counterRepository, org.mockito.Mockito.never()).decrementSequenceIfCurrent(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
     }
 }

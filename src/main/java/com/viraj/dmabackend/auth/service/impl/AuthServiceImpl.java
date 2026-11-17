@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -65,12 +66,12 @@ public class AuthServiceImpl implements AuthService {
                         new UnauthorizedException("Invalid email or password"));
 
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new UnauthorizedException("User account is not active");
+            throw new UnauthorizedException("Invalid email or password");
         }
 
         if (user.getLockoutUntil() != null) {
             if (user.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
-                throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
+                throw new UnauthorizedException("Invalid email or password");
             }
         }
 
@@ -79,8 +80,8 @@ public class AuthServiceImpl implements AuthService {
             boolean wasLockedExpired = user.getLockoutUntil() != null && !user.getLockoutUntil().isAfter(now);
 
             Update update = wasLockedExpired
-                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil").set("updatedAt", now).set("updatedBy", "SYSTEM")
-                    : new Update().inc("failedLoginAttempts", 1).set("updatedAt", now).set("updatedBy", "SYSTEM");
+                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil").set("updatedAt", now).set("updatedBy", "SYSTEM").inc("version", 1)
+                    : new Update().inc("failedLoginAttempts", 1).set("updatedAt", now).set("updatedBy", "SYSTEM").inc("version", 1);
 
             User updatedUser = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("id").is(user.getId())),
@@ -105,7 +106,8 @@ public class AuthServiceImpl implements AuthService {
                         new Update().set("lockoutUntil", lockoutUntil)
                                 .set("tokensRevokedAt", revocationTime)
                                 .set("updatedAt", now)
-                                .set("updatedBy", "SYSTEM"),
+                                .set("updatedBy", "SYSTEM")
+                                .inc("version", 1),
                         User.class
                 );
             }
@@ -115,7 +117,7 @@ public class AuthServiceImpl implements AuthService {
         // Verify user account was not locked out during BCrypt verification
         User freshUser = userRepository.findById(user.getId()).orElse(user);
         if (freshUser.getLockoutUntil() != null && freshUser.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
-            throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
+            throw new UnauthorizedException("Invalid email or password");
         }
 
         if (user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
@@ -126,7 +128,8 @@ public class AuthServiceImpl implements AuthService {
                     new Update().set("failedLoginAttempts", 0)
                             .unset("lockoutUntil")
                             .set("updatedAt", LocalDateTime.now(ZoneOffset.UTC))
-                            .set("updatedBy", "SYSTEM"),
+                            .set("updatedBy", "SYSTEM")
+                            .inc("version", 1),
                     User.class
             );
         }
@@ -150,6 +153,7 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthenticationResponse(user, refreshTokenValue);
     }
 
+    @Transactional
     @Override
     public AuthenticationResponse refresh(String refreshTokenValue) {
 
@@ -276,6 +280,7 @@ public class AuthServiceImpl implements AuthService {
                 });
     }
 
+    @Transactional
     @Override
     public AuthenticationResponse changePassword(ChangePasswordRequest request) {
 
@@ -300,8 +305,8 @@ public class AuthServiceImpl implements AuthService {
             boolean wasLockedExpired = user.getLockoutUntil() != null && !user.getLockoutUntil().isAfter(now);
 
             Update update = wasLockedExpired
-                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil").set("updatedAt", now).set("updatedBy", "SYSTEM")
-                    : new Update().inc("failedLoginAttempts", 1).set("updatedAt", now).set("updatedBy", "SYSTEM");
+                    ? new Update().set("failedLoginAttempts", 1).unset("lockoutUntil").set("updatedAt", now).set("updatedBy", "SYSTEM").inc("version", 1)
+                    : new Update().inc("failedLoginAttempts", 1).set("updatedAt", now).set("updatedBy", "SYSTEM").inc("version", 1);
 
             User updatedUser = mongoTemplate.findAndModify(
                     Query.query(Criteria.where("id").is(user.getId())),
@@ -326,7 +331,8 @@ public class AuthServiceImpl implements AuthService {
                         new Update().set("lockoutUntil", lockoutUntil)
                                 .set("tokensRevokedAt", revocationTime)
                                 .set("updatedAt", now)
-                                .set("updatedBy", "SYSTEM"),
+                                .set("updatedBy", "SYSTEM")
+                                .inc("version", 1),
                         User.class
                 );
             }
@@ -399,23 +405,18 @@ public class AuthServiceImpl implements AuthService {
         if (user.getTokensRevokedAt() != null) {
             long revokedEpochMilli = user.getTokensRevokedAt().toInstant(ZoneOffset.UTC).toEpochMilli();
             long nowEpochMilli = System.currentTimeMillis();
-            if (nowEpochMilli <= revokedEpochMilli) {
-                java.util.Date issuedAt = new java.util.Date(revokedEpochMilli + 1L);
-                token = jwtUtil.generateToken(
-                        user.getEmail(),
-                        role.getName(),
-                        permissionNames,
-                        user.isPasswordChangeRequired(),
-                        issuedAt
-                );
-            } else {
-                token = jwtUtil.generateToken(
-                        user.getEmail(),
-                        role.getName(),
-                        permissionNames,
-                        user.isPasswordChangeRequired()
-                );
+            long targetIssuedAtMilli = Math.max(nowEpochMilli, revokedEpochMilli + 1000L);
+            if (targetIssuedAtMilli / 1000 <= revokedEpochMilli / 1000) {
+                targetIssuedAtMilli = ((revokedEpochMilli / 1000) + 1) * 1000L;
             }
+            java.util.Date issuedAt = new java.util.Date(targetIssuedAtMilli);
+            token = jwtUtil.generateToken(
+                    user.getEmail(),
+                    role.getName(),
+                    permissionNames,
+                    user.isPasswordChangeRequired(),
+                    issuedAt
+            );
         } else {
             token = jwtUtil.generateToken(
                     user.getEmail(),

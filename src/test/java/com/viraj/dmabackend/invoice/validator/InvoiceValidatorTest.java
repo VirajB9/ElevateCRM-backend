@@ -103,6 +103,28 @@ class InvoiceValidatorTest {
     }
 
     @Test
+    void validateCreateInvoice_whenQuantityZeroOrNull_throwsBadRequestException() {
+        com.viraj.dmabackend.invoice.dto.InvoiceItemRequest item = com.viraj.dmabackend.invoice.dto.InvoiceItemRequest.builder()
+                .description("SEO Audit")
+                .quantity(BigDecimal.ZERO)
+                .unitPrice(BigDecimal.TEN)
+                .build();
+
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .clientId("client-1")
+                .projectId("proj-1")
+                .issueDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(10))
+                .items(List.of(item))
+                .discount(BigDecimal.ZERO)
+                .build();
+
+        assertThatThrownBy(() -> invoiceValidator.validateCreateInvoice(request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Line item quantity must be greater than zero");
+    }
+
+    @Test
     void validateCreateInvoice_whenProjectIsCancelled_throwsBadRequestException() {
         ClientResponse activeClient = ClientResponse.builder().id("client-1").status(ClientStatus.ACTIVE).build();
         ProjectResponse cancelledProject = ProjectResponse.builder().id("proj-1").clientId("client-1").status(ProjectStatus.CANCELLED).build();

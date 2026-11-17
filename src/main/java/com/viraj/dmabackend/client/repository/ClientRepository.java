@@ -20,6 +20,12 @@ public interface ClientRepository extends MongoRepository<Client, String>, Clien
     @Query(value = "{ 'gstNumber': { $eq: ?0, $type: 'string' }, 'deleted': false }", exists = true)
     boolean existsByGstNumber(String gstNumber);
 
+    @Query(value = "{ 'companyName': { $regex: '^?0$', $options: 'i' }, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
+    boolean existsByCompanyNameAndStatusNot(String companyName, ClientStatus status);
+
+    @Query(value = "{ 'companyName': { $regex: '^?0$', $options: 'i' }, '_id': { $ne: ?1 }, 'status': { $ne: ?2 }, 'deleted': false }", exists = true)
+    boolean existsByCompanyNameAndIdNotAndStatusNot(String companyName, String clientId, ClientStatus status);
+
     @Query(value = "{ 'email': ?0, 'status': { $ne: ?1 }, 'deleted': false }", exists = true)
     boolean existsByEmailAndStatusNot(String email, ClientStatus status);
 

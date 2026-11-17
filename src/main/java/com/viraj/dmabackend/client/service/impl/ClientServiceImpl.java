@@ -31,6 +31,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public ClientResponse createClient(CreateClientRequest request) {
 
+        clientValidator.validateDuplicateCompanyName(request.getCompanyName());
         clientValidator.validateDuplicateEmail(request.getEmail());
         clientValidator.validateDuplicatePhone(request.getPhoneNumber());
         clientValidator.validateDuplicateGst(request.getGstNumber());
@@ -45,6 +46,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public ClientResponse createClientFromLead(LeadConversionData data) {
 
+        clientValidator.validateDuplicateCompanyName(data.getCompanyName());
         clientValidator.validateDuplicateEmail(data.getEmail());
         clientValidator.validateDuplicatePhone(data.getPhoneNumber());
 
@@ -115,6 +117,7 @@ public class ClientServiceImpl implements ClientService {
         }
 
         clientValidator.validateClientStatusForUpdate(request.getStatus(), client.getId());
+        clientValidator.validateCompanyNameForUpdate(request.getCompanyName(), client.getId());
         clientValidator.validateEmailForUpdate(request.getEmail(), client.getId());
         clientValidator.validatePhoneForUpdate(request.getPhoneNumber(), client.getId());
         clientValidator.validateGstForUpdate(request.getGstNumber(), client.getId());
@@ -131,7 +134,7 @@ public class ClientServiceImpl implements ClientService {
 
         Client client = findClientById(clientId);
 
-        if (version != null && !version.equals(client.getVersion())) {
+        if (client.getVersion() != null && (version == null || !version.equals(client.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Client has been modified by another operation prior to deletion. Please refresh and try again."
             );

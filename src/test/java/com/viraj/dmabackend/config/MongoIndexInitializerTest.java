@@ -73,4 +73,18 @@ class MongoIndexInitializerTest {
 
         verify(mongoTemplate, never()).indexOps(any(Class.class));
     }
+
+    @Test
+    void run_whenProdProfileAndIndexOpsFails_throwsIllegalStateException() {
+        when(environment.getProperty("spring.data.mongodb.auto-index-creation", "true")).thenReturn("false");
+        when(environment.matchesProfiles("prod")).thenReturn(true);
+
+        MongoMappingContext mappingContext = new MongoMappingContext();
+        when(mongoTemplate.getConverter()).thenReturn(mongoConverter);
+        doReturn(mappingContext).when(mongoConverter).getMappingContext();
+        doThrow(new RuntimeException("Connection failed")).when(mongoTemplate).indexOps(any(Class.class));
+
+        MongoIndexInitializer initializer = new MongoIndexInitializer(mongoTemplate, environment);
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> initializer.run(args));
+    }
 }

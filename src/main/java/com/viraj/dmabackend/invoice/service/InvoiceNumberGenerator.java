@@ -35,18 +35,7 @@ public class InvoiceNumberGenerator {
     }
 
     public void compensate(String invoiceNumber) {
-        if (invoiceNumber == null || !invoiceNumber.startsWith(INVOICE_PREFIX + "-")) {
-            return;
-        }
-        try {
-            String[] parts = invoiceNumber.split("-");
-            if (parts.length == 3) {
-                int year = Integer.parseInt(parts[1]);
-                long seq = Long.parseLong(parts[2]);
-                String counterKey = INVOICE_COUNTER + "_" + year;
-                counterRepository.decrementSequenceIfCurrent(counterKey, seq);
-            }
-        } catch (Exception ignored) {
-        }
+        // Monotonic sequence counters are never decremented backwards on transaction abort
+        // to prevent duplicate key collisions and preserve monotonic audit logs.
     }
 }

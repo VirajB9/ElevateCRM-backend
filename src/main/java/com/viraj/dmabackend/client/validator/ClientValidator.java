@@ -17,6 +17,13 @@ public class ClientValidator {
     private final ClientRepository clientRepository;
     private final List<ClientDeletionGuard> clientDeletionGuards;
 
+    public void validateDuplicateCompanyName(String companyName) {
+        String normalized = companyName != null ? companyName.trim() : null;
+        if (normalized != null && clientRepository.existsByCompanyNameAndStatusNot(normalized, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+            throw new BadRequestException("Client with company name '" + companyName.trim() + "' already exists");
+        }
+    }
+
     public void validateDuplicateEmail(String email) {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
         if (clientRepository.existsByEmailAndStatusNot(normalizedEmail, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
@@ -40,6 +47,14 @@ public class ClientValidator {
             if (clientRepository.existsByGstNumberAndStatusNot(normalizedGst, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
                 throw new DuplicateClientGstException(gstNumber);
             }
+        }
+    }
+
+    public void validateCompanyNameForUpdate(String companyName, String clientId) {
+        String normalized = companyName != null ? companyName.trim() : null;
+        String trimmedClientId = clientId != null ? clientId.trim() : null;
+        if (normalized != null && clientRepository.existsByCompanyNameAndIdNotAndStatusNot(normalized, trimmedClientId, com.viraj.dmabackend.client.enums.ClientStatus.ARCHIVED)) {
+            throw new BadRequestException("Client with company name '" + companyName.trim() + "' already exists");
         }
     }
 

@@ -5,8 +5,11 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -105,12 +108,34 @@ public class JwtUtil {
         }
     }
 
+    public Claims extractAllClaims(String token) {
+        return extractClaims(token);
+    }
+
     private Claims extractClaims(String token) {
-        return Jwts.parser()
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            HttpServletRequest request = attrs.getRequest();
+            Object cached = request.getAttribute("CACHED_JWT_CLAIMS");
+            if (cached instanceof Claims claims && token.equals(request.getAttribute("CACHED_JWT_TOKEN"))) {
+                return claims;
+            }
+        }
+
+        Claims claims = Jwts.parser()
                 .verifyWith(key)
+                .clockSkewSeconds(60)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+
+        if (attrs != null) {
+            HttpServletRequest request = attrs.getRequest();
+            request.setAttribute("CACHED_JWT_CLAIMS", claims);
+            request.setAttribute("CACHED_JWT_TOKEN", token);
+        }
+
+        return claims;
     }
 
     private final SecureRandom secureRandom = new SecureRandom();

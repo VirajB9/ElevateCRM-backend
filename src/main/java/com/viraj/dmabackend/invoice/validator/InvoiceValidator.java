@@ -65,8 +65,13 @@ public class InvoiceValidator {
         }
         if (items != null) {
             for (InvoiceItemRequest item : items) {
-                if (item != null && item.getUnitPrice() != null && item.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new BadRequestException("Line item unit price must be greater than zero");
+                if (item != null) {
+                    if (item.getQuantity() == null || item.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new BadRequestException("Line item quantity must be greater than zero");
+                    }
+                    if (item.getUnitPrice() != null && item.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new BadRequestException("Line item unit price must be greater than zero");
+                    }
                 }
             }
         }

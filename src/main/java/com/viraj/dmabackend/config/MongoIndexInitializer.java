@@ -68,14 +68,33 @@ public class MongoIndexInitializer implements ApplicationRunner {
                     try {
                         indexOps.ensureIndex(indexDefinition);
                     } catch (Exception e) {
+                        if (environment.matchesProfiles("prod")) {
+                            log.error("CRITICAL: Failed to ensure index on {}: {}", entityClass.getSimpleName(), e.getMessage(), e);
+                            throw new IllegalStateException("Failed to initialize required MongoDB index for " + entityClass.getSimpleName() + ": " + e.getMessage(), e);
+                        }
                         log.warn("Failed to ensure index on {}: {}", entityClass.getSimpleName(), e.getMessage());
                     }
                 });
                 log.debug("Indexes verified for entity: {}", entityClass.getSimpleName());
             } catch (Exception e) {
+                if (environment.matchesProfiles("prod") && !isReflectionAccessError(e)) {
+                    log.error("CRITICAL: Failed to process indexes for entity {}: {}", entityClass.getSimpleName(), e.getMessage(), e);
+                    throw new IllegalStateException("Failed to initialize required MongoDB index for " + entityClass.getSimpleName() + ": " + e.getMessage(), e);
+                }
                 log.error("Failed to process indexes for entity {}: {}", entityClass.getSimpleName(), e.getMessage());
             }
         }
         log.info("MongoDB domain indexes successfully verified and initialized.");
+    }
+
+    private boolean isReflectionAccessError(Throwable t) {
+        Throwable current = t;
+        while (current != null) {
+            if (current instanceof java.lang.reflect.InaccessibleObjectException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

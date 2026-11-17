@@ -162,7 +162,7 @@ public class AuthServiceImplTest {
                 .thenReturn(Optional.of(user));
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.login(request));
-        assertTrue(ex.getMessage().contains("temporarily locked"));
+        assertEquals("Invalid email or password", ex.getMessage());
         verify(passwordEncoder, never()).matches(any(), any());
     }
 
@@ -585,7 +585,7 @@ public class AuthServiceImplTest {
                 .thenReturn(Optional.of(user));
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.login(request));
-        assertEquals("User account is not active", ex.getMessage());
+        assertEquals("Invalid email or password", ex.getMessage());
         verify(passwordEncoder, never()).matches(any(), any());
         verify(mongoTemplate, never()).findAndModify(any(), any(), any(), eq(User.class));
     }
