@@ -47,9 +47,9 @@ class MongoConfigTest {
         customizer.customize(builder);
         MongoClientSettings settings = builder.build();
 
-        assertEquals(50, settings.getConnectionPoolSettings().getMaxSize());
-        assertEquals(5, settings.getConnectionPoolSettings().getMinSize());
-        assertEquals(5000, settings.getConnectionPoolSettings().getMaxWaitTime(TimeUnit.MILLISECONDS));
+        assertEquals(100, settings.getConnectionPoolSettings().getMaxSize());
+        assertEquals(10, settings.getConnectionPoolSettings().getMinSize());
+        assertEquals(10000, settings.getConnectionPoolSettings().getMaxWaitTime(TimeUnit.MILLISECONDS));
         assertEquals(10000, settings.getSocketSettings().getConnectTimeout(TimeUnit.MILLISECONDS));
         assertEquals(10000, settings.getSocketSettings().getReadTimeout(TimeUnit.MILLISECONDS));
     }

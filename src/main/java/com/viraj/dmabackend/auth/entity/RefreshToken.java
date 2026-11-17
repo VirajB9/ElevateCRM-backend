@@ -34,6 +34,9 @@ public class RefreshToken {
     private LocalDateTime expiresAt;
 
     @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now(java.time.ZoneOffset.UTC);
+
+    @Builder.Default
     private boolean revoked = false;
 
     private LocalDateTime revokedAt;

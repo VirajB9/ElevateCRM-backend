@@ -29,7 +29,7 @@ public class Invoice extends BaseEntity {
     @Id
     private String id;
 
-    @Indexed(unique = true, partialFilter = "{'deleted': false}")
+    @Indexed(unique = true)
     private String invoiceNumber;
 
     @Indexed

@@ -13,6 +13,12 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -26,6 +32,24 @@ public class MongoConfig {
     @Bean
     public DateTimeProvider auditingDateTimeProvider() {
         return () -> Optional.of(LocalDateTime.now(ZoneOffset.UTC));
+    }
+
+    @Bean
+    public MongoCustomConversions mongoCustomConversions() {
+        List<Converter<?, ?>> converters = new ArrayList<>();
+        converters.add(new Converter<LocalDateTime, Date>() {
+            @Override
+            public Date convert(LocalDateTime source) {
+                return Date.from(source.toInstant(ZoneOffset.UTC));
+            }
+        });
+        converters.add(new Converter<Date, LocalDateTime>() {
+            @Override
+            public LocalDateTime convert(Date source) {
+                return LocalDateTime.ofInstant(source.toInstant(), ZoneOffset.UTC);
+            }
+        });
+        return new MongoCustomConversions(converters);
     }
 
     @Bean
@@ -50,9 +74,9 @@ public class MongoConfig {
     public MongoClientSettingsBuilderCustomizer mongoConnectionCustomizer() {
         return clientSettingsBuilder -> clientSettingsBuilder
                 .applyToConnectionPoolSettings(pool -> pool
-                        .maxSize(50)
-                        .minSize(5)
-                        .maxWaitTime(5000, TimeUnit.MILLISECONDS))
+                        .maxSize(100)
+                        .minSize(10)
+                        .maxWaitTime(10000, TimeUnit.MILLISECONDS))
                 .applyToSocketSettings(socket -> socket
                         .connectTimeout(10000, TimeUnit.MILLISECONDS)
                         .readTimeout(10000, TimeUnit.MILLISECONDS));

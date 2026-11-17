@@ -20,6 +20,7 @@ import com.viraj.dmabackend.invoice.service.InvoiceNumberGenerator;
 import com.viraj.dmabackend.invoice.service.InvoiceService;
 import com.viraj.dmabackend.invoice.validator.InvoiceValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InvoiceServiceImpl implements InvoiceService {
@@ -64,28 +66,13 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setInvoiceNumber(generatedInvoiceNumber);
 
         Invoice savedInvoice;
-        int maxAttempts = 3;
-        for (int attempt = 1; ; attempt++) {
-            try {
-                savedInvoice = invoiceRepository.save(invoice);
-                saveInvoiceHistory(savedInvoice);
-                break;
-            } catch (org.springframework.dao.TransientDataAccessException | com.mongodb.MongoCommandException ex) {
-                if (attempt >= maxAttempts) {
-                    invoiceNumberGenerator.compensate(generatedInvoiceNumber);
-                    throw ex;
-                }
-                try {
-                    Thread.sleep(50L * attempt);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    invoiceNumberGenerator.compensate(generatedInvoiceNumber);
-                    throw ex;
-                }
-            } catch (Exception ex) {
-                invoiceNumberGenerator.compensate(generatedInvoiceNumber);
-                throw ex;
-            }
+        try {
+            savedInvoice = invoiceRepository.save(invoice);
+            saveInvoiceHistory(savedInvoice);
+        } catch (Exception ex) {
+            log.error("Failed to create invoice with number [{}]: {}", generatedInvoiceNumber, ex.getMessage());
+            invoiceNumberGenerator.compensate(generatedInvoiceNumber);
+            throw ex;
         }
 
         return invoiceMapper.toResponse(savedInvoice);

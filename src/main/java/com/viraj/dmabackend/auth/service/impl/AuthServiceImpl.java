@@ -112,6 +112,12 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid email or password");
         }
 
+        // Verify user account was not locked out during BCrypt verification
+        User freshUser = userRepository.findById(user.getId()).orElse(user);
+        if (freshUser.getLockoutUntil() != null && freshUser.getLockoutUntil().isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
+            throw new UnauthorizedException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
+        }
+
         if (user.getFailedLoginAttempts() > 0 || user.getLockoutUntil() != null) {
             user.setFailedLoginAttempts(0);
             user.setLockoutUntil(null);
@@ -204,6 +210,12 @@ public class AuthServiceImpl implements AuthService {
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new UnauthorizedException("User account is not active");
+        }
+
+        if (user.getTokensRevokedAt() != null) {
+            if (activeToken.getCreatedAt() == null || !activeToken.getCreatedAt().isAfter(user.getTokensRevokedAt())) {
+                throw new UnauthorizedException("Session has been revoked");
+            }
         }
 
         // Generate and persist new rotated refresh token

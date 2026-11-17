@@ -335,7 +335,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleMongoCommandException(
             MongoCommandException ex) {
 
-        if (ex.getErrorCode() == 15 || (ex.getErrorMessage() != null && ex.getErrorMessage().contains("text search phrase"))) {
+        if (ex.getErrorCode() == 15 || ex.getErrorCode() == 27 || (ex.getErrorMessage() != null && (ex.getErrorMessage().contains("text search phrase") || ex.getErrorMessage().contains("must contain at least one positive term")))) {
             log.warn("MongoDB text search query syntax error: {}", ex.getMessage());
             ApiResponse<Object> response = new ApiResponse<>(
                     false,
@@ -366,7 +366,7 @@ public class GlobalExceptionHandler {
 
         Throwable cause = ex.getCause();
         if (cause instanceof MongoCommandException mce) {
-            if (mce.getErrorCode() == 15 || (mce.getErrorMessage() != null && mce.getErrorMessage().contains("text search phrase"))) {
+            if (mce.getErrorCode() == 15 || mce.getErrorCode() == 27 || (mce.getErrorMessage() != null && (mce.getErrorMessage().contains("text search phrase") || mce.getErrorMessage().contains("must contain at least one positive term")))) {
                 log.warn("MongoDB text search query syntax error: {}", mce.getMessage());
                 ApiResponse<Object> response = new ApiResponse<>(
                         false,
@@ -379,7 +379,7 @@ public class GlobalExceptionHandler {
                         HttpStatus.BAD_REQUEST);
             }
         }
-        if (ex.getMessage() != null && ex.getMessage().contains("text search phrase")) {
+        if (ex.getMessage() != null && (ex.getMessage().contains("text search phrase") || ex.getMessage().contains("must contain at least one positive term"))) {
             log.warn("MongoDB text search query syntax error: {}", ex.getMessage());
             ApiResponse<Object> response = new ApiResponse<>(
                     false,

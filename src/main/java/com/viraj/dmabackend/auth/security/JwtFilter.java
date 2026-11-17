@@ -64,25 +64,31 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
             } catch (Exception ex) {
+                SecurityContextHolder.clearContext();
                 filterChain.doFilter(request, response);
                 return;
             }
 
             if (!userDetails.isEnabled() || !userDetails.isAccountNonLocked()) {
-                filterChain.doFilter(request, response);
+                SecurityContextHolder.clearContext();
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "User account is disabled or locked");
                 return;
             }
 
             com.viraj.dmabackend.auth.entity.User user = userDetails.getUser();
             if (user != null && user.getTokensRevokedAt() != null) {
                 java.util.Date issuedAt = jwtUtil.extractIssuedAt(token);
-                if (issuedAt != null) {
-                    long issuedAtMillis = issuedAt.getTime();
-                    long revokedAtMillis = user.getTokensRevokedAt().toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
-                    if (issuedAtMillis <= revokedAtMillis) {
-                        filterChain.doFilter(request, response);
-                        return;
-                    }
+                if (issuedAt == null) {
+                    SecurityContextHolder.clearContext();
+                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+                    return;
+                }
+                long issuedAtMillis = issuedAt.getTime();
+                long revokedAtMillis = user.getTokensRevokedAt().toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
+                if (issuedAtMillis <= revokedAtMillis) {
+                    SecurityContextHolder.clearContext();
+                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+                    return;
                 }
             }
 

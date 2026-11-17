@@ -159,7 +159,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (LOCAL_PROXIES.contains(clean)) {
             return true;
         }
-        return trustedProxies != null && trustedProxies.contains(clean);
+        if (trustedProxies != null && trustedProxies.contains(clean)) {
+            return true;
+        }
+        if (clean.startsWith("10.") || clean.startsWith("192.168.") || clean.startsWith("127.") || clean.startsWith("169.254.")) {
+            return true;
+        }
+        if (clean.startsWith("172.")) {
+            String[] parts = clean.split("\\.");
+            if (parts.length >= 2) {
+                try {
+                    int second = Integer.parseInt(parts[1]);
+                    if (second >= 16 && second <= 31) {
+                        return true;
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return false;
     }
 
     private String getClientIp(HttpServletRequest request) {

@@ -17,9 +17,12 @@ spring:
 
 server:
   port: ${PORT:8080}
-  forward-headers-strategy: framework
+  forward-headers-strategy: native
   shutdown: graceful
   tomcat:
+    remoteip:
+      remote-ip-header: x-forwarded-for
+      protocol-header: x-forwarded-proto
     threads:
       max: ${TOMCAT_MAX_THREADS:50}
       min-spare: 10

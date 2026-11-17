@@ -80,6 +80,29 @@ public final class PaginationUtils {
             trimmed = trimmed.replace("\"", "");
         }
 
+        trimmed = trimmed.trim();
+        String[] tokens = trimmed.split("\\s+");
+        boolean hasPositive = false;
+        for (String token : tokens) {
+            if (!token.isEmpty() && !token.startsWith("-")) {
+                hasPositive = true;
+                break;
+            }
+        }
+        if (!hasPositive && tokens.length > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (String token : tokens) {
+                String stripped = token.replaceAll("^-+", "");
+                if (!stripped.isEmpty()) {
+                    if (sb.length() > 0) {
+                        sb.append(" ");
+                    }
+                    sb.append(stripped);
+                }
+            }
+            trimmed = sb.toString();
+        }
+
         return trimmed.trim();
     }
 }

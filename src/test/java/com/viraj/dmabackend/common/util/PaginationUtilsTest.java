@@ -81,6 +81,14 @@ class PaginationUtilsTest {
     }
 
     @Test
+    void clampKeyword_NegationOnlyKeywords_StripsLeadingHyphensToEnsurePositiveTerms() {
+        assertEquals("admin", PaginationUtils.clampKeyword("-admin"));
+        assertEquals("search", PaginationUtils.clampKeyword("--search"));
+        assertEquals("test dev", PaginationUtils.clampKeyword("-test -dev"));
+        assertEquals("Acme -inactive", PaginationUtils.clampKeyword("Acme -inactive"));
+    }
+
+    @Test
     void clampPageable_StripsSensitivePasswordSortProperty() {
         Pageable pageable = PageRequest.of(0, 20, Sort.by("password").ascending());
         Pageable result = PaginationUtils.clampPageable(pageable);

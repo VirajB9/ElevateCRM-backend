@@ -529,7 +529,8 @@ public class AuthServiceImplTest {
         when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
         when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
         when(jwtUtil.generateRefreshToken()).thenReturn("new-refresh-token");
-        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean(), any(java.util.Date.class))).thenReturn("replacement-jwt-token");
+        lenient().when(jwtUtil.generateToken(any(), any(), any(), anyBoolean())).thenReturn("replacement-jwt-token");
+        lenient().when(jwtUtil.generateToken(any(), any(), any(), anyBoolean(), any(java.util.Date.class))).thenReturn("replacement-jwt-token");
         when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
 
         com.viraj.dmabackend.auth.dto.ChangePasswordRequest request = new com.viraj.dmabackend.auth.dto.ChangePasswordRequest();
