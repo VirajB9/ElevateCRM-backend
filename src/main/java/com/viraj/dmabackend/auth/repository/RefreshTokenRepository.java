@@ -12,4 +12,6 @@ public interface RefreshTokenRepository extends MongoRepository<RefreshToken, St
     Optional<RefreshToken> findByTokenHashAndRevokedFalse(String tokenHash);
 
     void deleteByUserId(String userId);
+
+    void deleteByUserIdAndExpiresAtBefore(String userId, java.time.LocalDateTime dateTime);
 }

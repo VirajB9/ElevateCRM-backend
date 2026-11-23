@@ -211,7 +211,7 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         Invoice invoice = findInvoiceById(invoiceId);
 
-        if (version != null && !version.equals(invoice.getVersion())) {
+        if (invoice.getVersion() != null && (version == null || !version.equals(invoice.getVersion()))) {
             throw new OptimisticLockingFailureException(
                     "Invoice has been modified by another user prior to deletion. Please refresh and try again."
             );

@@ -142,7 +142,7 @@ public class MenuBootstrap implements CommandLineRunner {
                 "settings",
                 null,
                 6,
-                null);
+                "user:read");
         createMenu(
                 "User Accounts",
                 "/settings/users",

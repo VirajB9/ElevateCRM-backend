@@ -134,7 +134,8 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        refreshTokenRepository.deleteByUserId(user.getId());
+        // Multi-device session support: clean up expired tokens for the user rather than wiping other active sessions
+        refreshTokenRepository.deleteByUserIdAndExpiresAtBefore(user.getId(), LocalDateTime.now(ZoneOffset.UTC));
 
         String refreshTokenValue = jwtUtil.generateRefreshToken();
         String tokenHash = RefreshToken.hashToken(refreshTokenValue);
@@ -185,10 +186,22 @@ public class AuthServiceImpl implements AuthService {
                 if (existingToken.getExpiresAt() != null && existingToken.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
                     throw new UnauthorizedException("Refresh token has expired");
                 }
-                // Concurrency grace window (15 seconds) protects against multi-request session destruction
+                // Concurrency grace window (15 seconds) protects against multi-request session destruction and dropped responses
                 if (existingToken.getRevokedAt() != null &&
                         existingToken.getRevokedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusSeconds(15))) {
-                    throw new UnauthorizedException("Refresh token was recently rotated; please use the newly issued token");
+                    User user = userRepository.findByIdAndStatusNot(existingToken.getUserId(), UserStatus.DELETED)
+                            .filter(u -> !u.isDeleted() && u.getStatus() == UserStatus.ACTIVE)
+                            .orElseThrow(() -> new UnauthorizedException("User not found"));
+                    String replacementTokenValue = jwtUtil.generateRefreshToken();
+                    String replacementHash = RefreshToken.hashToken(replacementTokenValue);
+                    RefreshToken replacementToken = RefreshToken.builder()
+                            .tokenHash(replacementHash)
+                            .userId(user.getId())
+                            .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plus(java.time.Duration.ofMillis(refreshExpiration)))
+                            .revoked(false)
+                            .build();
+                    refreshTokenRepository.save(replacementToken);
+                    return buildAuthenticationResponse(user, replacementTokenValue);
                 }
                 // Compromised token reuse detected: revoke all active tokens for this user
                 refreshTokenRepository.deleteByUserId(existingToken.getUserId());

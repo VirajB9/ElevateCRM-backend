@@ -202,12 +202,16 @@ public class RoleServiceImpl implements RoleService {
         return mapRoleWithPermissions(updatedRole);
     }
 
+    private static final java.util.Set<String> ALLOWED_USER_SORT_PROPERTIES = java.util.Set.of(
+            "id", "firstName", "lastName", "email", "phoneNumber", "status", "roleId", "createdAt", "updatedAt"
+    );
+
     @Override
     public Page<UserResponse> getUsersByRole(String roleId, Pageable pageable) {
 
         Role role = findRoleById(roleId);
 
-        return userRepository.findByRoleIdAndStatusNot(role.getId(), com.viraj.dmabackend.auth.enums.UserStatus.DELETED, PaginationUtils.clampPageable(pageable))
+        return userRepository.findByRoleIdAndStatusNot(role.getId(), com.viraj.dmabackend.auth.enums.UserStatus.DELETED, PaginationUtils.clampPageable(pageable, ALLOWED_USER_SORT_PROPERTIES))
                 .map(user -> userMapper.toUserResponse(user, role.getName()));
     }
 

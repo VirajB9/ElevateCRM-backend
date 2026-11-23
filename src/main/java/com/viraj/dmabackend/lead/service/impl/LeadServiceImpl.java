@@ -257,7 +257,7 @@ public class LeadServiceImpl implements LeadService {
 
         Lead lead = findLeadById(leadId);
 
-        if (version != null && !version.equals(lead.getVersion())) {
+        if (lead.getVersion() != null && (version == null || !version.equals(lead.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Lead has been modified by another operation prior to deletion. Please refresh and try again."
             );

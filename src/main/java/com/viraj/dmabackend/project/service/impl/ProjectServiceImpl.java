@@ -138,7 +138,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = findProjectById(projectId);
 
-        if (version != null && !version.equals(project.getVersion())) {
+        if (project.getVersion() != null && (version == null || !version.equals(project.getVersion()))) {
             throw new org.springframework.dao.OptimisticLockingFailureException(
                     "Project has been modified by another operation prior to deletion. Please refresh and try again."
             );

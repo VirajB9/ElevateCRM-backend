@@ -189,11 +189,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         // Only trust proxy forwarding headers when request arrives from an explicitly trusted proxy
         if (isTrustedProxy(remoteAddr)) {
-            String xRealIp = request.getHeader("X-Real-IP");
-            if (xRealIp != null && !xRealIp.isBlank() && !"unknown".equalsIgnoreCase(xRealIp.trim())) {
-                return xRealIp.trim();
-            }
-
             String xForwardedFor = request.getHeader("X-Forwarded-For");
             if (xForwardedFor != null && !xForwardedFor.isBlank()) {
                 String[] ips = xForwardedFor.split(",");
@@ -211,6 +206,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
                         return trimmedIp;
                     }
                 }
+            }
+
+            String xRealIp = request.getHeader("X-Real-IP");
+            if (xRealIp != null && !xRealIp.isBlank() && !"unknown".equalsIgnoreCase(xRealIp.trim()) && !isTrustedProxy(xRealIp.trim())) {
+                return xRealIp.trim();
             }
         }
 

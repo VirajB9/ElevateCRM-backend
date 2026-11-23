@@ -55,8 +55,12 @@ public class MongoConfig {
     @Bean
     @ConditionalOnProperty(name = "spring.data.mongodb.transaction.enabled", havingValue = "true")
     public MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
-        log.info("MongoDB Multi-Document Transactions enabled via MongoTransactionManager");
-        return new MongoTransactionManager(dbFactory);
+        log.info("MongoDB Multi-Document Transactions enabled via MongoTransactionManager with MAJORITY write concern and SNAPSHOT read concern");
+        com.mongodb.TransactionOptions options = com.mongodb.TransactionOptions.builder()
+                .writeConcern(com.mongodb.WriteConcern.MAJORITY)
+                .readConcern(com.mongodb.ReadConcern.SNAPSHOT)
+                .build();
+        return new MongoTransactionManager(dbFactory, options);
     }
 
     @Bean

@@ -311,6 +311,47 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
 
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHttpMediaTypeNotAcceptable(
+            org.springframework.web.HttpMediaTypeNotAcceptableException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "Requested media type is not acceptable",
+                null,
+                "NOT_ACCEPTABLE",
+                HttpStatus.NOT_ACCEPTABLE.value());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHandlerMethodValidation(
+            org.springframework.web.method.annotation.HandlerMethodValidationException ex) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+        ex.getAllValidationResults().forEach(result -> {
+            String paramName = result.getMethodParameter().getParameterName();
+            result.getResolvableErrors().forEach(error -> {
+                String msg = error.getDefaultMessage() != null ? error.getDefaultMessage() : "Validation error";
+                errors.put(paramName != null ? paramName : "parameter", msg);
+            });
+        });
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                "Validation failed",
+                errors,
+                "VALIDATION_FAILED",
+                HttpStatus.BAD_REQUEST.value());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleConstraintViolation(
             ConstraintViolationException ex) {

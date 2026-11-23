@@ -28,8 +28,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MenuServiceImpl implements MenuService {
 
-    private static final Object MENU_HIERARCHY_LOCK = new Object();
-
     private final MenuRepository menuRepository;
 
     private final MenuMapper menuMapper;
@@ -96,28 +94,26 @@ public class MenuServiceImpl implements MenuService {
     @Transactional
     @CacheEvict(value = "menuTree", allEntries = true)
     public MenuResponse updateMenu(String menuId, UpdateMenuRequest request) {
-        synchronized (MENU_HIERARCHY_LOCK) {
-            Menu menu = findMenuById(menuId);
+        Menu menu = findMenuById(menuId);
 
-            if ((menu.getVersion() != null && request.getVersion() == null) ||
-                    (request.getVersion() != null && !request.getVersion().equals(menu.getVersion()))) {
-                throw new org.springframework.dao.OptimisticLockingFailureException(
-                        "Menu has been modified by another operation. Please refresh and try again."
-                );
-            }
-
-            validateUpdateMenuRequest(menuId, request);
-
-            if (Boolean.FALSE.equals(request.getActive())) {
-                menuValidator.validateMenuDeactivation(menuId);
-            }
-
-            updateMenuFields(menu, request);
-
-            Menu updatedMenu = menuRepository.save(menu);
-
-            return menuMapper.toMenuResponse(updatedMenu);
+        if ((menu.getVersion() != null && request.getVersion() == null) ||
+                (request.getVersion() != null && !request.getVersion().equals(menu.getVersion()))) {
+            throw new org.springframework.dao.OptimisticLockingFailureException(
+                    "Menu has been modified by another operation. Please refresh and try again."
+            );
         }
+
+        validateUpdateMenuRequest(menuId, request);
+
+        if (Boolean.FALSE.equals(request.getActive())) {
+            menuValidator.validateMenuDeactivation(menuId);
+        }
+
+        updateMenuFields(menu, request);
+
+        Menu updatedMenu = menuRepository.save(menu);
+
+        return menuMapper.toMenuResponse(updatedMenu);
     }
 
     @Override

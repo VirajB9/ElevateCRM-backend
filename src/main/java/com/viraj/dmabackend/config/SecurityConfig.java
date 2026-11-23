@@ -1,11 +1,14 @@
 package com.viraj.dmabackend.config;
 
 import com.viraj.dmabackend.auth.security.JwtFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,12 +16,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -74,16 +77,37 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            String body = String.format("{\"success\":false,\"message\":\"%s\",\"data\":null,\"errorCode\":\"UNAUTHORIZED\",\"status\":401,\"timestamp\":\"%s\"}",
+                                    "Unauthorized: Authentication token is missing or invalid",
+                                    java.time.LocalDateTime.now(java.time.ZoneOffset.UTC));
+                            response.getWriter().write(body);
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            String body = String.format("{\"success\":false,\"message\":\"%s\",\"data\":null,\"errorCode\":\"FORBIDDEN\",\"status\":403,\"timestamp\":\"%s\"}",
+                                    "Access Denied: You do not have permission to access this resource",
+                                    java.time.LocalDateTime.now(java.time.ZoneOffset.UTC));
+                            response.getWriter().write(body);
+                        })
                 )
 
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(
+                    auth.requestMatchers(HttpMethod.POST,
                             "/api/v1/auth/login",
                             "/api/v1/auth/refresh",
-                            "/api/v1/auth/logout",
+                            "/api/v1/auth/logout"
+                    ).permitAll();
+                    auth.requestMatchers(
                             "/actuator/health",
-                            "/actuator/health/**"
+                            "/actuator/health/**",
+                            "/actuator/info",
+                            "/actuator/prometheus"
                     ).permitAll();
 
                     boolean isProd = java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod");
@@ -129,9 +153,13 @@ public class SecurityConfig {
                         .toList()
                 : List.of();
 
+        boolean isProd = java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod");
         if (!explicitOrigins.isEmpty()) {
             configuration.setAllowedOrigins(explicitOrigins);
         } else {
+            if (isProd) {
+                throw new IllegalStateException("CORS allowed origins must be explicitly configured in production profile ('prod').");
+            }
             configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
         }
         configuration.setAllowedMethods(Arrays.asList(

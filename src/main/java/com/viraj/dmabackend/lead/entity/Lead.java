@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 @TypeAlias("Lead")
 @CompoundIndex(name = "idx_assigned_user_status", def = "{'assignedUserId': 1, 'status': 1}")
 @CompoundIndex(name = "idx_source_status", def = "{'source': 1, 'status': 1}")
+@CompoundIndex(name = "idx_lead_deleted_created_at", def = "{'deleted': 1, 'createdAt': -1}")
 @CompoundIndex(name = "idx_lead_pipeline_status_created", def = "{'activePipeline': 1, 'status': 1, 'createdAt': -1}")
 public class Lead extends BaseEntity {
 

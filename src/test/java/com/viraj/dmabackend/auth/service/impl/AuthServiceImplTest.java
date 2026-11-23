@@ -467,7 +467,7 @@ public class AuthServiceImplTest {
     }
 
     @Test
-    void refresh_withRecentlyRotatedTokenWithinGraceWindow_withReplacedByToken_throwsUnauthorizedExceptionWithoutRevokingAll() {
+    void refresh_withRecentlyRotatedTokenWithinGraceWindow_withReplacedByToken_returnsReplacementTokenWithoutRevokingAll() {
         when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
                 .thenReturn(null);
 
@@ -480,13 +480,25 @@ public class AuthServiceImplTest {
                 .replacedByToken(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("successor-token-123"))
                 .build();
 
+        Role role = new Role();
+        role.setId("role-1");
+        role.setName("EMPLOYEE");
+
         when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("concurrent-token"))).thenReturn(Optional.of(recentlyRotated));
+        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(Optional.of(user));
+        when(jwtUtil.generateRefreshToken()).thenReturn("replacement-refresh-token");
+        when(roleRepository.findById("role-1")).thenReturn(Optional.of(role));
+        when(permissionRepository.findAllById(any())).thenReturn(java.util.Collections.emptyList());
+        when(jwtUtil.generateToken(any(), any(), any(), anyBoolean())).thenReturn("mock-access-token");
+        when(userMapper.toUserResponse(any(), any())).thenReturn(com.viraj.dmabackend.auth.dto.UserResponse.builder().build());
 
-        UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("concurrent-token"));
+        com.viraj.dmabackend.auth.dto.AuthenticationResponse response = authService.refresh("concurrent-token");
 
-        assertEquals("Refresh token was recently rotated; please use the newly issued token", ex.getMessage());
+        assertNotNull(response);
+        assertEquals("mock-access-token", response.getToken());
+        assertEquals("replacement-refresh-token", response.getRefreshToken());
         verify(refreshTokenRepository, never()).deleteByUserId(any());
-        verify(jwtUtil, never()).generateToken(any(), any(), any(), anyBoolean());
+        verify(refreshTokenRepository).save(any(com.viraj.dmabackend.auth.entity.RefreshToken.class));
     }
 
     @Test
@@ -547,7 +559,7 @@ public class AuthServiceImplTest {
     }
 
     @Test
-    void refresh_withRecentlyRotatedTokenWithinGraceWindow_doesNotDeleteUserTokens() {
+    void refresh_withRecentlyRotatedTokenWithinGraceWindow_whenUserNotFound_throwsUnauthorizedExceptionWithoutRevokingAll() {
         when(mongoTemplate.findAndModify(any(), any(), any(), eq(com.viraj.dmabackend.auth.entity.RefreshToken.class)))
                 .thenReturn(null);
 
@@ -560,9 +572,10 @@ public class AuthServiceImplTest {
                 .build();
 
         when(refreshTokenRepository.findByTokenHash(com.viraj.dmabackend.auth.entity.RefreshToken.hashToken("concurrent-token"))).thenReturn(Optional.of(recentlyRotated));
+        when(userRepository.findByIdAndStatusNot("user-1", UserStatus.DELETED)).thenReturn(Optional.empty());
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.refresh("concurrent-token"));
-        assertTrue(ex.getMessage().contains("recently rotated"));
+        assertEquals("User not found", ex.getMessage());
         verify(refreshTokenRepository, never()).deleteByUserId(any());
     }
 

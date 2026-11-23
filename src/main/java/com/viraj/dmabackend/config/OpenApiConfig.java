@@ -1,6 +1,5 @@
 package com.viraj.dmabackend.config;
 
-import com.viraj.dmabackend.common.response.ApiError;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.converter.ResolvedSchema;
@@ -56,9 +55,9 @@ public class OpenApiConfig {
         return openApi -> {
             if (openApi.getComponents() != null) {
                 ResolvedSchema resolvedSchema = ModelConverters.getInstance()
-                        .resolveAsResolvedSchema(new AnnotatedType(ApiError.class));
+                        .resolveAsResolvedSchema(new AnnotatedType(com.viraj.dmabackend.common.response.ApiResponse.class));
                 if (resolvedSchema != null && resolvedSchema.schema != null) {
-                    openApi.getComponents().addSchemas("ApiError", resolvedSchema.schema);
+                    openApi.getComponents().addSchemas("ApiResponse", resolvedSchema.schema);
                 }
             }
 
@@ -73,7 +72,7 @@ public class OpenApiConfig {
 
                             Content errorContent = new Content().addMediaType(
                                     org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
-                                    new MediaType().schema(new Schema<>().$ref("#/components/schemas/ApiError"))
+                                    new MediaType().schema(new Schema<>().$ref("#/components/schemas/ApiResponse"))
                             );
 
                             if (!responses.containsKey("400")) {
