@@ -26,7 +26,7 @@ public class SecurityUtilsTest {
     }
 
     @Test
-    void getCurrentUserEmail_WhenPrincipalIsString_ReturnsTrimmedLowercaseEmail() {
+    void getCurrentUserEmail_WhenPrincipalIsString_PreservesOriginalCasing() {
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                 "  User@EXAMPLE.com  ",
                 "credentials",
@@ -36,11 +36,11 @@ public class SecurityUtilsTest {
 
         Optional<String> email = SecurityUtils.getCurrentUserEmail();
         assertTrue(email.isPresent());
-        assertEquals("user@example.com", email.get());
+        assertEquals("User@EXAMPLE.com", email.get());
     }
 
     @Test
-    void getCurrentUserEmail_WhenPrincipalIsUserDetails_ReturnsTrimmedLowercaseUsername() {
+    void getCurrentUserEmail_WhenPrincipalIsUserDetails_PreservesOriginalCasing() {
         User userDetails = new User(
                 "  ADMIN@EXAMPLE.COM  ",
                 "secret",
@@ -55,7 +55,7 @@ public class SecurityUtilsTest {
 
         Optional<String> email = SecurityUtils.getCurrentUserEmail();
         assertTrue(email.isPresent());
-        assertEquals("admin@example.com", email.get());
+        assertEquals("ADMIN@EXAMPLE.COM", email.get());
     }
 
     @Test

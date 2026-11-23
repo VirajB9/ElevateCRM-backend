@@ -37,6 +37,7 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 	implementation 'com.bucket4j:bucket4j-core:8.10.1'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
@@ -45,7 +46,9 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
-	environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+	if (System.getenv('TESTCONTAINERS_RYUK_DISABLED') != null) {
+		environment 'TESTCONTAINERS_RYUK_DISABLED', System.getenv('TESTCONTAINERS_RYUK_DISABLED')
+	}
 }
 
 jar {

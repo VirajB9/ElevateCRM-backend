@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -168,7 +169,7 @@ public class RoleController {
             @Parameter(description = "Unique identifier of the role", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String roleId,
-            @Parameter(description = "Pagination parameters (page, size, sort)") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return roleService.getUsersByRole(roleId, pageable);
     }
 }

@@ -116,7 +116,7 @@ public class SecurityConfig {
                             "/actuator/prometheus"
                     ).permitAll();
 
-                    boolean isProd = java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod");
+                    boolean isProd = isProductionEnvironment();
                     if (!isProd) {
                         auth.requestMatchers(
                                 "/v3/api-docs/**",
@@ -159,7 +159,7 @@ public class SecurityConfig {
                         .toList()
                 : List.of();
 
-        boolean isProd = java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod");
+        boolean isProd = isProductionEnvironment();
         if (!explicitOrigins.isEmpty()) {
             configuration.setAllowedOrigins(explicitOrigins);
         } else {
@@ -187,8 +187,25 @@ public class SecurityConfig {
         ));
         configuration.setExposedHeaders(List.of("x-auth-token", "X-Request-ID", "Retry-After"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    private boolean isProductionEnvironment() {
+        String[] profiles = environment.getActiveProfiles();
+        if (profiles == null || profiles.length == 0) {
+            profiles = environment.getDefaultProfiles();
+        }
+        for (String profile : profiles) {
+            if (profile != null) {
+                String lower = profile.trim().toLowerCase();
+                if (lower.equals("prod") || lower.startsWith("prod-") || lower.startsWith("prod_") || lower.equals("production")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

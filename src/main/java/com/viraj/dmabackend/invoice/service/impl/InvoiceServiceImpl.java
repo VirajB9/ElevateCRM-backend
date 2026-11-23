@@ -102,8 +102,16 @@ public class InvoiceServiceImpl implements InvoiceService {
             throw new InvoiceNotFoundException(invoiceId);
         }
 
+        Pageable clampedPageable = PaginationUtils.clampPageable(pageable, ALLOWED_INVOICE_HISTORY_SORT_PROPERTIES);
+        if (clampedPageable.getSort().isUnsorted()) {
+            clampedPageable = org.springframework.data.domain.PageRequest.of(
+                    clampedPageable.getPageNumber(),
+                    clampedPageable.getPageSize(),
+                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "invoiceVersion")
+            );
+        }
         return invoiceHistoryRepository
-                .findByInvoiceIdOrderByInvoiceVersionAsc(trimmedInvoiceId, PaginationUtils.clampPageable(pageable, ALLOWED_INVOICE_HISTORY_SORT_PROPERTIES))
+                .findByInvoiceId(trimmedInvoiceId, clampedPageable)
                 .map(invoiceMapper::toHistoryResponse);
     }
 

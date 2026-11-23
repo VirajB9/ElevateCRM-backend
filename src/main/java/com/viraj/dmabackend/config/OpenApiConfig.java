@@ -75,19 +75,28 @@ public class OpenApiConfig {
                                     new MediaType().schema(new Schema<>().$ref("#/components/schemas/ApiResponse"))
                             );
 
+                            boolean isPublicAuth = "/api/v1/auth/login".equals(path)
+                                    || "/api/v1/auth/logout".equals(path)
+                                    || "/api/v1/auth/refresh".equals(path);
+
                             if (!responses.containsKey("400")) {
                                 responses.addApiResponse("400", new ApiResponse()
                                         .description("Invalid request payload or malformed syntax")
                                         .content(errorContent));
                             }
-                            if (!responses.containsKey("401") && !"/api/v1/auth/login".equals(path) && !"/api/v1/auth/logout".equals(path)) {
+                            if (!responses.containsKey("401") && !isPublicAuth) {
                                 responses.addApiResponse("401", new ApiResponse()
                                         .description("Unauthorized - missing, invalid, or expired authentication token")
                                         .content(errorContent));
                             }
-                            if (!responses.containsKey("403") && !"/api/v1/auth/login".equals(path) && !"/api/v1/auth/logout".equals(path)) {
+                            if (!responses.containsKey("403") && !isPublicAuth) {
                                 responses.addApiResponse("403", new ApiResponse()
                                         .description("Forbidden - insufficient role or missing permission")
+                                        .content(errorContent));
+                            }
+                            if (!responses.containsKey("429")) {
+                                responses.addApiResponse("429", new ApiResponse()
+                                        .description("Too Many Requests - rate limit exceeded. Inspect Retry-After header.")
                                         .content(errorContent));
                             }
                             if (!responses.containsKey("500")) {

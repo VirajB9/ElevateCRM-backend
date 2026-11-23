@@ -11,3 +11,18 @@ springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: alpha
+  pageable-as-query-param: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+    info:
+      enabled: true

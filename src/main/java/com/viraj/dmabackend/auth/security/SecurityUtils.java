@@ -25,12 +25,10 @@ public final class SecurityUtils {
         if (principal instanceof UserDetails userDetails) {
             return Optional.ofNullable(userDetails.getUsername())
                     .map(String::trim)
-                    .map(String::toLowerCase)
                     .filter(s -> !s.isBlank());
         } else if (principal instanceof String email) {
             return Optional.of(email)
                     .map(String::trim)
-                    .map(String::toLowerCase)
                     .filter(s -> !s.isBlank());
         }
 

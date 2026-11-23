@@ -296,7 +296,7 @@ public class InvoiceServiceImplTest {
         history.setInvoiceId("inv-123");
         history.setInvoiceVersion(0L);
 
-        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc(eq("inv-123"), any()))
+        when(invoiceHistoryRepository.findByInvoiceId(eq("inv-123"), any()))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(history)));
 
         var result = invoiceService.getInvoiceHistory("inv-123", org.springframework.data.domain.PageRequest.of(0, 10));
@@ -313,7 +313,7 @@ public class InvoiceServiceImplTest {
         history.setInvoiceId("inv-deleted");
         history.setInvoiceVersion(1L);
 
-        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc(eq("inv-deleted"), any()))
+        when(invoiceHistoryRepository.findByInvoiceId(eq("inv-deleted"), any()))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(history)));
 
         var result = invoiceService.getInvoiceHistory("inv-deleted", org.springframework.data.domain.PageRequest.of(0, 10));
@@ -335,7 +335,7 @@ public class InvoiceServiceImplTest {
         org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> pageableCaptor =
                 org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
 
-        when(invoiceHistoryRepository.findByInvoiceIdOrderByInvoiceVersionAsc(eq("inv-123"), pageableCaptor.capture()))
+        when(invoiceHistoryRepository.findByInvoiceId(eq("inv-123"), pageableCaptor.capture()))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
 
         org.springframework.data.domain.PageRequest pageRequest =

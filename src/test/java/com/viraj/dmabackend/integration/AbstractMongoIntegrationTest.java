@@ -15,6 +15,7 @@ public abstract class AbstractMongoIntegrationTest {
     static {
         MONGO_CONTAINER = new MongoDBContainer("mongo:7.0.5");
         MONGO_CONTAINER.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(MONGO_CONTAINER::stop));
     }
 
     @DynamicPropertySource

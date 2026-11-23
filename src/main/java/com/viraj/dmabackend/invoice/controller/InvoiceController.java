@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -76,7 +77,7 @@ public class InvoiceController {
             @Parameter(description = "Unique ID of the invoice", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String invoiceId,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return invoiceService.getInvoiceHistory(invoiceId, pageable);
     }
 
@@ -89,7 +90,7 @@ public class InvoiceController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<InvoiceResponse> getAllInvoices(
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return invoiceService.getAllInvoices(pageable);
     }
 
@@ -103,7 +104,7 @@ public class InvoiceController {
     })
     public Page<InvoiceResponse> filterInvoicesByStatus(
             @Parameter(description = "Invoice status", required = true) @RequestParam InvoiceStatus status,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return invoiceService.getInvoicesByStatus(status, pageable);
     }
 
@@ -117,7 +118,7 @@ public class InvoiceController {
     })
     public Page<InvoiceResponse> getInvoicesByStatus(
             @Parameter(description = "Invoice status", required = true) @PathVariable InvoiceStatus status,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return invoiceService.getInvoicesByStatus(status, pageable);
     }
 
@@ -134,7 +135,7 @@ public class InvoiceController {
             @Parameter(description = "Unique ID of the client", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String clientId,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return invoiceService.getInvoicesByClientId(clientId, pageable);
     }
 
@@ -151,7 +152,7 @@ public class InvoiceController {
             @Parameter(description = "Unique ID of the project", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String projectId,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return invoiceService.getInvoicesByProjectId(projectId, pageable);
     }
 

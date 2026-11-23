@@ -14,8 +14,15 @@ public interface InvoiceHistoryRepository
             String invoiceId
     );
 
-    Page<InvoiceHistory> findByInvoiceIdOrderByInvoiceVersionAsc(
+    Page<InvoiceHistory> findByInvoiceId(
             String invoiceId,
             Pageable pageable
     );
+
+    default Page<InvoiceHistory> findByInvoiceIdOrderByInvoiceVersionAsc(
+            String invoiceId,
+            Pageable pageable
+    ) {
+        return findByInvoiceId(invoiceId, pageable);
+    }
 }

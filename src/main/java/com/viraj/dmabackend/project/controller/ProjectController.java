@@ -16,6 +16,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -72,7 +73,7 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<ProjectResponse> getAllProjects(
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return projectService.getAllProjects(pageable);
     }
 
@@ -89,7 +90,7 @@ public class ProjectController {
             @Parameter(description = "Unique ID of the client", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String clientId,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return projectService.getProjectsByClient(clientId, pageable);
     }
 
@@ -106,7 +107,7 @@ public class ProjectController {
             @NotBlank(message = "Search keyword cannot be blank")
             @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
             @RequestParam String keyword,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return projectService.searchProjects(keyword, pageable);
     }
 
@@ -120,7 +121,7 @@ public class ProjectController {
     })
     public Page<ProjectResponse> filterByStatus(
             @Parameter(description = "Project status", required = true) @RequestParam ProjectStatus status,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return projectService.getProjectsByStatus(status, pageable);
     }
 

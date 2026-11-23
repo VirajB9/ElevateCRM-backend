@@ -16,6 +16,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -56,7 +57,7 @@ public class ClientController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<ClientResponse> getAllClients(
-            @Parameter(description = "Pagination and sorting parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return clientService.getAllClients(pageable);
     }
 
@@ -89,7 +90,7 @@ public class ClientController {
             @NotBlank(message = "Search keyword cannot be blank")
             @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
             @RequestParam String keyword,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return clientService.searchClients(keyword, pageable);
     }
 
@@ -103,7 +104,7 @@ public class ClientController {
     })
     public Page<ClientResponse> filterClientsByStatus(
             @Parameter(description = "Exact client status to filter by", required = true) @RequestParam ClientStatus status,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return clientService.filterClientsByStatus(status, pageable);
     }
 

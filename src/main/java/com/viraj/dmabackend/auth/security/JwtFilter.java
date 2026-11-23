@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -47,7 +48,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || authHeader.length() < 7 || !authHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -105,12 +106,30 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
 
+            java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> authorities = userDetails.getAuthorities();
+            String tokenRole = jwtUtil.extractRole(token);
+            List<String> tokenPermissions = jwtUtil.extractPermissions(token);
+            if ((tokenRole != null && !tokenRole.isBlank()) || (tokenPermissions != null && !tokenPermissions.isEmpty())) {
+                List<org.springframework.security.core.GrantedAuthority> tokenAuthorities = new java.util.ArrayList<>();
+                if (tokenRole != null && !tokenRole.isBlank()) {
+                    tokenAuthorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + tokenRole.trim()));
+                }
+                if (tokenPermissions != null) {
+                    tokenPermissions.stream()
+                            .filter(java.util.Objects::nonNull)
+                            .filter(p -> !p.isBlank())
+                            .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                            .forEach(tokenAuthorities::add);
+                }
+                authorities = tokenAuthorities;
+            }
+
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 email,
                                 null,
-                                userDetails.getAuthorities()
+                                authorities
                         );
 
                 authentication.setDetails(

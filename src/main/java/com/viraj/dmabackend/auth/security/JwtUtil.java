@@ -28,11 +28,16 @@ public class JwtUtil {
     private long expiration;
 
     private SecretKey key;
+    private io.jsonwebtoken.JwtParser jwtParser;
 
     @PostConstruct
     public void init() {
         this.key = Keys.hmacShaKeyFor(
                 secret.getBytes(StandardCharsets.UTF_8));
+        this.jwtParser = Jwts.parser()
+                .verifyWith(this.key)
+                .clockSkewSeconds(60)
+                .build();
     }
 
     public String generateToken(
@@ -122,10 +127,15 @@ public class JwtUtil {
             }
         }
 
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .clockSkewSeconds(60)
-                .build()
+        io.jsonwebtoken.JwtParser parser = this.jwtParser;
+        if (parser == null) {
+            parser = Jwts.parser()
+                    .verifyWith(this.key != null ? this.key : Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
+                    .clockSkewSeconds(60)
+                    .build();
+        }
+
+        Claims claims = parser
                 .parseSignedClaims(token)
                 .getPayload();
 

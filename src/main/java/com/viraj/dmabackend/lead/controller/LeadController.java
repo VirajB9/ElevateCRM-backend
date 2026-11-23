@@ -17,6 +17,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -73,7 +74,7 @@ public class LeadController {
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public Page<LeadResponse> getAllLeads(
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return leadService.getAllLeads(pageable);
     }
 
@@ -90,7 +91,7 @@ public class LeadController {
             @NotBlank(message = "Search keyword cannot be blank")
             @Size(max = 100, message = "Search keyword cannot exceed 100 characters")
             @RequestParam String keyword,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return leadService.searchLeads(keyword, pageable);
     }
 
@@ -104,7 +105,7 @@ public class LeadController {
     })
     public Page<LeadResponse> filterBySource(
             @Parameter(description = "Lead source", required = true) @RequestParam LeadSource source,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return leadService.filterBySource(source, pageable);
     }
 
@@ -119,7 +120,7 @@ public class LeadController {
     })
     public Page<LeadResponse> filterByStatus(
             @Parameter(description = "Lead status", required = true) @RequestParam LeadStatus status,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return leadService.filterByStatus(status, pageable);
     }
 
@@ -136,7 +137,7 @@ public class LeadController {
             @Parameter(description = "Unique ID of the assigned user", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String userId,
-            @Parameter(description = "Pagination parameters") Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         return leadService.filterByAssignedUser(userId, pageable);
     }
 

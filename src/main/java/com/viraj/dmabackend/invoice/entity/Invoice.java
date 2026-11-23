@@ -25,6 +25,7 @@ import java.util.List;
 @CompoundIndex(name = "idx_project_deleted", def = "{'projectId': 1, 'deleted': 1}")
 @CompoundIndex(name = "idx_deleted_created_at", def = "{'deleted': 1, 'createdAt': -1}")
 @CompoundIndex(name = "idx_invoice_client_deleted_status", def = "{'clientId': 1, 'deleted': 1, 'status': 1}")
+@CompoundIndex(name = "idx_invoice_project_deleted_status", def = "{'projectId': 1, 'deleted': 1, 'status': 1}")
 public class Invoice extends BaseEntity {
 
     @Id
