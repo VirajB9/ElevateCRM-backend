@@ -8,7 +8,11 @@ import java.util.Optional;
 
 public interface MenuRepository extends MongoRepository<Menu, String> {
 
-    List<Menu> findByActiveTrueOrderByOrderIndexAsc();
+    List<Menu> findByActiveTrueOrderByOrderIndexAscTitleAsc();
+
+    default List<Menu> findByActiveTrueOrderByOrderIndexAsc() {
+        return findByActiveTrueOrderByOrderIndexAscTitleAsc();
+    }
 
     Optional<Menu> findByTitleAndActiveTrue(String title);
 

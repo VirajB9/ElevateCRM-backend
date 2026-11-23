@@ -26,7 +26,6 @@ public class InvoiceHistory {
     @Id
     private String id;
 
-    @Indexed
     private String invoiceId;
 
     private String invoiceNumber;

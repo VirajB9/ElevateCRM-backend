@@ -21,6 +21,7 @@ public class UpdateMenuRequest {
 
     @NotBlank(message = "Path is required")
     @jakarta.validation.constraints.Size(max = 255)
+    @jakarta.validation.constraints.Pattern(regexp = "^(/[a-zA-Z0-9_.-]*)*$", message = "Path must be a valid URI path")
     private String path;
 
     @NotBlank(message = "Icon is required")
@@ -31,6 +32,8 @@ public class UpdateMenuRequest {
     private String parentId;
 
     @NotNull(message = "Order index is required")
+    @jakarta.validation.constraints.Min(value = 0, message = "Order index cannot be negative")
+    @jakarta.validation.constraints.Max(value = 10000, message = "Order index cannot exceed 10000")
     private Integer orderIndex;
 
     @jakarta.validation.constraints.Size(max = 100)

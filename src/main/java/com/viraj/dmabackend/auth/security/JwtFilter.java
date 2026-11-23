@@ -19,11 +19,22 @@ import java.io.IOException;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    public JwtFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
+        this(jwtUtil, userDetailsService, new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public JwtFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService, com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+        this.objectMapper = objectMapper != null ? objectMapper : new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules();
+    }
 
     @Override
     protected void doFilterInternal(
@@ -31,6 +42,8 @@ public class JwtFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain)
             throws ServletException, IOException {
+
+        SecurityContextHolder.clearContext();
 
         String authHeader = request.getHeader("Authorization");
 
@@ -42,21 +55,21 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7).trim();
         if (token.isEmpty()) {
             SecurityContextHolder.clearContext();
-            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "INVALID_TOKEN", "Invalid JWT token");
             return;
         }
 
         try {
             if (!jwtUtil.validateToken(token)) {
                 SecurityContextHolder.clearContext();
-                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "INVALID_TOKEN", "Invalid JWT token");
                 return;
             }
 
             String email = jwtUtil.extractEmail(token);
             if (email == null) {
                 SecurityContextHolder.clearContext();
-                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "INVALID_TOKEN", "Invalid JWT token");
                 return;
             }
 
@@ -65,13 +78,13 @@ public class JwtFilter extends OncePerRequestFilter {
                 userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
             } catch (Exception ex) {
                 SecurityContextHolder.clearContext();
-                filterChain.doFilter(request, response);
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "USER_NOT_FOUND", "User not found or inaccessible");
                 return;
             }
 
             if (!userDetails.isEnabled() || !userDetails.isAccountNonLocked()) {
                 SecurityContextHolder.clearContext();
-                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "User account is disabled or locked");
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "USER_LOCKED", "User account is disabled or locked");
                 return;
             }
 
@@ -80,14 +93,14 @@ public class JwtFilter extends OncePerRequestFilter {
                 java.util.Date issuedAt = jwtUtil.extractIssuedAt(token);
                 if (issuedAt == null) {
                     SecurityContextHolder.clearContext();
-                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "TOKEN_REVOKED", "Token has been revoked");
                     return;
                 }
                 long issuedAtMillis = issuedAt.getTime();
                 long revokedAtMillis = user.getTokensRevokedAt().toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
                 if (issuedAtMillis <= revokedAtMillis) {
                     SecurityContextHolder.clearContext();
-                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has been revoked");
+                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "TOKEN_REVOKED", "Token has been revoked");
                     return;
                 }
             }
@@ -118,7 +131,7 @@ public class JwtFilter extends OncePerRequestFilter {
                     !("/api/v1/auth/change-password".equals(path) || "/api/v1/auth/logout".equals(path) || "/api/v1/auth/refresh".equals(path))) {
 
                 SecurityContextHolder.clearContext();
-                writeErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Password change required");
+                writeErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "PASSWORD_CHANGE_REQUIRED", "Password change required");
                 return;
             }
 
@@ -135,25 +148,29 @@ public class JwtFilter extends OncePerRequestFilter {
             }
             log.debug("Expired JWT token received: {}", ex.getMessage());
             SecurityContextHolder.clearContext();
-            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT token has expired");
+            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "TOKEN_EXPIRED", "JWT token has expired");
         } catch (JwtException | IllegalArgumentException ex) {
             log.warn("Invalid JWT token received: {}", ex.getMessage());
             SecurityContextHolder.clearContext();
-            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "INVALID_TOKEN", "Invalid JWT token");
         }
     }
 
-    private void writeErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+    private void writeErrorResponse(HttpServletResponse response, int status, String errorCode, String message) throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(String.format(
+        String json = String.format(
                 """
                 {
                     "success": false,
+                    "status": %d,
+                    "errorCode": "%s",
                     "message": "%s",
-                    "data": null
+                    "data": null,
+                    "timestamp": "%s"
                 }
-                """, message));
+                """, status, errorCode, message, java.time.Instant.now());
+        response.getWriter().write(json);
     }
 }

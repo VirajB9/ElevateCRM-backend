@@ -13,6 +13,7 @@ import java.util.List;
 public class AssignPermissionsRequest {
 
     @NotEmpty(message = "At least one permission is required")
+    @jakarta.validation.constraints.Size(min = 1, max = 100, message = "Permission IDs must contain between 1 and 100 entries")
     private List<@NotBlank(message = "Permission ID cannot be blank") String> permissionIds;
 
     @NotNull(message = "Version is required for optimistic concurrency control")

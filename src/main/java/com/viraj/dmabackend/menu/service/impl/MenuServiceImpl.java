@@ -60,7 +60,7 @@ public class MenuServiceImpl implements MenuService {
     public List<MenuResponse> getAllMenus() {
 
         List<Menu> menus = menuRepository.findAll(
-                Sort.by(Sort.Direction.ASC, "orderIndex"));
+                Sort.by(Sort.Direction.ASC, "orderIndex").and(Sort.by(Sort.Direction.ASC, "title")));
 
         if (menus.size() > 500) {
             log.warn("Menu count exceeds expected threshold: {}", menus.size());
@@ -117,6 +117,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "menuTree", allEntries = true)
     public void deactivateMenu(String menuId, Long version) {
 
@@ -297,7 +298,21 @@ public class MenuServiceImpl implements MenuService {
                 }
             }
         }
+        sortMenuTreeNodes(rootMenus);
         return pruneEmptyContainers(rootMenus, containerMenuIds);
+    }
+
+    private void sortMenuTreeNodes(List<MenuTreeResponse> nodes) {
+        if (nodes == null || nodes.isEmpty()) {
+            return;
+        }
+        nodes.sort(Comparator.comparing(MenuTreeResponse::getOrderIndex, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(MenuTreeResponse::getTitle, Comparator.nullsLast(Comparator.naturalOrder())));
+        for (MenuTreeResponse node : nodes) {
+            if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+                sortMenuTreeNodes(node.getChildren());
+            }
+        }
     }
 
     private List<MenuTreeResponse> pruneEmptyContainers(List<MenuTreeResponse> menuTree, Set<String> containerMenuIds) {

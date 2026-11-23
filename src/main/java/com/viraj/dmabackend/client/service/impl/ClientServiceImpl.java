@@ -74,7 +74,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
-            "id", "name", "companyName", "email", "phone", "status", "createdAt", "updatedAt"
+            "id", "name", "contactPerson", "companyName", "email", "phone", "phoneNumber", "status", "createdAt", "updatedAt"
     );
 
     @Override

@@ -30,8 +30,8 @@ public final class PaginationUtils {
         if (pageable == null || pageable.isUnpaged()) {
             return PageRequest.of(0, MAX_PAGE_SIZE);
         }
-        int pageNumber = pageable.getPageNumber();
-        int pageSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
+        int pageNumber = Math.max(0, pageable.getPageNumber());
+        int pageSize = Math.max(1, Math.min(pageable.getPageSize(), MAX_PAGE_SIZE));
         Sort sort = sanitizeSort(pageable.getSort(), allowedProperties);
         return PageRequest.of(pageNumber, pageSize, sort);
     }

@@ -76,7 +76,7 @@ public class InvoiceController {
             @Parameter(description = "Unique ID of the invoice", required = true)
             @Pattern(regexp = "^[a-fA-F0-9]{24}$|^[a-zA-Z0-9_-]{1,50}$", message = "Invalid ID format")
             @PathVariable String invoiceId,
-            Pageable pageable) {
+            @Parameter(description = "Pagination parameters") Pageable pageable) {
         return invoiceService.getInvoiceHistory(invoiceId, pageable);
     }
 

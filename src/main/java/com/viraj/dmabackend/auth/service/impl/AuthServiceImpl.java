@@ -55,6 +55,8 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.jwt.refresh-expiration}")
     private long refreshExpiration;
 
+    private static final String DUMMY_BCRYPT_HASH = "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
+
     @Override
     public AuthenticationResponse login(LoginRequest request) {
 
@@ -62,8 +64,12 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository
                 .findByEmailAndStatusNot(email, UserStatus.DELETED)
-                .orElseThrow(() ->
-                        new UnauthorizedException("Invalid email or password"));
+                .orElse(null);
+
+        if (user == null) {
+            passwordEncoder.matches(request.getPassword() != null ? request.getPassword() : "", DUMMY_BCRYPT_HASH);
+            throw new UnauthorizedException("Invalid email or password");
+        }
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new UnauthorizedException("Invalid email or password");
@@ -253,7 +259,9 @@ public class AuthServiceImpl implements AuthService {
 
         mongoTemplate.updateFirst(
                 Query.query(Criteria.where("tokenHash").is(tokenHash)),
-                new Update().set("replacedByToken", newTokenHash),
+                new Update().set("replacedByToken", newTokenHash)
+                        .set("updatedAt", LocalDateTime.now(ZoneOffset.UTC))
+                        .set("updatedBy", user.getEmail() != null ? user.getEmail() : "SYSTEM"),
                 RefreshToken.class
         );
 
@@ -375,7 +383,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setPasswordChangeRequired(false);
-        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC));
+        user.setTokensRevokedAt(LocalDateTime.now(ZoneOffset.UTC).minusSeconds(1));
         userRepository.save(user);
 
         refreshTokenRepository.deleteByUserId(user.getId());
@@ -419,8 +427,8 @@ public class AuthServiceImpl implements AuthService {
             long revokedEpochMilli = user.getTokensRevokedAt().toInstant(ZoneOffset.UTC).toEpochMilli();
             long nowEpochMilli = System.currentTimeMillis();
             long targetIssuedAtMilli = Math.max(nowEpochMilli, revokedEpochMilli + 1000L);
-            if (targetIssuedAtMilli / 1000 <= revokedEpochMilli / 1000) {
-                targetIssuedAtMilli = ((revokedEpochMilli / 1000) + 1) * 1000L;
+            if (targetIssuedAtMilli > nowEpochMilli + 50L) {
+                targetIssuedAtMilli = nowEpochMilli;
             }
             java.util.Date issuedAt = new java.util.Date(targetIssuedAtMilli);
             token = jwtUtil.generateToken(

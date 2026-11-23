@@ -119,9 +119,10 @@ public class LeadServiceImpl implements LeadService {
 
             savedLead = leadRepository.save(lead);
         } catch (Exception ex) {
-            if (existingClientId == null && client != null && client.getId() != null) {
+            if (!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()
+                    && existingClientId == null && client != null && client.getId() != null) {
                 try {
-                    log.warn("Compensating rollback: purging orphaned client [{}] after lead conversion error", client.getId());
+                    log.warn("Compensating rollback (non-transactional standalone mode): purging orphaned client [{}] after lead conversion error", client.getId());
                     clientService.purgeOrphanedClient(client.getId());
                 } catch (Exception rollbackEx) {
                     log.error("Failed to purge orphaned client [{}]: {}", client.getId(), rollbackEx.getMessage());
@@ -162,7 +163,7 @@ public class LeadServiceImpl implements LeadService {
     }
 
     private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
-            "id", "title", "name", "email", "phone", "company", "status", "source", "estimatedBudget", "assignedUserId", "createdAt", "updatedAt"
+            "id", "title", "name", "firstName", "lastName", "company", "companyName", "email", "phone", "phoneNumber", "status", "source", "estimatedBudget", "assignedUserId", "createdAt", "updatedAt"
     );
 
     @Override
@@ -253,6 +254,7 @@ public class LeadServiceImpl implements LeadService {
     }
 
     @Override
+    @Transactional
     public void deleteLead(String leadId, Long version) {
 
         Lead lead = findLeadById(leadId);

@@ -22,6 +22,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @CompoundIndex(
         name = "idx_active_order_index",
         def = "{'active': 1, 'orderIndex': 1}")
+@CompoundIndex(
+        name = "idx_menu_parent_active",
+        def = "{'parentId': 1, 'active': 1}")
 public class Menu extends BaseEntity {
 
     @Id
@@ -35,7 +38,6 @@ public class Menu extends BaseEntity {
 
     private String icon;
 
-    @Indexed
     private String parentId;
 
     private Integer orderIndex;

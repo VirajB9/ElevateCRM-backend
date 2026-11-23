@@ -21,8 +21,8 @@ server:
   shutdown: graceful
   tomcat:
     remoteip:
-      remote-ip-header: x-forwarded-for
-      protocol-header: x-forwarded-proto
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
     threads:
       max: ${TOMCAT_MAX_THREADS:50}
       min-spare: 10

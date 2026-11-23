@@ -32,7 +32,6 @@ public class Project extends BaseEntity {
     @Id
     private String id;
 
-    @Indexed
     private String clientId;
 
     @TextIndexed

@@ -24,6 +24,7 @@ import java.util.List;
 @CompoundIndex(name = "idx_status_deleted", def = "{'status': 1, 'deleted': 1}")
 @CompoundIndex(name = "idx_project_deleted", def = "{'projectId': 1, 'deleted': 1}")
 @CompoundIndex(name = "idx_deleted_created_at", def = "{'deleted': 1, 'createdAt': -1}")
+@CompoundIndex(name = "idx_invoice_client_deleted_status", def = "{'clientId': 1, 'deleted': 1, 'status': 1}")
 public class Invoice extends BaseEntity {
 
     @Id
@@ -32,10 +33,8 @@ public class Invoice extends BaseEntity {
     @Indexed(unique = true)
     private String invoiceNumber;
 
-    @Indexed
     private String clientId;
 
-    @Indexed
     private String projectId;
 
     private LocalDate issueDate;
@@ -54,7 +53,6 @@ public class Invoice extends BaseEntity {
 
     private BigDecimal totalAmount;
 
-    @Indexed
     private InvoiceStatus status;
 
     private String notes;

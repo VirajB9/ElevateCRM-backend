@@ -40,4 +40,7 @@ public interface ProjectRepository extends MongoRepository<Project, String>, Pro
 
     @Query(value = "{ 'clientId': ?0, 'status': { $in: ?1 }, 'deleted': false }", exists = true)
     boolean existsByClientIdAndStatusIn(String clientId, java.util.Collection<ProjectStatus> statuses);
+
+    @Query(value = "{ 'createdBy': ?0, 'status': { $in: ?1 }, 'deleted': false }", exists = true)
+    boolean existsByCreatedByAndStatusIn(String createdBy, java.util.Collection<ProjectStatus> statuses);
 }

@@ -37,8 +37,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int MAX_CACHE_SIZE = 10000;
     private static final int MAX_BLOCKED_CACHE_SIZE = 100000;
 
-    @org.springframework.beans.factory.annotation.Value("${app.rate-limit.trusted-proxies:}")
-    private List<String> trustedProxies;
+    @org.springframework.beans.factory.annotation.Value("${app.rate-limit.trusted-proxies:198.51.100.1}")
+    private List<String> trustedProxies = List.of("198.51.100.1");
+
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper =
+            new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules();
 
     public void setTrustedProxies(List<String> trustedProxies) {
         this.trustedProxies = trustedProxies;
@@ -123,14 +126,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
             errorMessage = "Too many login attempts. Please try again later.";
         }
 
-        response.getWriter().write(
-                """
-                {
-                    "success": false,
-                    "message": "%s",
-                    "data": null
-                }
-                """.formatted(errorMessage));
+        response.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        com.viraj.dmabackend.common.response.ApiResponse<Void> apiResponse = com.viraj.dmabackend.common.response.ApiResponse.<Void>builder()
+                .success(false)
+                .status(429)
+                .errorCode("RATE_LIMIT_EXCEEDED")
+                .message(errorMessage)
+                .data(null)
+                .timestamp(java.time.Instant.now())
+                .build();
+        objectMapper.writeValue(response.getWriter(), apiResponse);
     }
 
     private Bucket getBucket(String bucketKey) {
@@ -149,13 +155,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .build();
     }
 
-    private static final java.util.Set<String> LOCAL_PROXIES = java.util.Set.of("127.0.0.1", "0:0:0:0:0:0:0:1", "::1", "localhost", "10.0.0.1", "198.51.100.1");
+    private static final java.util.Set<String> LOCAL_PROXIES = java.util.Set.of("127.0.0.1", "0:0:0:0:0:0:0:1", "::1", "localhost");
+
+    private static final java.util.regex.Pattern IP_PATTERN = java.util.regex.Pattern.compile(
+            "^([0-9]{1,3}\\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$"
+    );
 
     private boolean isTrustedProxy(String ip) {
         if (ip == null || ip.isBlank()) {
             return false;
         }
         String clean = ip.trim();
+        if (!IP_PATTERN.matcher(clean).matches()) {
+            return false;
+        }
         if (LOCAL_PROXIES.contains(clean)) {
             return true;
         }

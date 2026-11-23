@@ -37,10 +37,19 @@ public class GlobalExceptionHandler {
 
         ex.getBindingResult()
                 .getFieldErrors()
-                .forEach(error ->
-                        errors.put(
-                                error.getField(),
-                                error.getDefaultMessage()));
+                .forEach(error -> {
+                    String existing = errors.get(error.getField());
+                    String msg = error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value";
+                    errors.put(error.getField(), existing != null ? existing + "; " + msg : msg);
+                });
+
+        ex.getBindingResult()
+                .getGlobalErrors()
+                .forEach(error -> {
+                    String existing = errors.get(error.getObjectName());
+                    String msg = error.getDefaultMessage() != null ? error.getDefaultMessage() : "Validation constraint violation";
+                    errors.put(error.getObjectName(), existing != null ? existing + "; " + msg : msg);
+                });
 
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
@@ -187,16 +196,33 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleConflict(
             ConflictException ex) {
 
+        String errorCode = ex.getErrorCode() != null ? ex.getErrorCode() : "CONFLICT";
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
                 ex.getMessage(),
                 null,
-                "CONFLICT",
+                errorCode,
                 HttpStatus.CONFLICT.value());
 
         return new ResponseEntity<>(
                 response,
                 HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUnauthorizedRoleAssignment(
+            com.viraj.dmabackend.auth.exception.UnauthorizedRoleAssignmentException ex) {
+
+        ApiResponse<Object> response = new ApiResponse<>(
+                false,
+                ex.getMessage(),
+                null,
+                "FORBIDDEN",
+                HttpStatus.FORBIDDEN.value());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(DuplicateKeyException.class)
@@ -285,7 +311,7 @@ public class GlobalExceptionHandler {
 
         ApiResponse<Object> response = new ApiResponse<>(
                 false,
-                ex.getMessage(),
+                "The requested resource was not found: " + ex.getResourcePath(),
                 null,
                 "NOT_FOUND",
                 HttpStatus.NOT_FOUND.value());

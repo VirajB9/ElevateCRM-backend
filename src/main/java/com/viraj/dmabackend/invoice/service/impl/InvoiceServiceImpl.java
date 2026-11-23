@@ -87,7 +87,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     private static final java.util.Set<String> ALLOWED_SORT_PROPERTIES = java.util.Set.of(
-            "id", "invoiceNumber", "clientId", "projectId", "issueDate", "dueDate", "totalAmount", "status", "invoiceVersion", "createdAt", "updatedAt"
+            "id", "invoiceNumber", "clientId", "projectId", "issueDate", "dueDate", "totalAmount", "status", "version", "invoiceVersion", "createdAt", "updatedAt"
     );
 
     private static final java.util.Set<String> ALLOWED_INVOICE_HISTORY_SORT_PROPERTIES = java.util.Set.of(

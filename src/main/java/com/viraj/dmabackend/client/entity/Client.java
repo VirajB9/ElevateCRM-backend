@@ -62,6 +62,5 @@ public class Client extends BaseEntity {
     private String notes;
 
     @Builder.Default
-    @Indexed
     private ClientStatus status = ClientStatus.ACTIVE;
 }

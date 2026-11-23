@@ -30,7 +30,7 @@ public class InvoiceItemRequest {
     private BigDecimal quantity;
 
     @NotNull(message = "Unit price is required")
-    @DecimalMin(value = "0.00", message = "Unit price cannot be negative")
+    @DecimalMin(value = "0.01", message = "Unit price must be greater than zero")
     @Digits(integer = 15, fraction = 2, message = "Unit price must have at most 15 integer digits and 2 decimal places")
     private BigDecimal unitPrice;
 }

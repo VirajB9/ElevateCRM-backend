@@ -51,11 +51,9 @@ public class User extends BaseEntity {
 
     private boolean passwordChangeRequired;
 
-    @Indexed
     private String roleId;
 
     @Builder.Default
-    @Indexed
     private UserStatus status = UserStatus.ACTIVE;
 
     @Builder.Default
